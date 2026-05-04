@@ -7,6 +7,17 @@
 
 ---
 
+## AlfaHome — 26/04/2026 — Confirmação de baixa com valor editável e cadastro rápido aprimorado
+
+### Novidades
+- **Valor editável ao confirmar pagamento ou recebimento**: ao baixar uma conta no Fluxo de Caixa, agora você pode informar o valor real recebido ou pago, mesmo que diferente do previsto. Útil quando recebeu algumas reais a mais ou pagou um valor menor do que o lançado, sem precisar editar a despesa/receita inteira. Um indicador mostra em tempo real quanto a mais ou a menos está em relação ao previsto.
+- **Cadastro rápido modernizado** ao criar uma nova despesa: o botão "+" ao lado de Onde e Categoria agora abre uma janela elegante dentro do próprio modal de Nova Despesa, com ícones e mensagens claras de erro, em vez do popup branco do navegador. Pressionar Enter já confirma.
+
+### Correções
+- **"Saldo insuficiente" indevido ao marcar despesa como paga**: ao criar uma despesa nova já marcada como paga, o sistema rejeitava o lançamento mesmo quando havia saldo positivo na conta, porque descontava todas as outras despesas em aberto do disponível. Agora, pagamentos imediatos são validados apenas contra o saldo atual + cheque especial; despesas futuras continuam sendo validadas individualmente quando forem pagas.
+
+---
+
 ## AlfaHome — 21/04/2026 — Cor de destaque atualizada para verde
 
 ### Melhorias

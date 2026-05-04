@@ -558,6 +558,32 @@
     <input type="hidden" name="escopo" id="escopo-excluir" value="apenas_esta">
 </form>
 
+{{-- ── Mini-modal: criar rápido (fornecedor / categoria) ─────────────────── --}}
+<div class="modal-backdrop" id="modal-criar-rapido" style="z-index:1200;">
+    <div class="modal" style="max-width:380px;">
+        <div class="modal-header">
+            <i class="fa-solid fa-plus" id="cr-icone" style="color:var(--color-primary);"></i>
+            <h3 id="cr-titulo">Novo</h3>
+            <button class="modal-close" onclick="closeModal('modal-criar-rapido')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label" id="cr-label">Nome *</label>
+                <input type="text" id="cr-nome" class="form-control" maxlength="120" autocomplete="off"
+                       placeholder="Digite o nome..."
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarCriarRapido();}">
+                <div id="cr-erro" style="display:none;font-size:12px;color:var(--color-danger);margin-top:6px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('modal-criar-rapido')" class="btn btn-secondary">Cancelar</button>
+                <button type="button" onclick="confirmarCriarRapido()" class="btn btn-primary" id="cr-btn-salvar">
+                    <i class="fa-solid fa-floppy-disk"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ── Modal de confirmação de exclusão ──────────────────────────────────── --}}
 <div class="modal-backdrop" id="modal-confirmar-exclusao-despesa" style="z-index:1100;">
     <div class="modal" style="max-width:420px;">
@@ -833,24 +859,59 @@ function confirmarExclusaoDespesa(escopoFixo) {
     closeModal('modal-confirmar-exclusao-despesa');
 }
 
-// ── Cadastro rápido (categoria / fornecedor) ─────────────────────────────────
-function criarRapido(tipo, selectId) {
-    const labels = {
-        'categoria-despesa': 'Nova Categoria (Despesa)',
-        'categoria-receita': 'Nova Categoria (Receita)',
-        'fornecedor': 'Novo Fornecedor',
-    };
-    const nome = prompt(labels[tipo] || 'Nome:');
-    if (!nome || !nome.trim()) return;
+// ── Cadastro rápido (categoria / fornecedor) via mini-modal ─────────────────
+const _cr_meta = {
+    'categoria-despesa': { titulo: 'Nova Categoria (Despesa)', label: 'Nome da categoria *', icone: 'fa-tags',  cor: 'var(--color-danger)'  },
+    'categoria-receita': { titulo: 'Nova Categoria (Receita)', label: 'Nome da categoria *', icone: 'fa-tags',  cor: 'var(--color-success)' },
+    'fornecedor':        { titulo: 'Novo Fornecedor',          label: 'Nome do fornecedor *', icone: 'fa-store', cor: 'var(--color-primary)' },
+};
 
+let _crCtx = null;
+
+function criarRapido(tipo, selectId) {
+    const meta = _cr_meta[tipo];
+    if (!meta) return;
+    _crCtx = { tipo, selectId };
+
+    document.getElementById('cr-titulo').textContent = meta.titulo;
+    document.getElementById('cr-label').textContent  = meta.label;
+    const ico = document.getElementById('cr-icone');
+    ico.className = `fa-solid ${meta.icone}`;
+    ico.style.color = meta.cor;
+
+    const inp = document.getElementById('cr-nome');
+    inp.value = '';
+    document.getElementById('cr-erro').style.display = 'none';
+    document.getElementById('cr-btn-salvar').disabled = false;
+
+    openModal('modal-criar-rapido');
+    setTimeout(() => inp.focus(), 50);
+}
+
+function confirmarCriarRapido() {
+    if (!_crCtx) return;
+    const inp   = document.getElementById('cr-nome');
+    const erro  = document.getElementById('cr-erro');
+    const btn   = document.getElementById('cr-btn-salvar');
+    const nome  = (inp.value || '').trim();
+
+    erro.style.display = 'none';
+    if (!nome) {
+        erro.textContent = 'Informe um nome.';
+        erro.style.display = 'block';
+        inp.focus();
+        return;
+    }
+
+    btn.disabled = true;
     let url, body;
-    if (tipo === 'fornecedor') {
+    if (_crCtx.tipo === 'fornecedor') {
         url = '/fornecedores/rapido';
-        body = JSON.stringify({ nome: nome.trim() });
+        body = JSON.stringify({ nome });
     } else {
-        const tipoCategoria = tipo === 'categoria-receita' ? 'RECEITA' : 'DESPESA';
+        const tipoCategoria = _crCtx.tipo === 'categoria-receita' ? 'RECEITA' : 'DESPESA';
         url = '/categorias/rapido';
-        body = JSON.stringify({ nome: nome.trim(), tipo: tipoCategoria });
+        body = JSON.stringify({ nome, tipo: tipoCategoria });
     }
 
     fetch(url, {
@@ -860,25 +921,32 @@ function criarRapido(tipo, selectId) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json',
         },
-        body: body,
+        body,
     })
-    .then(r => { if (!r.ok) throw r; return r.json(); })
+    .then(async r => {
+        if (!r.ok) {
+            const j = await r.json().catch(() => ({}));
+            throw new Error(j.message || 'Erro ao cadastrar.');
+        }
+        return r.json();
+    })
     .then(data => {
-        // Adiciona a nova opção em TODOS os selects do mesmo tipo na página
-        const seletores = tipo === 'fornecedor'
+        const seletores = _crCtx.tipo === 'fornecedor'
             ? document.querySelectorAll('select[name="onde_comprou"]')
             : document.querySelectorAll('select[name="categoria_id"]');
 
-        seletores.forEach(sel => {
-            const opt = new Option(data.nome, data.id);
-            sel.appendChild(opt);
-        });
-
-        // Seleciona no select que originou a ação
-        const selectOrigem = document.getElementById(selectId);
+        seletores.forEach(sel => sel.appendChild(new Option(data.nome, data.id)));
+        const selectOrigem = document.getElementById(_crCtx.selectId);
         if (selectOrigem) selectOrigem.value = data.id;
+
+        closeModal('modal-criar-rapido');
+        _crCtx = null;
     })
-    .catch(() => alert('Erro ao cadastrar. Verifique se você tem permissão.'));
+    .catch(err => {
+        erro.textContent = err.message || 'Erro ao cadastrar. Verifique se você tem permissão.';
+        erro.style.display = 'block';
+        btn.disabled = false;
+    });
 }
 </script>
 @endpush

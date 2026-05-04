@@ -335,7 +335,7 @@
 
 {{-- ─── Modal Baixar Receita ──────────────────────────────────────────────── --}}
 <div class="modal-backdrop" id="modal-baixa-receita">
-    <div class="modal" style="max-width:380px;">
+    <div class="modal" style="max-width:420px;">
         <div class="modal-header">
             <i class="fa-solid fa-check-circle" style="color:var(--color-success);"></i>
             <h3>Confirmar Recebimento</h3>
@@ -344,15 +344,24 @@
         <div class="modal-body">
             <div id="baixa-receita-desc"
                  style="font-size:13px;font-weight:600;margin-bottom:4px;color:var(--color-text);"></div>
-            <div id="baixa-receita-val"
-                 style="font-size:20px;font-weight:700;color:var(--color-success);margin-bottom:16px;"></div>
+            <div id="baixa-receita-previsto"
+                 style="font-size:12px;color:var(--color-text-subtle);margin-bottom:14px;"></div>
             <form method="POST" action="" id="form-baixa-receita">
                 @csrf
-                <div class="form-group">
-                    <label class="form-label">Data do Recebimento</label>
-                    <input type="date" name="data_recebimento" id="baixa-receita-data"
-                           class="form-control" required value="{{ now()->format('Y-m-d') }}">
+                <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                        <label class="form-label">Valor Recebido *</label>
+                        <input type="number" name="valor" id="baixa-receita-valor"
+                               class="form-control" required step="0.01" min="0.01" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data do Recebimento *</label>
+                        <input type="date" name="data_recebimento" id="baixa-receita-data"
+                               class="form-control" required value="{{ now()->format('Y-m-d') }}">
+                    </div>
                 </div>
+                <div id="baixa-receita-diff"
+                     style="font-size:12px;margin:-2px 0 10px 2px;min-height:16px;"></div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('modal-baixa-receita')" class="btn btn-secondary">Cancelar</button>
                     <button type="submit" class="btn btn-success">
@@ -366,7 +375,7 @@
 
 {{-- ─── Modal Baixar Despesa ──────────────────────────────────────────────── --}}
 <div class="modal-backdrop" id="modal-baixa-despesa">
-    <div class="modal" style="max-width:380px;">
+    <div class="modal" style="max-width:420px;">
         <div class="modal-header">
             <i class="fa-solid fa-check-circle" style="color:var(--color-danger);"></i>
             <h3>Confirmar Pagamento</h3>
@@ -375,15 +384,24 @@
         <div class="modal-body">
             <div id="baixa-despesa-desc"
                  style="font-size:13px;font-weight:600;margin-bottom:4px;color:var(--color-text);"></div>
-            <div id="baixa-despesa-val"
-                 style="font-size:20px;font-weight:700;color:var(--color-danger);margin-bottom:16px;"></div>
+            <div id="baixa-despesa-previsto"
+                 style="font-size:12px;color:var(--color-text-subtle);margin-bottom:14px;"></div>
             <form method="POST" action="" id="form-baixa-despesa">
                 @csrf
-                <div class="form-group">
-                    <label class="form-label">Data do Pagamento</label>
-                    <input type="date" name="data_pagamento" id="baixa-despesa-data"
-                           class="form-control" required value="{{ now()->format('Y-m-d') }}">
+                <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div class="form-group">
+                        <label class="form-label">Valor Pago *</label>
+                        <input type="number" name="valor" id="baixa-despesa-valor"
+                               class="form-control" required step="0.01" min="0.01" inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Data do Pagamento *</label>
+                        <input type="date" name="data_pagamento" id="baixa-despesa-data"
+                               class="form-control" required value="{{ now()->format('Y-m-d') }}">
+                    </div>
                 </div>
+                <div id="baixa-despesa-diff"
+                     style="font-size:12px;margin:-2px 0 10px 2px;min-height:16px;"></div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('modal-baixa-despesa')" class="btn btn-secondary">Cancelar</button>
                     <button type="submit" class="btn btn-danger">
@@ -399,10 +417,35 @@
 
 @push('scripts')
 <script>
+function fmtBRL(v) {
+    return 'R$ ' + Number(v).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function atualizarDiffBaixa(prefix, valorPrevisto) {
+    const inp  = document.getElementById(`${prefix}-valor`);
+    const out  = document.getElementById(`${prefix}-diff`);
+    if (!inp || !out) return;
+    const novo = parseFloat(inp.value);
+    if (isNaN(novo) || novo <= 0) { out.textContent = ''; return; }
+    const diff = +(novo - valorPrevisto).toFixed(2);
+    if (diff === 0) {
+        out.innerHTML = `<i class="fa-solid fa-check" style="color:var(--color-success);"></i> <span style="color:var(--color-text-subtle);">Valor igual ao previsto.</span>`;
+    } else if (diff > 0) {
+        out.innerHTML = `<i class="fa-solid fa-arrow-up" style="color:var(--color-success);"></i> <span style="color:var(--color-success);font-weight:600;">${fmtBRL(diff)} a mais</span> <span style="color:var(--color-text-subtle);">que o previsto.</span>`;
+    } else {
+        out.innerHTML = `<i class="fa-solid fa-arrow-down" style="color:var(--color-danger);"></i> <span style="color:var(--color-danger);font-weight:600;">${fmtBRL(Math.abs(diff))} a menos</span> <span style="color:var(--color-text-subtle);">que o previsto.</span>`;
+    }
+}
+
 function abrirBaixaReceita(id, desc, valor) {
     document.getElementById('form-baixa-receita').action = `/fluxo-caixa/baixar-receita/${id}`;
     document.getElementById('baixa-receita-desc').textContent = desc;
-    document.getElementById('baixa-receita-val').textContent  = 'R$ ' + valor.toFixed(2).replace('.', ',');
+    document.getElementById('baixa-receita-previsto').textContent = `Valor previsto: ${fmtBRL(valor)}`;
+    const inp = document.getElementById('baixa-receita-valor');
+    inp.value = Number(valor).toFixed(2);
+    inp.dataset.previsto = String(valor);
+    inp.oninput = () => atualizarDiffBaixa('baixa-receita', valor);
+    document.getElementById('baixa-receita-diff').textContent = '';
     document.getElementById('baixa-receita-data').value = '{{ now()->format('Y-m-d') }}';
     openModal('modal-baixa-receita');
 }
@@ -410,7 +453,12 @@ function abrirBaixaReceita(id, desc, valor) {
 function abrirBaixaDespesa(id, desc, valor) {
     document.getElementById('form-baixa-despesa').action = `/fluxo-caixa/baixar-despesa/${id}`;
     document.getElementById('baixa-despesa-desc').textContent = desc;
-    document.getElementById('baixa-despesa-val').textContent  = 'R$ ' + valor.toFixed(2).replace('.', ',');
+    document.getElementById('baixa-despesa-previsto').textContent = `Valor previsto: ${fmtBRL(valor)}`;
+    const inp = document.getElementById('baixa-despesa-valor');
+    inp.value = Number(valor).toFixed(2);
+    inp.dataset.previsto = String(valor);
+    inp.oninput = () => atualizarDiffBaixa('baixa-despesa', valor);
+    document.getElementById('baixa-despesa-diff').textContent = '';
     document.getElementById('baixa-despesa-data').value = '{{ now()->format('Y-m-d') }}';
     openModal('modal-baixa-despesa');
 }

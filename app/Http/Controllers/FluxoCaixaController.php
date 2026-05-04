@@ -61,10 +61,18 @@ class FluxoCaixaController extends Controller
     {
         $this->authorize('update', $despesa);
 
-        $request->validate(['data_pagamento' => 'required|date']);
+        $request->validate([
+            'data_pagamento' => 'required|date',
+            'valor'          => 'nullable|numeric|min:0.01',
+        ]);
 
-        // O DespesaObserver atualiza o saldo do banco automaticamente
-        $despesa->update(['data_pagamento' => $request->data_pagamento]);
+        // O DespesaObserver atualiza o saldo do banco automaticamente, usando
+        // o $despesa->valor já atualizado quando a data_pagamento muda.
+        $dados = ['data_pagamento' => $request->data_pagamento];
+        if ($request->filled('valor')) {
+            $dados['valor'] = (float) $request->valor;
+        }
+        $despesa->update($dados);
 
         return back()->with('success', 'Despesa baixada com sucesso!');
     }
@@ -85,10 +93,18 @@ class FluxoCaixaController extends Controller
     {
         $this->authorize('update', $receita);
 
-        $request->validate(['data_recebimento' => 'required|date']);
+        $request->validate([
+            'data_recebimento' => 'required|date',
+            'valor'            => 'nullable|numeric|min:0.01',
+        ]);
 
-        // O ReceitaObserver atualiza o saldo do banco automaticamente
-        $receita->update(['data_recebimento' => $request->data_recebimento]);
+        // O ReceitaObserver atualiza o saldo do banco automaticamente, usando
+        // o $receita->valor já atualizado quando a data_recebimento muda.
+        $dados = ['data_recebimento' => $request->data_recebimento];
+        if ($request->filled('valor')) {
+            $dados['valor'] = (float) $request->valor;
+        }
+        $receita->update($dados);
 
         return back()->with('success', 'Receita baixada com sucesso!');
     }

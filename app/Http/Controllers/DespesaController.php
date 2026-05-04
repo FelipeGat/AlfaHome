@@ -103,6 +103,8 @@ class DespesaController extends Controller
                 (int) $request->forma_pagamento,
                 (float) $request->valor,   // valor total (antes de dividir em parcelas)
                 $request->tipo_pagamento,
+                null,
+                pagamentoImediato: true,
             );
             if ($erro) {
                 return back()->withErrors(['valor' => $erro])->withInput();
@@ -156,7 +158,8 @@ class DespesaController extends Controller
                     (int) $request->forma_pagamento,
                     (float) $request->valor,
                     $request->tipo_pagamento,
-                    $mesmoCartao ? $despesa->id : null
+                    $mesmoCartao ? $despesa->id : null,
+                    pagamentoImediato: true,
                 );
                 if ($erro) {
                     return back()->withErrors(['valor' => $erro])->withInput();
@@ -224,21 +227,24 @@ class DespesaController extends Controller
     /**
      * Valida se a conta/cartão tem saldo ou limite suficiente para o lançamento.
      *
-     * Regras por tipo_pagamento:
-     *  - credito          → valida contra limite do cartão de crédito
-     *  - pix / debito / transferencia → valida contra saldo + cheque especial
-     *  - dinheiro         → valida apenas contra saldo (sem cheque especial)
+     * Para pagamento imediato (data_pagamento preenchida) o cálculo considera
+     * apenas saldo atual + cheque especial — despesas futuras em aberto serão
+     * validadas individualmente quando forem pagas. Para lançamentos em aberto
+     * (a pagar no futuro), descontamos o que já está comprometido na conta
+     * para evitar acumular obrigações além do que a conta suporta.
      *
-     * @param int         $bancoId         ID do banco/cartão
-     * @param float       $novoValor       Valor total do lançamento (antes de dividir parcelas)
-     * @param string      $tipoPagamento   Tipo: dinheiro|pix|debito|credito|transferencia
-     * @param int|null    $excluirId       ID de despesa a excluir do cálculo (na edição)
+     * @param int         $bancoId           ID do banco/cartão
+     * @param float       $novoValor         Valor total do lançamento (antes de dividir parcelas)
+     * @param string      $tipoPagamento     Tipo: dinheiro|pix|debito|credito|transferencia|boleto
+     * @param int|null    $excluirId         ID de despesa a excluir do cálculo (na edição)
+     * @param bool        $pagamentoImediato true quando a despesa já sai do saldo agora
      */
     private function validarDisponibilidade(
         int $bancoId,
         float $novoValor,
         string $tipoPagamento,
-        ?int $excluirId = null
+        ?int $excluirId = null,
+        bool $pagamentoImediato = false
     ): ?string {
         $banco = Banco::find($bancoId);
         if (! $banco) {
@@ -278,8 +284,34 @@ class DespesaController extends Controller
             return null;
         }
 
-        // Para dinheiro, pix, débito e transferência: comprometido são apenas despesas
-        // não-crédito em aberto (exclui cartão de crédito que não afeta conta corrente)
+        $saldo            = (float) $banco->saldo;
+        $chequeDisponivel = $tipoPagamento === 'dinheiro'
+            ? 0.0
+            : max(0, (float) $banco->cheque_especial - (float) $banco->saldo_cheque);
+
+        if ($pagamentoImediato) {
+            // Pagamento à vista: valida só contra o que já está na conta hoje.
+            $disponivel = $saldo + $chequeDisponivel;
+
+            if ($novoValor > $disponivel) {
+                $msg = sprintf(
+                    'Saldo insuficiente em %s. Disponível: R$ %s (Saldo: R$ %s',
+                    $banco->nome,
+                    number_format(max(0, $disponivel), 2, ',', '.'),
+                    number_format($saldo, 2, ',', '.')
+                );
+
+                if ($chequeDisponivel > 0) {
+                    $msg .= sprintf(' + Cheque Especial: R$ %s', number_format($chequeDisponivel, 2, ',', '.'));
+                }
+
+                return $msg . ').';
+            }
+
+            return null;
+        }
+
+        // Lançamento em aberto: deduz despesas já comprometidas na conta.
         $comprometidoConta = (float) Despesa::where('forma_pagamento', $bancoId)
             ->whereNull('data_pagamento')
             ->where(function ($q) {
@@ -289,28 +321,7 @@ class DespesaController extends Controller
             ->when($excluirId, fn ($q) => $q->where('id', '!=', $excluirId))
             ->sum('valor');
 
-        // ── Dinheiro (carteira física) ────────────────────────────────────────
-        if ($tipoPagamento === 'dinheiro') {
-            $saldo      = (float) $banco->saldo;
-            $disponivel = $saldo - $comprometidoConta;
-
-            if ($novoValor > $disponivel) {
-                return sprintf(
-                    'Saldo insuficiente em %s. Disponível: R$ %s (Saldo: R$ %s).',
-                    $banco->nome,
-                    number_format(max(0, $disponivel), 2, ',', '.'),
-                    number_format($saldo, 2, ',', '.')
-                );
-            }
-
-            return null;
-        }
-
-        // ── Pix / Débito / Transferência Bancária ────────────────────────────
-        // (pix, debito, transferencia) — usa saldo + cheque especial disponível
-        $saldo            = (float) $banco->saldo;
-        $chequeDisponivel = max(0, (float) $banco->cheque_especial - (float) $banco->saldo_cheque);
-        $disponivel       = $saldo - $comprometidoConta + $chequeDisponivel;
+        $disponivel = $saldo - $comprometidoConta + $chequeDisponivel;
 
         if ($novoValor > $disponivel) {
             $msg = sprintf(
@@ -324,9 +335,7 @@ class DespesaController extends Controller
                 $msg .= sprintf(' + Cheque Especial: R$ %s', number_format($chequeDisponivel, 2, ',', '.'));
             }
 
-            $msg .= ').';
-
-            return $msg;
+            return $msg . ').';
         }
 
         return null;
