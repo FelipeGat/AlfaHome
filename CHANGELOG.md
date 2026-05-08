@@ -1,5 +1,12 @@
 # Changelog
 
+## AlfaHome — 04/05/2026 — Correção de indisponibilidade total do sistema
+
+### Correções
+- O sistema ficou inacessível para todos os usuários devido a uma regra de rede legada no servidor que redirecionava todo o tráfego HTTPS para uma porta inexistente. A regra foi identificada e removida, restaurando o acesso imediatamente. O servidor foi ajustado para evitar que o problema ocorra novamente em futuras reinicializações.
+
+---
+
 ## AlfaHome — 26/04/2026 — Confirmação de baixa com valor editável e cadastro rápido aprimorado
 
 ### Novidades
