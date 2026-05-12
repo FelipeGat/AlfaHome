@@ -60,13 +60,13 @@ class DashboardSnapshotService
 
         $lancamentos = DB::table('receitas')
             ->leftJoin('categorias', 'receitas.categoria_id', '=', 'categorias.id')
-            ->selectRaw("receitas.id, 'receita' as tipo, receitas.valor, receitas.data_prevista_recebimento as data, COALESCE(categorias.nome,'Sem categoria') as categoria")
+            ->selectRaw("receitas.id, 'receita' as tipo, receitas.valor, receitas.data_prevista_recebimento as data, COALESCE(categorias.nome,'Sem categoria') as categoria, receitas.tipo_pagamento as tipo_pagamento")
             ->where('receitas.tenant_id', $tenantId)
             ->whereNull('receitas.deleted_at')
             ->union(
                 DB::table('despesas')
                     ->leftJoin('categorias', 'despesas.categoria_id', '=', 'categorias.id')
-                    ->selectRaw("despesas.id, 'despesa' as tipo, despesas.valor, despesas.data_compra as data, COALESCE(categorias.nome,'Sem categoria') as categoria")
+                    ->selectRaw("despesas.id, 'despesa' as tipo, despesas.valor, despesas.data_compra as data, COALESCE(categorias.nome,'Sem categoria') as categoria, despesas.tipo_pagamento as tipo_pagamento")
                     ->where('despesas.tenant_id', $tenantId)
                     ->whereNull('despesas.deleted_at')
             )
