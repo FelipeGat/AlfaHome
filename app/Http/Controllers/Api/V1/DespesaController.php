@@ -21,6 +21,7 @@ class DespesaController extends Controller
      *   inicio, fim       — Y-m-d (padrão: mês corrente)
      *   familiar_id, fornecedor_id, banco_id, categoria_id, tipo_pagamento
      *   status            — pago | a_pagar | vencido
+     *   pending_only      — 1 = atalho para a_pagar OU vencido, exclui crédito
      *   per_page          — 1..100 (padrão 30)
      *
      * Resposta: paginação Laravel padrão (data + meta + links).
@@ -36,6 +37,7 @@ class DespesaController extends Controller
             'categoria_id'   => ['nullable', 'integer'],
             'tipo_pagamento' => ['nullable', 'string'],
             'status'         => ['nullable', 'in:pago,a_pagar,vencido'],
+            'pending_only'   => ['nullable', 'boolean'],
             'per_page'       => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -43,16 +45,31 @@ class DespesaController extends Controller
         $inicio   = $request->query('inicio', now()->startOfMonth()->format('Y-m-d'));
         $fim      = $request->query('fim',    now()->endOfMonth()->format('Y-m-d'));
 
-        $query = Despesa::with(['categoria', 'familiar', 'fornecedor', 'banco'])
+        $query = Despesa::query()
             ->where('tenant_id', $tenantId)
             ->whereBetween('data_compra', [$inicio, $fim]);
 
         $this->applyOptionalFilters($query, $request);
         $this->applyStatusFilter($query, $request->query('status'));
 
+        if ($request->boolean('pending_only')) {
+            // a_pagar OU vencido, excluindo cartão de crédito (vai pra fatura)
+            $query->whereNull('data_pagamento')
+                ->where(function ($q) {
+                    $q->where('tipo_pagamento', '!=', 'credito')
+                      ->orWhereNull('tipo_pagamento');
+                });
+        }
+
+        // Clona ANTES do paginate para que `total_valor` reflita exatamente
+        // a mesma seleção (inclui status + pending_only, que não cabem nos
+        // filtros estruturais reaplicados).
+        $totalValor = (float) (clone $query)->sum('valor');
+
         $perPage = (int) $request->query('per_page', 30);
 
         $paginator = $query
+            ->with(['categoria', 'familiar', 'fornecedor', 'banco'])
             ->orderByDesc('data_compra')
             ->orderByDesc('id')
             ->paginate($perPage)
@@ -60,15 +77,8 @@ class DespesaController extends Controller
 
         return DespesaResource::collection($paginator)->additional([
             'meta' => [
-                'periodo' => ['inicio' => $inicio, 'fim' => $fim],
-                'total_valor' => (float) Despesa::where('tenant_id', $tenantId)
-                    ->whereBetween('data_compra', [$inicio, $fim])
-                    ->when($request->query('familiar_id'),    fn($q,$v) => $q->where('quem_comprou', $v))
-                    ->when($request->query('fornecedor_id'),  fn($q,$v) => $q->where('onde_comprou', $v))
-                    ->when($request->query('banco_id'),       fn($q,$v) => $q->where('forma_pagamento', $v))
-                    ->when($request->query('categoria_id'),   fn($q,$v) => $q->where('categoria_id', $v))
-                    ->when($request->query('tipo_pagamento'), fn($q,$v) => $q->where('tipo_pagamento', $v))
-                    ->sum('valor'),
+                'periodo'     => ['inicio' => $inicio, 'fim' => $fim],
+                'total_valor' => $totalValor,
             ],
         ]);
     }

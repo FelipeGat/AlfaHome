@@ -43,7 +43,8 @@ class CatalogosController extends Controller
     public function familiares(Request $request): AnonymousResourceCollection
     {
         return FamiliarResource::collection(
-            Familiar::where('tenant_id', $request->user()->tenant_id)
+            Familiar::with('userVinculado')
+                ->where('tenant_id', $request->user()->tenant_id)
                 ->orderBy('nome')
                 ->get()
         );

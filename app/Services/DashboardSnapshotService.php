@@ -51,6 +51,7 @@ class DashboardSnapshotService
             ->get(['nome', 'saldo_cartao', 'limite_cartao', 'cor'])
             ->map(fn($c) => [
                 'nome'       => $c->nome,
+                'cor'        => $c->cor,
                 'fatura'     => (float) $c->saldo_cartao,
                 'limite'     => (float) $c->limite_cartao,
                 'percentual' => $c->limite_cartao > 0

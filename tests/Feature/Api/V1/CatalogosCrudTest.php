@@ -136,6 +136,30 @@ class CatalogosCrudTest extends TestCase
             'nome' => 'Maria', 'salario' => 3000.0,
         ])->assertCreated()
           ->assertJsonPath('data.nome', 'Maria')
-          ->assertJsonPath('data.salario', 3000.0);
+          ->assertJsonPath('data.salario', 3000.0)
+          ->assertJsonPath('data.is_master', false);
+    }
+
+    public function test_familiares_index_marks_is_master_when_user_role_master(): void
+    {
+        $tenant = Tenant::factory()->create();
+
+        // Cria o familiar primeiro
+        $familiarMaster = Familiar::factory()->create(['tenant_id' => $tenant->id, 'nome' => 'Titular']);
+        $familiarOutro  = Familiar::factory()->create(['tenant_id' => $tenant->id, 'nome' => 'Outro']);
+
+        // User master apontando para o familiar
+        $master = User::factory()->create([
+            'tenant_id'   => $tenant->id,
+            'role'        => 'master',
+            'familiar_id' => $familiarMaster->id,
+        ]);
+
+        Sanctum::actingAs($master);
+
+        $resp = $this->getJson('/api/v1/familiares')->assertOk();
+        $byNome = collect($resp->json('data'))->keyBy('nome');
+        $this->assertTrue($byNome['Titular']['is_master']);
+        $this->assertFalse($byNome['Outro']['is_master']);
     }
 }

@@ -20,6 +20,7 @@ class FamiliarApiController extends Controller
     public function show(Request $request, Familiar $familiar): FamiliarResource
     {
         $this->ensureOwnership($request, $familiar);
+        $familiar->load('userVinculado');
         return new FamiliarResource($familiar);
     }
 
@@ -28,6 +29,7 @@ class FamiliarApiController extends Controller
         $familiar = Familiar::create(array_merge($request->validated(), [
             'user_id' => $request->user()->id,
         ]));
+        $familiar->load('userVinculado');
 
         return (new FamiliarResource($familiar))
             ->response()
@@ -38,6 +40,7 @@ class FamiliarApiController extends Controller
     {
         $this->ensureOwnership($request, $familiar);
         $familiar->update($request->validated());
+        $familiar->load('userVinculado');
         return new FamiliarResource($familiar);
     }
 
