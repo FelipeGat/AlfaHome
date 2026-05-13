@@ -55,6 +55,56 @@ Documento de integração consumido pelo app Flutter.
 ### GET `/auth/me`
 Retorna o `UserResource` do usuário atual.
 
+### PUT `/auth/me`
+
+Atualiza nome e/ou email do usuário logado. Campos parciais são aceitos (envie só o que mudou).
+
+**Body**:
+```json
+{ "name": "Maria Silva", "email": "maria@exemplo.com" }
+```
+
+**Validação**:
+- `name`: opcional; se presente, `string`, `max:255`
+- `email`: opcional; se presente, `string`, `lowercase`, `email`, `max:255`, único entre usuários (ignora o próprio)
+
+**Comportamento**:
+- Se o email mudar, `email_verified_at` é zerado.
+
+**Response 200**: `UserResource` atualizado (mesmo shape de `GET /auth/me`).
+
+**Erros**: `422` validação (email duplicado, formato inválido, etc.).
+
+### POST `/auth/me/password`
+
+Troca a senha do usuário. Exige a senha atual.
+
+**Body**:
+```json
+{
+  "current_password": "antiga",
+  "password": "NovaSenh@123",
+  "password_confirmation": "NovaSenh@123"
+}
+```
+
+**Validação**:
+- `current_password`: obrigatório; verificado contra hash atual do usuário
+- `password`: obrigatório; segue `Password::defaults()` do Laravel (mínimo 8 chars por padrão); requer `password_confirmation`
+
+**Comportamento**:
+- Senha é atualizada.
+- **Todos os outros tokens do usuário são revogados** — apenas o token usado nesta requisição sobrevive. Outros dispositivos são forçados a re-autenticar.
+
+**Response 200**:
+```json
+{ "message": "Senha atualizada com sucesso. Outras sessões foram encerradas." }
+```
+
+**Erros**:
+- `422 current_password`: senha atual incorreta
+- `422 password`: nova senha fraca ou `password_confirmation` não bate
+
 ### POST `/auth/logout`
 Revoga o token usado nesta requisição.
 

@@ -58,9 +58,11 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::middleware(['auth:sanctum', 'tenant.ativo.api'])->group(function () {
 
         // Auth
-        Route::get('auth/me',          [AuthController::class, 'me'])->name('auth.me');
-        Route::post('auth/logout',     [AuthController::class, 'logout'])->name('auth.logout');
-        Route::post('auth/logout-all', [AuthController::class, 'logoutAll'])->name('auth.logout-all');
+        Route::get( 'auth/me',           [AuthController::class, 'me'])->name('auth.me');
+        Route::put( 'auth/me',           [AuthController::class, 'updateMe'])->name('auth.me.update');
+        Route::post('auth/me/password',  [AuthController::class, 'updatePassword'])->name('auth.me.password');
+        Route::post('auth/logout',       [AuthController::class, 'logout'])->name('auth.logout');
+        Route::post('auth/logout-all',   [AuthController::class, 'logoutAll'])->name('auth.logout-all');
 
         // Dashboard
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
