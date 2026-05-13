@@ -76,7 +76,7 @@ Revoga todos os tokens do usuário (logout em todos os dispositivos).
   "periodo": { "inicio": "2026-05-01", "fim": "2026-05-31", "mes": "Maio 2026" },
   "kpis": { "receitas": 5000.0, "despesas": 3200.0, "saldo": 1800.0 },
   "bancos":  [{ "nome": "...", "saldo": 0.0, "cor": "#...", "logo": "..." }],
-  "cartoes": [{ "nome": "...", "fatura": 0.0, "limite": 0.0, "percentual": 0.0 }],
+  "cartoes": [{ "nome": "...", "cor": "#...", "fatura": 0.0, "limite": 0.0, "percentual": 0.0 }],
   "lancamentos": [
     {
       "id": 1, "tipo": "despesa", "valor": 150.0,
@@ -227,9 +227,12 @@ Usadas para popular dropdowns. Todas retornam array (sem paginação).
   "id": 1, "nome": "Maria",
   "foto": "familiares/abc.jpg",
   "foto_url": "https://.../storage/familiares/abc.jpg",
-  "salario": 5000.0, "limite_cartao": 3000.0, "limite_cheque": 1000.0
+  "salario": 5000.0, "limite_cartao": 3000.0, "limite_cheque": 1000.0,
+  "is_master": false
 }
 ```
+
+> `is_master = true` quando existe um `User` com este `familiar_id` e `role = master`. App usa para badge "titular" e bloqueio do botão excluir no titular.
 
 ---
 
@@ -237,7 +240,7 @@ Usadas para popular dropdowns. Todas retornam array (sem paginação).
 
 ### GET `/despesas`
 
-**Query**: `inicio`, `fim`, `familiar_id`, `fornecedor_id`, `banco_id`, `categoria_id`, `tipo_pagamento`, `status` (`pago|a_pagar|vencido`), `per_page` (1–100, default 30)
+**Query**: `inicio`, `fim`, `familiar_id`, `fornecedor_id`, `banco_id`, `categoria_id`, `tipo_pagamento`, `status` (`pago|a_pagar|vencido`), `pending_only` (`1` = `a_pagar` OU `vencido`, excluindo crédito), `per_page` (1–100, default 30)
 
 **Response**: paginação Laravel padrão + `meta.total_valor`, `meta.periodo`
 
@@ -314,8 +317,11 @@ Espelho de despesas com nomes próprios. `status`: `recebido|a_receber|vencido`.
 }
 ```
 
+### GET `/receitas`
+Mesmos filtros de `/despesas` exceto `fornecedor_id`. `status`: `recebido|a_receber|vencido`. `pending_only=1` retorna apenas pendentes (sem `data_recebimento`).
+
 ### Demais rotas
-`GET /receitas`, `GET/PUT/DELETE /receitas/{id}` — mesma semântica de `despesas`.
+`GET/PUT/DELETE /receitas/{id}` — mesma semântica de `despesas`.
 
 ### Schema `ReceitaResource`
 Igual ao de despesa, sem `fornecedor`, com `data_prevista_recebimento`/`data_recebimento` e `quem_recebeu`/`forma_recebimento`.

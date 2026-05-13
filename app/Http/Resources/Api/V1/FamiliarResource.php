@@ -18,6 +18,9 @@ class FamiliarResource extends JsonResource
             'salario'       => $this->salario !== null ? (float) $this->salario : null,
             'limite_cartao' => $this->limite_cartao !== null ? (float) $this->limite_cartao : null,
             'limite_cheque' => $this->limite_cheque !== null ? (float) $this->limite_cheque : null,
+            // Cobertura: app usa is_master para badge "titular" e bloqueio de exclusão.
+            // True quando existe um User com este familiar_id e role=master.
+            'is_master'     => $this->isMaster(),
         ];
     }
 }

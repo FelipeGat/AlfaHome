@@ -17,7 +17,9 @@ class ReceitaController extends Controller
      * GET /api/v1/receitas
      *
      * Filtros: inicio, fim, familiar_id, banco_id, categoria_id, tipo_pagamento,
-     *          status (recebido | a_receber | vencido), per_page (1..100, default 30).
+     *          status (recebido | a_receber | vencido),
+     *          pending_only (1 = a_receber OU vencido),
+     *          per_page (1..100, default 30).
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -29,6 +31,7 @@ class ReceitaController extends Controller
             'categoria_id'   => ['nullable', 'integer'],
             'tipo_pagamento' => ['nullable', 'string'],
             'status'         => ['nullable', 'in:recebido,a_receber,vencido'],
+            'pending_only'   => ['nullable', 'boolean'],
             'per_page'       => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -52,6 +55,11 @@ class ReceitaController extends Controller
                 ->where('data_prevista_recebimento', '<', now()->toDateString()),
             default     => null,
         };
+
+        if ($request->boolean('pending_only')) {
+            // a_receber OU vencido
+            $query->whereNull('data_recebimento');
+        }
 
         $perPage = (int) $request->query('per_page', 30);
 

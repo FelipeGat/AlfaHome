@@ -21,6 +21,7 @@ class DespesaController extends Controller
      *   inicio, fim       — Y-m-d (padrão: mês corrente)
      *   familiar_id, fornecedor_id, banco_id, categoria_id, tipo_pagamento
      *   status            — pago | a_pagar | vencido
+     *   pending_only      — 1 = atalho para a_pagar OU vencido, exclui crédito
      *   per_page          — 1..100 (padrão 30)
      *
      * Resposta: paginação Laravel padrão (data + meta + links).
@@ -36,6 +37,7 @@ class DespesaController extends Controller
             'categoria_id'   => ['nullable', 'integer'],
             'tipo_pagamento' => ['nullable', 'string'],
             'status'         => ['nullable', 'in:pago,a_pagar,vencido'],
+            'pending_only'   => ['nullable', 'boolean'],
             'per_page'       => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
@@ -49,6 +51,15 @@ class DespesaController extends Controller
 
         $this->applyOptionalFilters($query, $request);
         $this->applyStatusFilter($query, $request->query('status'));
+
+        if ($request->boolean('pending_only')) {
+            // a_pagar OU vencido, excluindo cartão de crédito (vai pra fatura)
+            $query->whereNull('data_pagamento')
+                ->where(function ($q) {
+                    $q->where('tipo_pagamento', '!=', 'credito')
+                      ->orWhereNull('tipo_pagamento');
+                });
+        }
 
         $perPage = (int) $request->query('per_page', 30);
 
