@@ -33,6 +33,14 @@ class DespesaPendingOnlyTest extends TestCase
             'tipo_pagamento' => 'pix',
             'valor'          => 200,
         ]);
+        $vencida = Despesa::factory()->create([
+            'tenant_id'      => $user->tenant_id,
+            'user_id'        => $user->id,
+            'data_compra'    => now()->format('Y-m-d'),
+            'data_pagamento' => null,
+            'tipo_pagamento' => 'boleto',
+            'valor'          => 50,
+        ]);
         $credito = Despesa::factory()->create([
             'tenant_id'      => $user->tenant_id,
             'user_id'        => $user->id,
@@ -48,8 +56,41 @@ class DespesaPendingOnlyTest extends TestCase
         $ids  = collect($resp->json('data'))->pluck('id')->all();
 
         $this->assertContains($aPagar->id, $ids);
+        $this->assertContains($vencida->id, $ids);
         $this->assertNotContains($paga->id, $ids);
         $this->assertNotContains($credito->id, $ids);
+
+        // meta.total_valor deve refletir SOMENTE os itens listados (250 = 200 + 50)
+        // — não inclui paga (100) nem crédito (300).
+        $this->assertEquals(250.0, (float) $resp->json('meta.total_valor'));
+
+        // Sanity: sem pending_only, total inclui tudo do período (650)
+        $respSemFiltro = $this->getJson('/api/v1/despesas')->assertOk();
+        $this->assertEquals(650.0, (float) $respSemFiltro->json('meta.total_valor'));
+    }
+
+    public function test_total_valor_respects_status_filter(): void
+    {
+        $user = User::factory()->create();
+
+        Despesa::factory()->create([
+            'tenant_id' => $user->tenant_id, 'user_id' => $user->id,
+            'data_compra' => now()->format('Y-m-d'),
+            'data_pagamento' => now()->format('Y-m-d'),
+            'valor' => 100,
+        ]);
+        Despesa::factory()->create([
+            'tenant_id' => $user->tenant_id, 'user_id' => $user->id,
+            'data_compra' => now()->format('Y-m-d'),
+            'data_pagamento' => null,
+            'valor' => 50,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        // status=pago: total_valor deve trazer apenas R$ 100, não R$ 150
+        $resp = $this->getJson('/api/v1/despesas?status=pago')->assertOk();
+        $this->assertEquals(100.0, (float) $resp->json('meta.total_valor'));
     }
 
     public function test_receita_pending_only_returns_unreceived(): void
@@ -78,5 +119,12 @@ class DespesaPendingOnlyTest extends TestCase
 
         $this->assertContains($aReceber->id, $ids);
         $this->assertNotContains($recebida->id, $ids);
+
+        // meta.total_valor deve trazer apenas a pendente (3000), não a recebida
+        $this->assertEquals(3000.0, (float) $resp->json('meta.total_valor'));
+
+        // Sanity: sem filtro, total = 8000
+        $respSemFiltro = $this->getJson('/api/v1/receitas')->assertOk();
+        $this->assertEquals(8000.0, (float) $respSemFiltro->json('meta.total_valor'));
     }
 }

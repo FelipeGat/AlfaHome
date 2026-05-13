@@ -39,7 +39,7 @@ class ReceitaController extends Controller
         $inicio   = $request->query('inicio', now()->startOfMonth()->format('Y-m-d'));
         $fim      = $request->query('fim',    now()->endOfMonth()->format('Y-m-d'));
 
-        $query = Receita::with(['categoria', 'familiar', 'banco'])
+        $query = Receita::query()
             ->where('tenant_id', $tenantId)
             ->whereBetween('data_prevista_recebimento', [$inicio, $fim]);
 
@@ -61,9 +61,14 @@ class ReceitaController extends Controller
             $query->whereNull('data_recebimento');
         }
 
+        // Clona ANTES do paginate para que `total_valor` reflita exatamente
+        // a mesma seleção (inclui status + pending_only).
+        $totalValor = (float) (clone $query)->sum('valor');
+
         $perPage = (int) $request->query('per_page', 30);
 
         $paginator = $query
+            ->with(['categoria', 'familiar', 'banco'])
             ->orderByDesc('data_prevista_recebimento')
             ->orderByDesc('id')
             ->paginate($perPage)
@@ -71,14 +76,8 @@ class ReceitaController extends Controller
 
         return ReceitaResource::collection($paginator)->additional([
             'meta' => [
-                'periodo' => ['inicio' => $inicio, 'fim' => $fim],
-                'total_valor' => (float) Receita::where('tenant_id', $tenantId)
-                    ->whereBetween('data_prevista_recebimento', [$inicio, $fim])
-                    ->when($request->query('familiar_id'),    fn($q,$v) => $q->where('quem_recebeu', $v))
-                    ->when($request->query('banco_id'),       fn($q,$v) => $q->where('forma_recebimento', $v))
-                    ->when($request->query('categoria_id'),   fn($q,$v) => $q->where('categoria_id', $v))
-                    ->when($request->query('tipo_pagamento'), fn($q,$v) => $q->where('tipo_pagamento', $v))
-                    ->sum('valor'),
+                'periodo'     => ['inicio' => $inicio, 'fim' => $fim],
+                'total_valor' => $totalValor,
             ],
         ]);
     }
