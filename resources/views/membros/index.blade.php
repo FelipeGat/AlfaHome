@@ -166,7 +166,7 @@ function editarMembro(id, name, email, ativo, permissoes) {
     document.getElementById('edit-ativo').checked = ativo;
     document.getElementById('form-editar').action = '/membros/' + id;
 
-    const modulos = ['despesas','receitas','investimentos','bancos','categorias','fornecedores','familiares'];
+    const modulos = ['despesas','receitas','transferencias','investimentos','bancos','categorias','fornecedores','familiares'];
     const acoes   = ['ver','criar','editar','excluir'];
     modulos.forEach(m => {
         acoes.forEach(a => {

@@ -10,10 +10,14 @@ class FornecedorResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'    => $this->id,
-            'nome'  => $this->nome,
-            'icone' => $this->icone,
-            'grupo' => $this->grupo,
+            'id'          => $this->id,
+            'nome'        => $this->nome,
+            'icone'       => $this->icone,
+            'grupo'       => $this->grupo,
+            'contato'     => $this->contato,
+            'cnpj'        => $this->cnpj,
+            'telefone'    => $this->telefone,
+            'observacoes' => $this->observacoes,
         ];
     }
 }
