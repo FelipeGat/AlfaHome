@@ -105,6 +105,10 @@ class InvestimentoApiController extends Controller
     {
         $this->ensureOwnership($request, $investimento);
 
+        if (! $request->user()->temPermissao('investimentos', 'editar')) {
+            return response()->json(['message' => 'Sem permissão para alterar investimentos.'], Response::HTTP_FORBIDDEN);
+        }
+
         if ($rendimento->investimento_id !== $investimento->id
             || $rendimento->tenant_id !== $request->user()->tenant_id) {
             abort(Response::HTTP_NOT_FOUND);

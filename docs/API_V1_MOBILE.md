@@ -157,7 +157,7 @@ Usadas para popular dropdowns. Todas retornam array (sem paginação).
 
 ### GET `/bancos/{id}` · PUT `/bancos/{id}` · DELETE `/bancos/{id}`
 
-**DELETE 409**: `em_uso { despesas, receitas, investimentos }`
+**DELETE 409**: `em_uso { despesas, receitas, investimentos, transferencias }`
 
 ### Schema `BancoResource`
 ```json
@@ -444,7 +444,7 @@ Toda rota sob `/api/*` retorna **JSON**, nunca HTML.
 
 // 409 catálogo em uso
 { "message": "Banco em uso e não pode ser excluído.",
-  "em_uso": { "despesas": true, "receitas": false, "investimentos": false } }
+  "em_uso": { "despesas": true, "receitas": false, "investimentos": false, "transferencias": false } }
 ```
 
 ---

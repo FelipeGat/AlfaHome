@@ -8,6 +8,7 @@ use App\Models\Despesa;
 use App\Models\Familiar;
 use App\Models\Fornecedor;
 use App\Models\Tenant;
+use App\Models\Transferencia;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -82,6 +83,34 @@ class CatalogosCrudTest extends TestCase
         ])->assertCreated()->json('data.id');
 
         $this->deleteJson("/api/v1/bancos/{$id}")->assertOk();
+    }
+
+    public function test_banco_delete_returns_409_when_used_in_transferencia(): void
+    {
+        $user    = User::factory()->create();
+        $origem  = Banco::factory()->create(['tenant_id' => $user->tenant_id]);
+        $destino = Banco::factory()->create(['tenant_id' => $user->tenant_id]);
+
+        Transferencia::create([
+            'tenant_id'  => $user->tenant_id,
+            'user_id'    => $user->id,
+            'valor'      => 100,
+            'data'       => now()->format('Y-m-d'),
+            'origem_id'  => $origem->id,
+            'destino_id' => $destino->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        // origem aparece em transferencia → 409
+        $this->deleteJson("/api/v1/bancos/{$origem->id}")
+            ->assertStatus(409)
+            ->assertJsonPath('em_uso.transferencias', true);
+
+        // destino também → 409
+        $this->deleteJson("/api/v1/bancos/{$destino->id}")
+            ->assertStatus(409)
+            ->assertJsonPath('em_uso.transferencias', true);
     }
 
     // ─── Fornecedor ──────────────────────────────────────────────────────

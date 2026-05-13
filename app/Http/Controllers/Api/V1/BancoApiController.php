@@ -48,12 +48,17 @@ class BancoApiController extends Controller
         $tenantId = $request->user()->tenant_id;
 
         $emUso = [
-            'despesas'      => \App\Models\Despesa::where('tenant_id', $tenantId)
+            'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
                 ->where('forma_pagamento', $banco->id)->exists(),
-            'receitas'      => \App\Models\Receita::where('tenant_id', $tenantId)
+            'receitas'       => \App\Models\Receita::where('tenant_id', $tenantId)
                 ->where('forma_recebimento', $banco->id)->exists(),
-            'investimentos' => \App\Models\Investimento::where('tenant_id', $tenantId)
+            'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
                 ->where('banco_id', $banco->id)->exists(),
+            'transferencias' => \App\Models\Transferencia::where('tenant_id', $tenantId)
+                ->where(function ($q) use ($banco) {
+                    $q->where('origem_id', $banco->id)
+                      ->orWhere('destino_id', $banco->id);
+                })->exists(),
         ];
 
         if (in_array(true, $emUso, true)) {
