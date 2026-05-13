@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
+use App\Http\Requests\Api\V1\UpdateMeRequest;
+use App\Http\Requests\Api\V1\UpdatePasswordRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -57,6 +59,51 @@ class AuthController extends Controller
     public function me(Request $request): UserResource
     {
         return new UserResource($request->user());
+    }
+
+    /**
+     * PUT /api/v1/auth/me
+     *
+     * Atualiza nome e/ou email do usuário logado.
+     * Quando o email muda, zera email_verified_at (espelha ProfileController web).
+     */
+    public function updateMe(UpdateMeRequest $request): UserResource
+    {
+        $user = $request->user();
+
+        $user->fill($request->safe()->only(['name', 'email']));
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
+
+        return new UserResource($user);
+    }
+
+    /**
+     * POST /api/v1/auth/me/password
+     *
+     * Troca a senha do usuário logado, exigindo a senha atual.
+     * Após sucesso, revoga todos os outros tokens (mantém o atual ativo) —
+     * outros dispositivos são forçados a re-autenticar.
+     */
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $user->forceFill([
+            'password' => Hash::make($request->validated()['password']),
+        ])->save();
+
+        // Revoga todos os outros tokens, mantém apenas o usado nesta requisição
+        $currentTokenId = $request->user()->currentAccessToken()->id;
+        $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+
+        return response()->json([
+            'message' => 'Senha atualizada com sucesso. Outras sessões foram encerradas.',
+        ]);
     }
 
     /**
