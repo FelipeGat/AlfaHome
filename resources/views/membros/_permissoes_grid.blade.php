@@ -1,12 +1,13 @@
 @php
 $modulos = [
-    'despesas'      => ['label' => 'Despesas',      'icon' => 'fa-arrow-trend-down'],
-    'receitas'      => ['label' => 'Receitas',       'icon' => 'fa-arrow-trend-up'],
-    'investimentos' => ['label' => 'Investimentos',  'icon' => 'fa-seedling'],
-    'bancos'        => ['label' => 'Contas Bancárias','icon' => 'fa-building-columns'],
-    'categorias'    => ['label' => 'Categorias',     'icon' => 'fa-tags'],
-    'fornecedores'  => ['label' => 'Fornecedores',   'icon' => 'fa-store'],
-    'familiares'    => ['label' => 'Familiares',      'icon' => 'fa-users'],
+    'despesas'       => ['label' => 'Despesas',         'icon' => 'fa-arrow-trend-down'],
+    'receitas'       => ['label' => 'Receitas',          'icon' => 'fa-arrow-trend-up'],
+    'transferencias' => ['label' => 'Transferências',    'icon' => 'fa-right-left'],
+    'investimentos'  => ['label' => 'Investimentos',     'icon' => 'fa-seedling'],
+    'bancos'         => ['label' => 'Contas Bancárias',  'icon' => 'fa-building-columns'],
+    'categorias'     => ['label' => 'Categorias',        'icon' => 'fa-tags'],
+    'fornecedores'   => ['label' => 'Fornecedores',      'icon' => 'fa-store'],
+    'familiares'     => ['label' => 'Familiares',         'icon' => 'fa-users'],
 ];
 $acoes = ['ver' => 'Ver', 'criar' => 'Criar', 'editar' => 'Editar', 'excluir' => 'Excluir'];
 @endphp

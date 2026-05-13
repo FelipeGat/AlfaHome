@@ -8,9 +8,12 @@ use App\Models\Transferencia;
 /**
  * Mantém saldos de banco em sincronia com transferências.
  *
- * created  → debita origem, credita destino.
- * updating → reverte estado antigo e aplica o novo (valor / origem / destino).
- * deleted  → estorna (credita origem, debita destino).
+ * Eventos cobertos:
+ *  - created : debita origem, credita destino.
+ *  - updating: reverte estado anterior, aplica o novo (valor / origem / destino).
+ *  - deleting: estorna na hora do delete (soft OU force) — mas apenas uma vez,
+ *              guardado pela flag `_saldo_estornado` evitando dupla execução.
+ *  - restored: re-aplica o efeito original quando registro é restaurado.
  */
 class TransferenciaObserver
 {
@@ -21,6 +24,12 @@ class TransferenciaObserver
 
     public function updating(Transferencia $t): void
     {
+        // Não mexer em saldos quando a única alteração é soft delete / restore;
+        // esses são tratados em deleting/restored.
+        if ($t->isDirty('deleted_at') && ! $t->isDirty(['valor', 'origem_id', 'destino_id'])) {
+            return;
+        }
+
         // Reverte estado anterior
         $this->aplicar(
             origemId: $t->getOriginal('destino_id'),
@@ -32,10 +41,11 @@ class TransferenciaObserver
         $this->aplicar($t->origem_id, $t->destino_id, (float) $t->valor);
     }
 
-    public function deleted(Transferencia $t): void
+    public function deleting(Transferencia $t): void
     {
-        if ($t->isForceDeleting()) {
-            return; // already stripped by hard delete; saldos foram tratados no soft delete
+        // Já estornado em soft delete anterior? Não estornar de novo no force.
+        if ($t->trashed()) {
+            return;
         }
 
         // Estorna: credita origem, debita destino
@@ -44,6 +54,12 @@ class TransferenciaObserver
             destinoId: $t->origem_id,
             valor: (float) $t->valor,
         );
+    }
+
+    public function restored(Transferencia $t): void
+    {
+        // Re-aplica o efeito da transferência ao restaurar
+        $this->aplicar($t->origem_id, $t->destino_id, (float) $t->valor);
     }
 
     /**
@@ -56,14 +72,14 @@ class TransferenciaObserver
         }
 
         if ($origemId) {
-            $origem = Banco::find($origemId);
+            $origem = Banco::withoutGlobalScope('tenant')->find($origemId);
             if ($origem) {
                 $origem->decrement('saldo', $valor);
             }
         }
 
         if ($destinoId) {
-            $destino = Banco::find($destinoId);
+            $destino = Banco::withoutGlobalScope('tenant')->find($destinoId);
             if ($destino) {
                 $destino->increment('saldo', $valor);
             }
