@@ -58,11 +58,14 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::middleware(['auth:sanctum', 'tenant.ativo.api'])->group(function () {
 
         // Auth
-        Route::get( 'auth/me',           [AuthController::class, 'me'])->name('auth.me');
-        Route::put( 'auth/me',           [AuthController::class, 'updateMe'])->name('auth.me.update');
-        Route::post('auth/me/password',  [AuthController::class, 'updatePassword'])->name('auth.me.password');
-        Route::post('auth/logout',       [AuthController::class, 'logout'])->name('auth.logout');
-        Route::post('auth/logout-all',   [AuthController::class, 'logoutAll'])->name('auth.logout-all');
+        Route::get(   'auth/me',           [AuthController::class, 'me'])->name('auth.me');
+        Route::put(   'auth/me',           [AuthController::class, 'updateMe'])->name('auth.me.update');
+        Route::delete('auth/me',           [AuthController::class, 'deleteMe'])->name('auth.me.delete');
+        Route::post(  'auth/me/password',  [AuthController::class, 'updatePassword'])->name('auth.me.password');
+        Route::post(  'auth/me/foto',      [AuthController::class, 'uploadFoto'])->name('auth.me.foto.upload');
+        Route::delete('auth/me/foto',      [AuthController::class, 'deleteFoto'])->name('auth.me.foto.delete');
+        Route::post(  'auth/logout',       [AuthController::class, 'logout'])->name('auth.logout');
+        Route::post(  'auth/logout-all',   [AuthController::class, 'logoutAll'])->name('auth.logout-all');
 
         // Dashboard
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -104,6 +107,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::put(   'investimentos/{investimento}', [InvestimentoApiController::class, 'update'])->name('investimentos.update');
         Route::delete('investimentos/{investimento}', [InvestimentoApiController::class, 'destroy'])->name('investimentos.destroy');
         Route::post(  'investimentos/{investimento}/rendimentos',              [InvestimentoApiController::class, 'storeRendimento'])->name('investimentos.rendimentos.store');
+        Route::put(   'investimentos/{investimento}/rendimentos/{rendimento}', [InvestimentoApiController::class, 'updateRendimento'])->name('investimentos.rendimentos.update');
         Route::delete('investimentos/{investimento}/rendimentos/{rendimento}', [InvestimentoApiController::class, 'destroyRendimento'])->name('investimentos.rendimentos.destroy');
 
         // ── Transferências (entidade própria — não infla KPIs) ──────────
