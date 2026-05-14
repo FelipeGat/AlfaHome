@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\DeleteMeRequest;
 use App\Http\Requests\Api\V1\LoginRequest;
 use App\Http\Requests\Api\V1\UpdateMeRequest;
 use App\Http\Requests\Api\V1\UpdatePasswordRequest;
+use App\Http\Requests\Api\V1\UploadFotoRequest;
 use App\Http\Resources\Api\V1\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -103,6 +106,73 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Senha atualizada com sucesso. Outras sessões foram encerradas.',
+        ]);
+    }
+
+    /**
+     * POST /api/v1/auth/me/foto
+     *
+     * Upload de foto de perfil. Multipart/form-data com o campo `foto`.
+     * Substitui a foto anterior (se houver) deletando do storage public.
+     */
+    public function uploadFoto(UploadFotoRequest $request): UserResource
+    {
+        $user = $request->user();
+
+        // Remove foto antiga se existir
+        if ($user->foto) {
+            Storage::disk('public')->delete($user->foto);
+        }
+
+        $user->foto = $request->file('foto')->store('usuarios', 'public');
+        $user->save();
+
+        return new UserResource($user);
+    }
+
+    /**
+     * DELETE /api/v1/auth/me/foto
+     *
+     * Remove a foto de perfil do usuário.
+     */
+    public function deleteFoto(Request $request): UserResource
+    {
+        $user = $request->user();
+
+        if ($user->foto) {
+            Storage::disk('public')->delete($user->foto);
+            $user->foto = null;
+            $user->save();
+        }
+
+        return new UserResource($user);
+    }
+
+    /**
+     * DELETE /api/v1/auth/me
+     *
+     * Desativa a conta do usuário logado. Exige a senha atual como confirmação.
+     *
+     * Comportamento (multi-tenant safe):
+     *   - Marca `ativo = false` no usuário (NÃO faz hard delete — preserva
+     *     histórico financeiro para auditoria e reativação pelo admin).
+     *   - Revoga TODOS os tokens (forçando logout em todos os dispositivos).
+     *   - Próxima requisição com qualquer token será bloqueada pelo middleware
+     *     tenant.ativo.api retornando 403 code:tenant_inactive.
+     *
+     * Para reativação, o admin do tenant deve marcar `ativo = true` novamente.
+     */
+    public function deleteMe(DeleteMeRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $user->update(['ativo' => false]);
+
+        // Revoga todos os tokens — incluindo o atual
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Conta desativada. Para reativar, entre em contato com o administrador.',
         ]);
     }
 

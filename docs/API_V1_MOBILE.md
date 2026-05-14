@@ -105,6 +105,48 @@ Troca a senha do usuário. Exige a senha atual.
 - `422 current_password`: senha atual incorreta
 - `422 password`: nova senha fraca ou `password_confirmation` não bate
 
+### POST `/auth/me/foto`
+
+Upload de foto de perfil via **multipart/form-data**.
+
+**Body** (multipart):
+- `foto` → arquivo de imagem (jpg, jpeg, png, gif, webp, máx 2 MB)
+
+**Comportamento**:
+- Substitui a foto anterior (deleta do storage `public`).
+- Persiste no disk `public` sob `usuarios/`.
+
+**Response 200**: `UserResource` com `foto_url` atualizada.
+
+**Erros**: `422 foto` (não é imagem, formato inválido, > 2 MB).
+
+### DELETE `/auth/me/foto`
+
+Remove a foto de perfil. Idempotente (não dá erro se já não houver foto).
+
+**Response 200**: `UserResource` com `foto_url: null`.
+
+### DELETE `/auth/me`
+
+Desativa a conta do usuário logado. Exige senha atual como confirmação.
+
+**Body**:
+```json
+{ "current_password": "minhasenha" }
+```
+
+**Comportamento (multi-tenant safe)**:
+- Marca `ativo = false` no usuário. **Não faz hard delete** — preserva histórico financeiro para auditoria e permite reativação por admin.
+- Revoga **todos os tokens** (logout em todos os dispositivos).
+- Próxima requisição com qualquer token recebe `403 code:tenant_inactive`.
+
+**Response 200**:
+```json
+{ "message": "Conta desativada. Para reativar, entre em contato com o administrador." }
+```
+
+**Erros**: `422 current_password` (senha errada ou ausente).
+
 ### POST `/auth/logout`
 Revoga o token usado nesta requisição.
 
@@ -406,6 +448,16 @@ Lista todos do tenant (sem paginação) com `banco` e `rendimentos[]` carregados
 ```json
 { "data": "2026-04-15", "valor_atual": 1014.5, "observacoes": null }
 ```
+
+### PUT `/investimentos/{id}/rendimentos/{rid}`
+
+Atualiza um ponto de rendimento existente. Campos parciais aceitos.
+
+```json
+{ "valor_atual": 1050.0 }
+```
+
+Permissão: `investimentos.editar`. Retorna `InvestimentoRendimentoResource`.
 
 ### DELETE `/investimentos/{id}/rendimentos/{rid}`
 

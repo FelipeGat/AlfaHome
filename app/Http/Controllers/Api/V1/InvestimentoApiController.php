@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreInvestimentoRequest;
 use App\Http\Requests\Api\V1\StoreRendimentoRequest;
 use App\Http\Requests\Api\V1\UpdateInvestimentoRequest;
+use App\Http\Requests\Api\V1\UpdateRendimentoRequest;
 use App\Http\Resources\Api\V1\InvestimentoRendimentoResource;
 use App\Http\Resources\Api\V1\InvestimentoResource;
 use App\Models\Investimento;
@@ -96,6 +97,25 @@ class InvestimentoApiController extends Controller
         return (new InvestimentoRendimentoResource($rendimento))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    /**
+     * PUT /api/v1/investimentos/{investimento}/rendimentos/{rendimento}
+     *
+     * Atualiza um ponto de rendimento existente (campos parciais aceitos).
+     */
+    public function updateRendimento(UpdateRendimentoRequest $request, Investimento $investimento, InvestimentoRendimento $rendimento): InvestimentoRendimentoResource
+    {
+        $this->ensureOwnership($request, $investimento);
+
+        if ($rendimento->investimento_id !== $investimento->id
+            || $rendimento->tenant_id !== $request->user()->tenant_id) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        $rendimento->update($request->validated());
+
+        return new InvestimentoRendimentoResource($rendimento);
     }
 
     /**
