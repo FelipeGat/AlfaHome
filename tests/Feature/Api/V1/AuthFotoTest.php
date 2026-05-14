@@ -120,4 +120,33 @@ class AuthFotoTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.foto_url', null);
     }
+
+    public function test_old_photo_is_only_deleted_after_db_save_succeeds(): void
+    {
+        // Garante ordem correta: persistir novo → salvar DB → apagar antigo.
+        // Verifica que, mesmo num upload bem-sucedido, o caminho antigo só
+        // é removido DEPOIS de o user->save() ter executado com sucesso.
+        Storage::fake('public');
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        // Upload inicial — captura o path antigo
+        $this->postJson('/api/v1/auth/me/foto', [
+            'foto' => UploadedFile::fake()->image('a.png'),
+        ])->assertOk();
+        $oldPath = $user->fresh()->foto;
+        Storage::disk('public')->assertExists($oldPath);
+
+        // Substitui
+        $resp = $this->postJson('/api/v1/auth/me/foto', [
+            'foto' => UploadedFile::fake()->image('b.png'),
+        ])->assertOk();
+
+        $newPath = $user->fresh()->foto;
+        $this->assertNotEquals($oldPath, $newPath, 'O path deve ter mudado.');
+
+        // DB já aponta para o novo, antigo já foi removido só ao final
+        Storage::disk('public')->assertExists($newPath);
+        Storage::disk('public')->assertMissing($oldPath);
+    }
 }

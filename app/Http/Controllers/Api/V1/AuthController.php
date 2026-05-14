@@ -114,18 +114,34 @@ class AuthController extends Controller
      *
      * Upload de foto de perfil. Multipart/form-data com o campo `foto`.
      * Substitui a foto anterior (se houver) deletando do storage public.
+     *
+     * Ordem importante: persiste o novo arquivo PRIMEIRO, depois atualiza
+     * o DB, e só ao final apaga o arquivo antigo. Se a escrita falhar
+     * (disco cheio, permissão, erro transiente), a foto antiga permanece
+     * intacta — evita perda de dados em rollback parcial.
      */
     public function uploadFoto(UploadFotoRequest $request): UserResource
     {
         $user = $request->user();
+        $oldFotoPath = $user->foto;
 
-        // Remove foto antiga se existir
-        if ($user->foto) {
-            Storage::disk('public')->delete($user->foto);
-        }
+        // 1) Persiste o arquivo novo. Se isso falhar, lança e nada mais é tocado.
+        $newFotoPath = $request->file('foto')->store('usuarios', 'public');
 
-        $user->foto = $request->file('foto')->store('usuarios', 'public');
+        // 2) Atualiza o DB com o novo path.
+        $user->foto = $newFotoPath;
         $user->save();
+
+        // 3) Só depois do save bem-sucedido, remove o arquivo antigo.
+        //    Falha aqui é log-only — o usuário fica com a foto nova correta;
+        //    no pior cenário sobra um arquivo órfão no storage.
+        if ($oldFotoPath && $oldFotoPath !== $newFotoPath) {
+            try {
+                Storage::disk('public')->delete($oldFotoPath);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
 
         return new UserResource($user);
     }
@@ -160,11 +176,26 @@ class AuthController extends Controller
      *   - Próxima requisição com qualquer token será bloqueada pelo middleware
      *     tenant.ativo.api retornando 403 code:tenant_inactive.
      *
-     * Para reativação, o admin do tenant deve marcar `ativo = true` novamente.
+     * Proteção contra órfão de administração:
+     *   - super_admin não pode se auto-desativar (não há fluxo in-app para
+     *     reativá-lo; precisa ser feito direto no banco / outro super_admin).
+     *   - master só pode se desativar se houver OUTRO master ativo no mesmo
+     *     tenant (MembroController::update rejeita role='master', então um
+     *     master sozinho ficaria sem caminho de recuperação).
+     *   - admin_revenda só pode se desativar se houver OUTRO admin_revenda
+     *     ativo na mesma revenda.
+     *   - membro pode sempre (master pode reativá-lo via gestão de membros).
      */
     public function deleteMe(DeleteMeRequest $request): JsonResponse
     {
         $user = $request->user();
+
+        if ($blockReason = $this->blockSelfDeactivationReason($user)) {
+            return response()->json([
+                'message' => $blockReason,
+                'code'    => 'last_active_admin',
+            ], 403);
+        }
 
         $user->update(['ativo' => false]);
 
@@ -174,6 +205,47 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Conta desativada. Para reativar, entre em contato com o administrador.',
         ]);
+    }
+
+    /**
+     * Retorna a razão para bloquear self-deactivation, ou null se permitido.
+     *
+     * Regras: ver docblock de deleteMe().
+     */
+    private function blockSelfDeactivationReason(User $user): ?string
+    {
+        if ($user->role === 'super_admin') {
+            return 'Super administradores não podem se auto-desativar pelo app. '
+                . 'Contate outro super administrador.';
+        }
+
+        if ($user->role === 'master') {
+            $outrosMasters = User::where('tenant_id', $user->tenant_id)
+                ->where('role', 'master')
+                ->where('ativo', true)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if (! $outrosMasters) {
+                return 'Você é o único administrador (master) ativo deste tenant. '
+                    . 'Crie outro master antes de desativar sua conta ou contate o suporte.';
+            }
+        }
+
+        if ($user->role === 'admin_revenda') {
+            $outrosAdmins = User::where('revenda_id', $user->revenda_id)
+                ->where('role', 'admin_revenda')
+                ->where('ativo', true)
+                ->where('id', '!=', $user->id)
+                ->exists();
+
+            if (! $outrosAdmins) {
+                return 'Você é o único administrador ativo desta revenda. '
+                    . 'Crie outro admin antes de desativar sua conta ou contate o suporte.';
+            }
+        }
+
+        return null;
     }
 
     /**
