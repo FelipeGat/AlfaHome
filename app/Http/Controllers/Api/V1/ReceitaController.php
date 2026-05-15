@@ -139,10 +139,20 @@ class ReceitaController extends Controller
         }
 
         if ($escopo === 'esta_e_futuras' && $receita->grupo_recorrencia_id) {
+            // IMPORTANTE: iterar os modelos para que o ReceitaObserver dispare
+            // em cada item (caso contrário, ajustes de saldo de banco quando
+            // muda data_recebimento ficam fora de sincronia em recorrências).
+            $payloadSemData = collect($payload)->except('data_prevista_recebimento')->all();
+
             Receita::where('tenant_id', $tenantId)
                 ->where('grupo_recorrencia_id', $receita->grupo_recorrencia_id)
                 ->where('data_prevista_recebimento', '>=', $receita->data_prevista_recebimento)
-                ->update(collect($payload)->except('data_prevista_recebimento')->all());
+                ->chunkById(100, function ($items) use ($payloadSemData) {
+                    foreach ($items as $r) {
+                        $r->update($payloadSemData);
+                    }
+                });
+
             $receita->refresh();
         } else {
             $receita->update($payload);

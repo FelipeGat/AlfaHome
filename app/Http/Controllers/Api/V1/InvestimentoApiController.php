@@ -20,6 +20,9 @@ class InvestimentoApiController extends Controller
 {
     /**
      * GET /api/v1/investimentos
+     *
+     * Retorna lista completa do tenant (sem paginação) com banco + rendimentos
+     * eager-loaded, e um meta agregado de patrimônio total.
      */
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -28,7 +31,29 @@ class InvestimentoApiController extends Controller
             ->orderByDesc('data_aporte')
             ->get();
 
-        return InvestimentoResource::collection($investimentos);
+        // Agregados (server-side para evitar somar 200 itens no cliente).
+        $valorAportadoTotal = (float) $investimentos->sum(fn($i) => (float) $i->valor_aportado);
+        $valorAtualTotal    = (float) $investimentos->sum(function ($inv) {
+            $ultimo = $inv->rendimentos->last();
+            return $ultimo
+                ? (float) $ultimo->valor_atual
+                : (float) $inv->valor_aportado;
+        });
+        $ganhoTotal      = $valorAtualTotal - $valorAportadoTotal;
+        $ganhoPercentual = $valorAportadoTotal > 0
+            ? round(($ganhoTotal / $valorAportadoTotal) * 100, 2)
+            : 0.0;
+
+        return InvestimentoResource::collection($investimentos)->additional([
+            'meta' => [
+                'total_valor'      => $valorAtualTotal, // alias consistente com /despesas
+                'valor_aportado'   => $valorAportadoTotal,
+                'valor_atual'      => $valorAtualTotal,
+                'ganho_total'      => $ganhoTotal,
+                'ganho_percentual' => $ganhoPercentual,
+                'count'            => $investimentos->count(),
+            ],
+        ]);
     }
 
     /**

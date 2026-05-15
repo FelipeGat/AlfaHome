@@ -23,7 +23,12 @@ class UpdateDespesaRequest extends FormRequest
             'categoria_id'    => ['nullable', 'integer', Rule::exists('categorias', 'id')->where('tenant_id', $tenantId)],
             'quem_comprou'    => ['nullable', 'integer', Rule::exists('familiares', 'id')->where('tenant_id', $tenantId)],
             'onde_comprou'    => ['nullable', 'integer', Rule::exists('fornecedores', 'id')->where('tenant_id', $tenantId)],
-            'forma_pagamento' => ['nullable', 'integer', Rule::exists('bancos', 'id')->where('tenant_id', $tenantId)],
+            'forma_pagamento' => [
+                'nullable',
+                'integer',
+                'required_if:tipo_pagamento,credito',
+                Rule::exists('bancos', 'id')->where('tenant_id', $tenantId),
+            ],
             'tipo_pagamento'  => ['nullable', Rule::in(StoreDespesaRequest::TIPOS_PAGAMENTO)],
             'observacoes'     => ['nullable', 'string', 'max:2000'],
             'escopo'          => ['nullable', Rule::in(['apenas_esta', 'esta_e_futuras'])],

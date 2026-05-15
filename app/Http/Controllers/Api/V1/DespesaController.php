@@ -177,10 +177,21 @@ class DespesaController extends Controller
         }
 
         if ($escopo === 'esta_e_futuras' && $despesa->grupo_recorrencia_id) {
+            // IMPORTANTE: iterar os modelos e chamar ->update() para que o
+            // DespesaObserver dispare em cada item (caso contrário, o ajuste
+            // automático de bancos.saldo / bancos.saldo_cartao fica fora de
+            // sincronia em recorrências de crédito).
+            $payloadSemData = collect($payload)->except('data_compra')->all();
+
             Despesa::where('tenant_id', $tenantId)
                 ->where('grupo_recorrencia_id', $despesa->grupo_recorrencia_id)
                 ->where('data_compra', '>=', $despesa->data_compra)
-                ->update(collect($payload)->except('data_compra')->all());
+                ->chunkById(100, function ($items) use ($payloadSemData) {
+                    foreach ($items as $d) {
+                        $d->update($payloadSemData);
+                    }
+                });
+
             $despesa->refresh();
         } else {
             $despesa->update($payload);

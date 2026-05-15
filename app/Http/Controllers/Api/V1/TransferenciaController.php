@@ -34,26 +34,51 @@ class TransferenciaController extends Controller
         $inicio   = $request->query('inicio', now()->startOfMonth()->format('Y-m-d'));
         $fim      = $request->query('fim',    now()->endOfMonth()->format('Y-m-d'));
 
-        $query = Transferencia::with(['origem', 'destino'])
+        $query = Transferencia::query()
             ->where('tenant_id', $tenantId)
             ->whereBetween('data', [$inicio, $fim]);
 
-        if ($bancoId = $request->query('banco_id')) {
+        $bancoId = $request->query('banco_id');
+        if ($bancoId) {
+            $bancoId = (int) $bancoId;
             $query->where(function ($q) use ($bancoId) {
-                $q->where('origem_id', (int) $bancoId)
-                  ->orWhere('destino_id', (int) $bancoId);
+                $q->where('origem_id', $bancoId)
+                  ->orWhere('destino_id', $bancoId);
             });
+        }
+
+        // Captura os totais ANTES de paginar — refletem exatamente os filtros.
+        // Quando `banco_id` está setado, expomos também `total_entradas` e
+        // `total_saidas` daquela conta no período (útil para a tela de extrato).
+        $baseClone   = clone $query;
+        $totalValor  = (float) $baseClone->sum('valor');
+
+        $totalEntradas = null;
+        $totalSaidas   = null;
+        if ($bancoId) {
+            $totalEntradas = (float) (clone $query)->where('destino_id', $bancoId)->sum('valor');
+            $totalSaidas   = (float) (clone $query)->where('origem_id', $bancoId)->sum('valor');
         }
 
         $perPage = (int) $request->query('per_page', 30);
 
-        $paginator = $query->orderByDesc('data')->orderByDesc('id')->paginate($perPage)->withQueryString();
+        $paginator = $query
+            ->with(['origem', 'destino'])
+            ->orderByDesc('data')
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
 
-        return TransferenciaResource::collection($paginator)->additional([
-            'meta' => [
-                'periodo' => ['inicio' => $inicio, 'fim' => $fim],
-            ],
-        ]);
+        $meta = [
+            'periodo'     => ['inicio' => $inicio, 'fim' => $fim],
+            'total_valor' => $totalValor,
+        ];
+        if ($bancoId) {
+            $meta['total_entradas'] = $totalEntradas;
+            $meta['total_saidas']   = $totalSaidas;
+        }
+
+        return TransferenciaResource::collection($paginator)->additional(['meta' => $meta]);
     }
 
     public function show(Request $request, Transferencia $transferencia): TransferenciaResource
