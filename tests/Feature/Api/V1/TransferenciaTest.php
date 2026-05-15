@@ -159,4 +159,30 @@ class TransferenciaTest extends TestCase
         $resp->assertOk();
         $this->assertCount(2, $resp->json('data'));
     }
+
+    public function test_index_returns_meta_total_valor_and_directional_totals(): void
+    {
+        $user = User::factory()->create();
+        $a = Banco::factory()->create(['tenant_id' => $user->tenant_id]);
+        $b = Banco::factory()->create(['tenant_id' => $user->tenant_id]);
+        $c = Banco::factory()->create(['tenant_id' => $user->tenant_id]);
+
+        // $b é destino (entrada de 100) + origem (saída de 30)
+        Transferencia::create(['tenant_id'=>$user->tenant_id,'user_id'=>$user->id,'valor'=>100,'data'=>now()->format('Y-m-d'),'origem_id'=>$a->id,'destino_id'=>$b->id]);
+        Transferencia::create(['tenant_id'=>$user->tenant_id,'user_id'=>$user->id,'valor'=>30, 'data'=>now()->format('Y-m-d'),'origem_id'=>$b->id,'destino_id'=>$c->id]);
+
+        Sanctum::actingAs($user);
+
+        // Sem banco_id: total_valor = soma de tudo
+        $semFiltro = $this->getJson('/api/v1/transferencias')->assertOk();
+        $this->assertEquals(130.0, (float) $semFiltro->json('meta.total_valor'));
+        $this->assertNull($semFiltro->json('meta.total_entradas'));
+
+        // Com banco_id: total_valor é o total das que envolvem o banco,
+        // mais total_entradas e total_saidas.
+        $comFiltro = $this->getJson("/api/v1/transferencias?banco_id={$b->id}")->assertOk();
+        $this->assertEquals(130.0, (float) $comFiltro->json('meta.total_valor'));
+        $this->assertEquals(100.0, (float) $comFiltro->json('meta.total_entradas'));
+        $this->assertEquals(30.0,  (float) $comFiltro->json('meta.total_saidas'));
+    }
 }

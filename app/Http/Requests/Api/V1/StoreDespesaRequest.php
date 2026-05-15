@@ -26,7 +26,14 @@ class StoreDespesaRequest extends FormRequest
             'categoria_id'    => ['nullable', 'integer', Rule::exists('categorias', 'id')->where('tenant_id', $tenantId)],
             'quem_comprou'    => ['nullable', 'integer', Rule::exists('familiares', 'id')->where('tenant_id', $tenantId)],
             'onde_comprou'    => ['nullable', 'integer', Rule::exists('fornecedores', 'id')->where('tenant_id', $tenantId)],
-            'forma_pagamento' => ['nullable', 'integer', Rule::exists('bancos', 'id')->where('tenant_id', $tenantId)],
+            'forma_pagamento' => [
+                'nullable',
+                'integer',
+                // Quando é cartão de crédito, o banco/cartão é obrigatório
+                // (sem banco o observer não consegue computar saldo_cartao).
+                'required_if:tipo_pagamento,credito',
+                Rule::exists('bancos', 'id')->where('tenant_id', $tenantId),
+            ],
             'tipo_pagamento'  => ['nullable', Rule::in(self::TIPOS_PAGAMENTO)],
             'parcelas'        => ['nullable', 'integer', 'min:0', 'max:360'],
             'frequencia'      => ['nullable', Rule::in(self::FREQUENCIAS)],
@@ -39,11 +46,12 @@ class StoreDespesaRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'valor.required'      => 'Informe o valor.',
-            'valor.min'           => 'O valor deve ser maior que zero.',
-            'data_compra.required'=> 'Informe a data da compra.',
-            'tipo_pagamento.in'   => 'Tipo de pagamento inválido.',
-            'frequencia.in'       => 'Frequência inválida.',
+            'valor.required'             => 'Informe o valor.',
+            'valor.min'                  => 'O valor deve ser maior que zero.',
+            'data_compra.required'       => 'Informe a data da compra.',
+            'tipo_pagamento.in'          => 'Tipo de pagamento inválido.',
+            'frequencia.in'              => 'Frequência inválida.',
+            'forma_pagamento.required_if'=> 'Selecione o cartão/banco quando o pagamento é em crédito.',
         ];
     }
 }

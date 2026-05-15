@@ -8,6 +8,13 @@ Documento de integração consumido pelo app Flutter.
 - **Encoding**: JSON em request e response
 - **Datas**: `Y-m-d` para datas, ISO-8601 para timestamps
 - **Multi-tenant**: todo registro é filtrado automaticamente pelo `tenant_id` do usuário autenticado
+- **Expiração de token**: tokens Sanctum **não expiram por TTL** (`config/sanctum.php` define `expiration => null`). Um token continua válido até ser revogado explicitamente por:
+  - `POST /auth/logout` (revoga só o token atual)
+  - `POST /auth/logout-all` (revoga todos os tokens do usuário)
+  - `POST /auth/me/password` (revoga todos os outros tokens, mantém o atual)
+  - `DELETE /auth/me` (revoga todos os tokens + desativa o usuário)
+  - Middleware `tenant.ativo.api` quando o usuário/tenant fica inativo (revoga o token atual e retorna `403 code:tenant_inactive`)
+- **Em 401**: app deve forçar logout local e redirecionar para a tela de login. Não há mecanismo de refresh — basta fazer login de novo.
 
 ---
 
@@ -334,6 +341,13 @@ Usadas para popular dropdowns. Todas retornam array (sem paginação).
 
 **Query**: `inicio`, `fim`, `familiar_id`, `fornecedor_id`, `banco_id`, `categoria_id`, `tipo_pagamento`, `status` (`pago|a_pagar|vencido`), `pending_only` (`1` = `a_pagar` OU `vencido`, excluindo crédito), `per_page` (1–100, default 30)
 
+> **Mapping de filtros**:
+> - `banco_id` em `/despesas` filtra por `forma_pagamento = banco_id`
+> - `banco_id` em `/receitas` filtra por `forma_recebimento = banco_id`
+> - `familiar_id` em `/despesas` filtra por `quem_comprou = familiar_id`
+> - `familiar_id` em `/receitas` filtra por `quem_recebeu = familiar_id`
+> - `fornecedor_id` em `/despesas` filtra por `onde_comprou = fornecedor_id`
+
 **Response**: paginação Laravel padrão + `meta.total_valor`, `meta.periodo`
 
 ### POST `/despesas`
@@ -359,6 +373,15 @@ Usadas para popular dropdowns. Todas retornam array (sem paginação).
 **`frequencia`**: `diaria|semanal|quinzenal|mensal|trimestral|semestral|anual`
 
 > Para `tipo_pagamento=credito`, datas das parcelas são calculadas server-side pelo dia de fechamento/vencimento do banco.
+
+> **`forma_pagamento` é obrigatório quando `tipo_pagamento=credito`** (422 com `errors.forma_pagamento` quando ausente). Para outros tipos é opcional.
+
+> **Saldo do cartão (`bancos.saldo_cartao`) é mantido server-side automaticamente.** O app **não** precisa mais fazer recálculo manual via PUT /bancos. O backend ajusta o saldo_cartao em:
+> - despesa de crédito criada (não paga) → soma à fatura
+> - despesa marcada como paga → sai da fatura
+> - despesa estornada (data_pagamento volta a null) → entra na fatura
+> - mudança de valor/cartão/tipo → reverte estado antigo + aplica novo
+> - despesa de crédito deletada (se estava na fatura) → recua
 
 ### GET `/despesas/grupo/{grupoId}`
 Lista todas as parcelas/recorrências do mesmo grupo, em ordem cronológica.
@@ -425,6 +448,13 @@ Igual ao de despesa, sem `fornecedor`, com `data_prevista_recebimento`/`data_rec
 ### GET `/investimentos`
 Lista todos do tenant (sem paginação) com `banco` e `rendimentos[]` carregados, e stats calculadas.
 
+Retorna também `meta` com agregados da carteira:
+- `meta.valor_aportado`: soma de `valor_aportado` (capital colocado)
+- `meta.valor_atual` (alias: `meta.total_valor`): soma de `valor_atual` (valor atualizado pelo último rendimento de cada ativo; usa `valor_aportado` quando não há rendimento)
+- `meta.ganho_total`: `valor_atual - valor_aportado`
+- `meta.ganho_percentual`: rentabilidade da carteira em %
+- `meta.count`: total de investimentos
+
 ### POST `/investimentos`
 ```json
 {
@@ -490,7 +520,12 @@ Permissão: `investimentos.editar`. Retorna `InvestimentoRendimentoResource`.
 
 **Query**: `inicio`, `fim`, `banco_id` (filtra onde `origem_id = banco_id` OR `destino_id = banco_id`), `per_page`
 
-**Response**: paginação Laravel + `meta.periodo`
+**Response**: paginação Laravel + `meta`:
+- `meta.periodo`: `{inicio, fim}`
+- `meta.total_valor`: soma de `valor` de todas as transferências do período (após filtros)
+- `meta.total_entradas` e `meta.total_saidas`: presentes **somente** quando `banco_id` é informado. Útil para extrato de uma conta:
+  - `total_entradas` = soma das transferências com `destino_id = banco_id`
+  - `total_saidas` = soma das transferências com `origem_id = banco_id`
 
 ### POST `/transferencias`
 ```json
