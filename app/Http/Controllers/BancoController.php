@@ -20,20 +20,32 @@ class BancoController extends Controller
             ->orderBy('nome')
             ->get()
             ->each(function ($banco) use ($tenantId) {
-                if ($banco->tem_cartao_credito) {
-                    // Calcula dinamicamente o saldo em uso do cartão (despesas não pagas)
-                    // Inclui tipo_pagamento = 'credito' OU NULL (registros sem tipo definido)
-                    // Exclui explicitamente pix/débito/dinheiro/transferencia/boleto
-                    $banco->saldo_cartao = (float) DB::table('despesas')
-                        ->where('tenant_id', $tenantId)
-                        ->whereNull('deleted_at')
-                        ->where('forma_pagamento', $banco->id)
-                        ->where(function ($q) {
-                            $q->where('tipo_pagamento', 'credito')
-                              ->orWhereNull('tipo_pagamento');
-                        })
-                        ->whereNull('data_pagamento')
-                        ->sum('valor');
+                if (! $banco->tem_cartao_credito) {
+                    return;
+                }
+
+                // Recalcula a fatura aberta a partir das despesas em aberto
+                // (não pagas) que apontam para este cartão.
+                // Inclui tipo_pagamento = 'credito' OU NULL (registros sem tipo definido)
+                // — exclui pix/débito/dinheiro/transferencia/boleto.
+                $faturaAtual = (float) DB::table('despesas')
+                    ->where('tenant_id', $tenantId)
+                    ->whereNull('deleted_at')
+                    ->where('forma_pagamento', $banco->id)
+                    ->where(function ($q) {
+                        $q->where('tipo_pagamento', 'credito')
+                          ->orWhereNull('tipo_pagamento');
+                    })
+                    ->whereNull('data_pagamento')
+                    ->sum('valor');
+
+                // Persiste no DB quando estiver fora de sincronia. Sem isso,
+                // o valor exibido (recalculado em memória) diverge do valor
+                // gravado, e qualquer caminho que leia `saldo_cartao` do DB
+                // (ex.: API mobile, relatórios) vê um valor antigo.
+                if ((float) $banco->saldo_cartao !== $faturaAtual) {
+                    $banco->saldo_cartao = $faturaAtual;
+                    $banco->saveQuietly(); // sem disparar observers (loop e custo)
                 }
             });
 
@@ -172,15 +184,13 @@ class BancoController extends Controller
         return back()->with('success', 'Saldo da poupança ajustado com sucesso!');
     }
 
-    public function ajustarSaldoCartao(Request $request, Banco $banco)
-    {
-        $this->authorize('update', $banco);
-
-        $request->validate(['saldo_cartao' => 'required|numeric|min:0']);
-        $banco->update(['saldo_cartao' => $request->saldo_cartao]);
-
-        return back()->with('success', 'Saldo do cartão ajustado com sucesso!');
-    }
+    // O método `ajustarSaldoCartao` foi removido propositalmente.
+    // `bancos.saldo_cartao` representa a fatura aberta — é totalmente
+    // derivado das despesas de crédito em aberto e é mantido em sincronia
+    // pelo DespesaObserver (criar/editar/pagar/excluir despesa de crédito)
+    // e pelo `index()` (que persiste o recálculo). Ajustar manualmente
+    // levaria a valor inconsistente (sobrescrito na próxima navegação) —
+    // melhor não oferecer esse caminho.
 
     public function destroy(Banco $banco)
     {
@@ -188,20 +198,22 @@ class BancoController extends Controller
 
         $tenantId = Auth::user()->tenant_id;
 
-        // Verifica dependentes para dar mensagem amigável em vez de
-        // FK violation (500). `withTrashed()` é essencial: Despesa,
-        // Receita, Investimento e Transferencia usam SoftDeletes — os
-        // registros físicos continuam no banco e a FK ainda aponta para
-        // bancos.id, mesmo após delete via API.
+        // Mapeamento das FKs (migrations 2024_01_01_050/060/070):
+        //   - despesas.forma_pagamento, receitas.forma_recebimento e
+        //     investimentos.banco_id usam onDelete('set null') — o DB
+        //     apenas zera a referência, sem FK violation. Checagem só
+        //     pelo uso ATIVO (sem withTrashed) para permitir limpeza
+        //     do catálogo quando só restam despesas soft-deletadas.
+        //   - transferencias.origem_id/destino_id são RESTRICT (default):
+        //     soft-deletado ainda tem FK viva apontando para bancos.id
+        //     e gera FK violation real. Por isso só transferencias usa
+        //     withTrashed().
         $emUso = [
-            'despesas'       => \App\Models\Despesa::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
                 ->where('forma_pagamento', $banco->id)->exists(),
-            'receitas'       => \App\Models\Receita::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'receitas'       => \App\Models\Receita::where('tenant_id', $tenantId)
                 ->where('forma_recebimento', $banco->id)->exists(),
-            'investimentos'  => \App\Models\Investimento::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
                 ->where('banco_id', $banco->id)->exists(),
             'transferencias' => \App\Models\Transferencia::withTrashed()
                 ->where('tenant_id', $tenantId)
