@@ -78,7 +78,7 @@
                    style="padding: 14px 32px; border-radius: 14px;
                           background: radial-gradient(ellipse at center, rgba(20,184,166,.18) 0%, rgba(15,23,42,.0) 70%);
                           box-shadow: 0 0 40px rgba(20,184,166,.12), inset 0 1px 0 rgba(255,255,255,.05);">
-                    <img src="/alfa-home-logo.png" alt="AlfaHome" style="height: 38px; width: auto; filter: drop-shadow(0 2px 12px rgba(20,184,166,.35));">
+                    <img src="/alfa-home-logo/alfa-home-logo.png" alt="AlfaHome" style="height: 38px; width: auto; filter: drop-shadow(0 2px 12px rgba(20,184,166,.35));">
                 </a>
             </div>
 

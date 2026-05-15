@@ -155,7 +155,7 @@
 <header class="topbar">
   <div class="container topbar-inner">
     <a href="/" class="brand">
-      <img src="/alfa-home-logo.png" alt="AlfaHome" />
+      <img src="/alfa-home-logo/alfa-home-logo.png" alt="AlfaHome" />
     </a>
     <div class="topbar-actions">
       <a href="/" class="back">← Voltar ao site</a>

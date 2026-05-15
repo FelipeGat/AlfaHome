@@ -1107,8 +1107,8 @@
 {{-- ─── Sidebar ──────────────────────────────────────────────────────── --}}
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-        <img src="/alfa-home-logo.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-full" style="max-width: 140px;">
-        <img src="/alfa-home-logo-2.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-icon" style="height: 34px; width: auto;">
+        <img src="/alfa-home-logo/alfa-home-logo.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-full" style="max-width: 140px;">
+        <img src="/alfa-home-logo/alfa-home-logo-2.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-icon" style="height: 34px; width: auto;">
     </div>
 
     <nav class="sidebar-nav">
@@ -1260,7 +1260,7 @@
                 <i class="fa-solid fa-sun  icon-sun"  style="font-size:15px;"></i>
                 <i class="fa-solid fa-moon icon-moon" style="font-size:15px;"></i>
             </button>
-            <img src="/alfa-home-logo-2.png" alt="AlfaHome" class="topbar-logo-mobile">
+            <img src="/alfa-home-logo/alfa-home-logo-2.png" alt="AlfaHome" class="topbar-logo-mobile">
         </div>
     </header>
     <script>
@@ -1515,22 +1515,47 @@
 
             init() {
                 var self = this;
+
+                // 1) Já está instalado como app standalone? Nunca mostrar.
+                var isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                                   || window.navigator.standalone === true;
+                if (isStandalone) return;
+
+                // 2) Usuário fechou explicitamente clicando no X? Respeitar 30 dias.
                 var dismissed = localStorage.getItem('pwa-dismissed');
                 if (dismissed && (Date.now() - parseInt(dismissed)) < 30 * 24 * 60 * 60 * 1000) return;
+
+                // 3) Já mostrou nesta SESSÃO do navegador? Não mostrar de novo nesta aba.
+                //    (Evita reaparição a cada navegação entre páginas non-SPA.)
+                if (sessionStorage.getItem('pwa-shown-session')) return;
+
+                // 4) Cooldown leve: já apareceu nas últimas 24h? Pular.
+                //    (Evita reaparição quando o usuário ignora o banner sem fechar.)
+                var lastShown = localStorage.getItem('pwa-last-shown');
+                if (lastShown && (Date.now() - parseInt(lastShown)) < 24 * 60 * 60 * 1000) return;
+
+                // Marca como exibido nesta sessão e registra timestamp global
+                var markShown = function () {
+                    sessionStorage.setItem('pwa-shown-session', '1');
+                    localStorage.setItem('pwa-last-shown', Date.now().toString());
+                };
 
                 window.addEventListener('beforeinstallprompt', function (e) {
                     e.preventDefault();
                     self._prompt = e;
                     self.visible = true;
+                    markShown();
                 });
                 window.addEventListener('appinstalled', function () {
                     self.visible = false; self._prompt = null;
                 });
 
+                // iOS Safari não dispara beforeinstallprompt — mostrar manualmente
                 var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-                var isStandalone = window.matchMedia('(display-mode: standalone)').matches
-                                   || window.navigator.standalone === true;
-                if (isIOS && !isStandalone) self.visible = true;
+                if (isIOS) {
+                    self.visible = true;
+                    markShown();
+                }
             },
 
             install() {

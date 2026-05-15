@@ -374,17 +374,9 @@ $bancosTemplate = [
                 </div>
 
                 <div class="form-grid">
-                    <div class="form-group" id="edit-grupo-saldo">
-                        <label class="form-label">Saldo</label>
-                        <input type="number" name="saldo" id="b-edit-saldo" step="0.01" class="form-control">
-                    </div>
                     <div class="form-group" id="edit-grupo-cheque">
                         <label class="form-label">Cheque Especial</label>
                         <input type="number" name="cheque_especial" id="b-edit-cheque" step="0.01" min="0" class="form-control">
-                    </div>
-                    <div class="form-group" id="edit-grupo-poupanca" style="display:none;">
-                        <label class="form-label">Saldo Poupança</label>
-                        <input type="number" name="saldo_poupanca" id="b-edit-saldo-poup" step="0.01" class="form-control">
                     </div>
                     <div class="form-group" id="edit-grupo-limite" style="display:none;">
                         <label class="form-label">Limite do Cartão</label>
@@ -406,6 +398,10 @@ $bancosTemplate = [
                         <label class="form-label">Conta</label>
                         <input type="text" name="conta" id="b-edit-conta" class="form-control">
                     </div>
+                </div>
+                <div style="margin-top:12px;padding:10px 12px;background:var(--color-bg-card);border-left:3px solid var(--color-primary);border-radius:6px;font-size:12px;color:var(--color-text-subtle);">
+                    <i class="fa-solid fa-circle-info" style="margin-right:6px;color:var(--color-primary);"></i>
+                    Os saldos são atualizados automaticamente. Para um ajuste manual, use o botão <strong>"Ajustar Saldo"</strong> em cada conta.
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('modal-editar-banco')" class="btn btn-secondary">Cancelar</button>
@@ -529,9 +525,7 @@ function toggleCamposEditar() {
     const cartao   = document.getElementById('b-edit-cartao').checked;
     const dinheiro = document.getElementById('b-edit-dinheiro').checked;
 
-    document.getElementById('edit-grupo-saldo').style.display   = (cc || dinheiro) ? '' : 'none';
     document.getElementById('edit-grupo-cheque').style.display   = cc ? '' : 'none';
-    document.getElementById('edit-grupo-poupanca').style.display = poup ? '' : 'none';
     document.getElementById('edit-grupo-limite').style.display   = cartao ? '' : 'none';
     document.getElementById('edit-grupo-vencimento').style.display = cartao ? '' : 'none';
     document.getElementById('edit-grupo-fechamento').style.display = cartao ? '' : 'none';
@@ -541,9 +535,7 @@ function editarBanco(id, data) {
     document.getElementById('form-editar-banco').action = `/bancos/${id}`;
     document.getElementById('b-edit-nome').value      = data.nome;
     document.getElementById('b-edit-titular').value   = data.titular_id || '';
-    document.getElementById('b-edit-saldo').value     = data.saldo;
     document.getElementById('b-edit-cheque').value    = data.cheque_especial;
-    document.getElementById('b-edit-saldo-poup').value = data.saldo_poupanca || 0;
     document.getElementById('b-edit-limite').value    = data.limite_cartao;
     document.getElementById('b-edit-vencimento').value = data.dia_vencimento_cartao || '';
     document.getElementById('b-edit-fechamento').value = data.dia_fechamento_cartao || '';
