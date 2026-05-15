@@ -54,6 +54,11 @@ class FamiliarApiController extends Controller
 
         $tenantId = $request->user()->tenant_id;
 
+        // Todas as FKs deste check (despesas.quem_comprou, receitas.quem_recebeu,
+        // bancos.titular_id, users.familiar_id) são onDelete('set null') /
+        // nullOnDelete — não dão FK violation. Checagem sem withTrashed
+        // reflete apenas uso ativo: se a única referência viva é um
+        // registro soft-deletado, permite excluir.
         $emUso = [
             'despesas' => Despesa::where('tenant_id', $tenantId)
                 ->where('quem_comprou', $familiar->id)->exists(),

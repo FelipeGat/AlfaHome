@@ -49,6 +49,11 @@ class CategoriaApiController extends Controller
 
         $tenantId = $request->user()->tenant_id;
 
+        // FKs despesas.categoria_id e receitas.categoria_id são
+        // onDelete('set null') — apagar a categoria apenas zera a
+        // referência nos filhos, sem FK violation. Por isso o check
+        // bloqueia apenas USO ATIVO (sem withTrashed): se a única
+        // referência viva é uma despesa soft-deletada, permite o delete.
         $emUso = [
             'despesas' => Despesa::where('tenant_id', $tenantId)->where('categoria_id', $categoria->id)->exists(),
             'receitas' => Receita::where('tenant_id', $tenantId)->where('categoria_id', $categoria->id)->exists(),
