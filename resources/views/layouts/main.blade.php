@@ -1107,8 +1107,8 @@
 {{-- ─── Sidebar ──────────────────────────────────────────────────────── --}}
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-        <img src="/alfa-home-logo.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-full" style="max-width: 140px;">
-        <img src="/alfa-home-logo-2.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-icon" style="height: 34px; width: auto;">
+        <img src="/alfa-home-logo/alfa-home-logo.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-full" style="max-width: 140px;">
+        <img src="/alfa-home-logo/alfa-home-logo-2.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-icon" style="height: 34px; width: auto;">
     </div>
 
     <nav class="sidebar-nav">
@@ -1260,7 +1260,7 @@
                 <i class="fa-solid fa-sun  icon-sun"  style="font-size:15px;"></i>
                 <i class="fa-solid fa-moon icon-moon" style="font-size:15px;"></i>
             </button>
-            <img src="/alfa-home-logo-2.png" alt="AlfaHome" class="topbar-logo-mobile">
+            <img src="/alfa-home-logo/alfa-home-logo-2.png" alt="AlfaHome" class="topbar-logo-mobile">
         </div>
     </header>
     <script>

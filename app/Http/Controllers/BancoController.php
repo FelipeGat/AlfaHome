@@ -107,14 +107,18 @@ class BancoController extends Controller
 
         $tenantId = Auth::user()->tenant_id;
 
+        // NOTA: saldo e saldo_poupanca NÃO são editáveis por este endpoint.
+        // Eles são gerenciados automaticamente pelos observers de despesa/
+        // receita/transferência. Para ajuste manual, use os endpoints
+        // dedicados POST /bancos/{id}/ajustar-saldo e /ajustar-saldo-poupanca.
+        // (Aceitar `saldo` aqui causava perda de ajustes feitos pelos
+        // observers entre o GET da tela e o POST do form — race condition.)
         $request->validate([
             'nome'               => 'required|string|max:150',
             'tem_conta_corrente' => 'nullable|boolean',
             'tem_poupanca'       => 'nullable|boolean',
             'tem_cartao_credito' => 'nullable|boolean',
             'eh_dinheiro'        => 'nullable|boolean',
-            'saldo'              => 'nullable|numeric',
-            'saldo_poupanca'     => 'nullable|numeric',
             'cheque_especial'    => 'nullable|numeric|min:0',
             'limite_cartao'      => 'nullable|numeric|min:0',
             'dia_vencimento_cartao' => 'nullable|integer|min:1|max:31',
@@ -137,8 +141,6 @@ class BancoController extends Controller
             'codigo_banco'       => $request->codigo_banco,
             'agencia'            => $request->agencia,
             'conta'              => $request->conta,
-            'saldo'              => $request->saldo ?? 0,
-            'saldo_poupanca'     => $request->saldo_poupanca ?? 0,
             'cheque_especial'    => $request->cheque_especial ?? 0,
             'limite_cartao'      => $request->limite_cartao ?? 0,
             'dia_vencimento_cartao' => $request->dia_vencimento_cartao,
@@ -183,6 +185,34 @@ class BancoController extends Controller
     public function destroy(Banco $banco)
     {
         $this->authorize('delete', $banco);
+
+        $tenantId = Auth::user()->tenant_id;
+
+        // Espelha BancoApiController::destroy: verifica dependentes para
+        // dar mensagem amigável em vez de FK violation (500). Cada chave
+        // do array só é true se houver pelo menos um registro vinculado.
+        $emUso = [
+            'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
+                ->where('forma_pagamento', $banco->id)->exists(),
+            'receitas'       => \App\Models\Receita::where('tenant_id', $tenantId)
+                ->where('forma_recebimento', $banco->id)->exists(),
+            'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
+                ->where('banco_id', $banco->id)->exists(),
+            'transferencias' => \App\Models\Transferencia::where('tenant_id', $tenantId)
+                ->where(function ($q) use ($banco) {
+                    $q->where('origem_id', $banco->id)
+                      ->orWhere('destino_id', $banco->id);
+                })->exists(),
+        ];
+
+        $bloqueios = array_keys(array_filter($emUso));
+        if (! empty($bloqueios)) {
+            return back()->withErrors([
+                'banco' => 'Conta em uso e não pode ser excluída. Remova primeiro: '
+                    . implode(', ', $bloqueios) . '.',
+            ]);
+        }
+
         $banco->delete();
 
         return back()->with('success', 'Conta excluída com sucesso!');
