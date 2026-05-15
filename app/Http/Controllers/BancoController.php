@@ -24,11 +24,25 @@ class BancoController extends Controller
                     return;
                 }
 
-                // Recalcula a fatura aberta a partir das despesas em aberto
-                // (não pagas) que apontam para este cartão.
-                // Inclui tipo_pagamento = 'credito' OU NULL (registros sem tipo definido)
-                // — exclui pix/débito/dinheiro/transferencia/boleto.
-                $faturaAtual = (float) DB::table('despesas')
+                // Recalcula a fatura aberta APENAS EM MEMÓRIA para a view.
+                // A persistência de `bancos.saldo_cartao` é responsabilidade
+                // do DespesaObserver (create/update/delete em despesa de
+                // crédito), que mantém o valor sincronizado em todos os
+                // caminhos de escrita.
+                //
+                // Não persistimos aqui porque esta rota (GET /bancos) é
+                // protegida apenas por `permissao:bancos,ver` — escrever
+                // no DB num endpoint de leitura violaria o boundary de
+                // permissão (um usuário view-only não deveria mutar
+                // bancos.updated_at só por abrir a página).
+                //
+                // Para resincronizar dados legados (pré-observer) sem
+                // depender de uma navegação, use o comando dedicado:
+                //   php artisan bancos:resync-saldo-cartao
+                //
+                // Inclui tipo_pagamento = 'credito' OU NULL (registros sem
+                // tipo definido) — exclui pix/débito/dinheiro/transferencia/boleto.
+                $banco->saldo_cartao = (float) DB::table('despesas')
                     ->where('tenant_id', $tenantId)
                     ->whereNull('deleted_at')
                     ->where('forma_pagamento', $banco->id)
@@ -38,15 +52,6 @@ class BancoController extends Controller
                     })
                     ->whereNull('data_pagamento')
                     ->sum('valor');
-
-                // Persiste no DB quando estiver fora de sincronia. Sem isso,
-                // o valor exibido (recalculado em memória) diverge do valor
-                // gravado, e qualquer caminho que leia `saldo_cartao` do DB
-                // (ex.: API mobile, relatórios) vê um valor antigo.
-                if ((float) $banco->saldo_cartao !== $faturaAtual) {
-                    $banco->saldo_cartao = $faturaAtual;
-                    $banco->saveQuietly(); // sem disparar observers (loop e custo)
-                }
             });
 
         $familiares = Familiar::orderBy('nome')->get();
