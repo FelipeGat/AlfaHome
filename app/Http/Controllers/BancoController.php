@@ -188,17 +188,23 @@ class BancoController extends Controller
 
         $tenantId = Auth::user()->tenant_id;
 
-        // Espelha BancoApiController::destroy: verifica dependentes para
-        // dar mensagem amigável em vez de FK violation (500). Cada chave
-        // do array só é true se houver pelo menos um registro vinculado.
+        // Verifica dependentes para dar mensagem amigável em vez de
+        // FK violation (500). `withTrashed()` é essencial: Despesa,
+        // Receita, Investimento e Transferencia usam SoftDeletes — os
+        // registros físicos continuam no banco e a FK ainda aponta para
+        // bancos.id, mesmo após delete via API.
         $emUso = [
-            'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
+            'despesas'       => \App\Models\Despesa::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where('forma_pagamento', $banco->id)->exists(),
-            'receitas'       => \App\Models\Receita::where('tenant_id', $tenantId)
+            'receitas'       => \App\Models\Receita::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where('forma_recebimento', $banco->id)->exists(),
-            'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
+            'investimentos'  => \App\Models\Investimento::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where('banco_id', $banco->id)->exists(),
-            'transferencias' => \App\Models\Transferencia::where('tenant_id', $tenantId)
+            'transferencias' => \App\Models\Transferencia::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where(function ($q) use ($banco) {
                     $q->where('origem_id', $banco->id)
                       ->orWhere('destino_id', $banco->id);
