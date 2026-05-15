@@ -6,6 +6,8 @@ use App\Models\Banco;
 use App\Models\Despesa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -248,5 +250,96 @@ class DespesaSaldoCartaoTest extends TestCase
         ]);
 
         $this->assertEquals(500.0, (float) $cartao->fresh()->saldo_cartao);
+    }
+
+    /**
+     * Regressão: PUT /despesas/{id} com escopo=esta_e_futuras antes usava
+     * Eloquent::query()->update() em massa, que pula model events. Em
+     * recorrências de crédito isso fazia saldo_cartao drift do total real
+     * de fatura aberta. O fix itera os modelos e chama ->update() em cada.
+     */
+    public function test_update_esta_e_futuras_keeps_saldo_cartao_in_sync(): void
+    {
+        $user   = $this->makeUser();
+        $cartao = $this->makeCartao($user);
+        $grupo  = (string) Str::uuid();
+
+        Sanctum::actingAs($user);
+
+        // 3 parcelas mensais de crédito, todas em aberto (não pagas)
+        $parcelas = collect(['2026-05-15', '2026-06-15', '2026-07-15'])
+            ->map(fn ($data) => Despesa::create([
+                'tenant_id'             => $user->tenant_id,
+                'user_id'               => $user->id,
+                'valor'                 => 100.0,
+                'data_compra'           => $data,
+                'tipo_pagamento'        => 'credito',
+                'forma_pagamento'       => $cartao->id,
+                'grupo_recorrencia_id'  => $grupo,
+                'origem'                => 'recorrencia',
+                'recorrente'            => true,
+                'frequencia'            => 'mensal',
+            ]));
+
+        // Após criar as 3, fatura = 300
+        $this->assertEquals(300.0, (float) $cartao->fresh()->saldo_cartao);
+
+        // Edição esta_e_futuras na primeira: muda valor de 100 → 250
+        $primeira = $parcelas->first();
+        $this->putJson("/api/v1/despesas/{$primeira->id}", [
+            'valor'           => 250.0,
+            'data_compra'     => $primeira->data_compra->format('Y-m-d'),
+            'tipo_pagamento'  => 'credito',
+            'forma_pagamento' => $cartao->id,
+            'escopo'          => 'esta_e_futuras',
+        ])->assertOk();
+
+        // Esperado: 3 parcelas × 250 = 750
+        $this->assertEquals(750.0, (float) $cartao->fresh()->saldo_cartao);
+
+        // Cada parcela individualmente também precisa refletir
+        foreach ($parcelas as $p) {
+            $this->assertEquals(250.0, (float) $p->fresh()->valor);
+        }
+    }
+
+    public function test_update_esta_e_futuras_changing_card_moves_balance_for_all(): void
+    {
+        $user    = $this->makeUser();
+        $cartaoA = $this->makeCartao($user);
+        $cartaoB = $this->makeCartao($user);
+        $grupo   = (string) Str::uuid();
+
+        Sanctum::actingAs($user);
+
+        $parcelas = collect(['2026-05-15', '2026-06-15'])
+            ->map(fn ($data) => Despesa::create([
+                'tenant_id'            => $user->tenant_id,
+                'user_id'              => $user->id,
+                'valor'                => 80.0,
+                'data_compra'          => $data,
+                'tipo_pagamento'       => 'credito',
+                'forma_pagamento'      => $cartaoA->id,
+                'grupo_recorrencia_id' => $grupo,
+                'origem'               => 'recorrencia',
+                'recorrente'           => true,
+                'frequencia'           => 'mensal',
+            ]));
+
+        $this->assertEquals(160.0, (float) $cartaoA->fresh()->saldo_cartao);
+        $this->assertEquals(0.0,   (float) $cartaoB->fresh()->saldo_cartao);
+
+        // Move todo o grupo para o cartaoB
+        $primeira = $parcelas->first();
+        $this->putJson("/api/v1/despesas/{$primeira->id}", [
+            'valor'           => 80.0,
+            'data_compra'     => $primeira->data_compra->format('Y-m-d'),
+            'tipo_pagamento'  => 'credito',
+            'forma_pagamento' => $cartaoB->id,
+            'escopo'          => 'esta_e_futuras',
+        ])->assertOk();
+
+        $this->assertEquals(0.0,   (float) $cartaoA->fresh()->saldo_cartao);
+        $this->assertEquals(160.0, (float) $cartaoB->fresh()->saldo_cartao);
     }
 }
