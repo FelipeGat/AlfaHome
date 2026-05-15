@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Categoria;
+use App\Models\Despesa;
+use App\Models\Receita;
 use Database\Seeders\CategoriasDefaultSeeder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -72,6 +74,28 @@ class CategoriaController extends Controller
     public function destroy(Categoria $categoria)
     {
         $this->authorize('delete', $categoria);
+
+        // Espelha CategoriaApiController::destroy: avisa o usuário quando
+        // a categoria está em uso ATIVO. FKs `despesas.categoria_id` e
+        // `receitas.categoria_id` são set null no DB — registros antigos
+        // soft-deletados não bloqueiam a exclusão.
+        $tenantId = Auth::user()->tenant_id;
+
+        $emUso = [
+            'despesas' => Despesa::where('tenant_id', $tenantId)
+                ->where('categoria_id', $categoria->id)->exists(),
+            'receitas' => Receita::where('tenant_id', $tenantId)
+                ->where('categoria_id', $categoria->id)->exists(),
+        ];
+
+        $bloqueios = array_keys(array_filter($emUso));
+        if (! empty($bloqueios)) {
+            return back()->withErrors([
+                'categoria' => 'Categoria em uso e não pode ser excluída. '
+                    . 'Remova primeiro: ' . implode(', ', $bloqueios) . '.',
+            ]);
+        }
+
         $categoria->delete();
         return back()->with('success', 'Categoria excluída com sucesso!');
     }

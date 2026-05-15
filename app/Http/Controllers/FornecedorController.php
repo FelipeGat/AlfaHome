@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Despesa;
 use App\Models\Fornecedor;
 use Database\Seeders\FornecedoresDefaultSeeder;
 use Illuminate\Http\Request;
@@ -75,6 +76,24 @@ class FornecedorController extends Controller
     public function destroy(Fornecedor $fornecedor)
     {
         $this->authorize('delete', $fornecedor);
+
+        // Espelha FornecedorApiController::destroy: avisa quando o
+        // fornecedor está em uso ATIVO. FK `despesas.onde_comprou` é
+        // set null no DB — soft-deletados não bloqueiam a exclusão.
+        $tenantId = Auth::user()->tenant_id;
+
+        $emUso = [
+            'despesas' => Despesa::where('tenant_id', $tenantId)
+                ->where('onde_comprou', $fornecedor->id)->exists(),
+        ];
+
+        if ($emUso['despesas']) {
+            return back()->withErrors([
+                'fornecedor' => 'Fornecedor em uso e não pode ser excluído. '
+                    . 'Remova primeiro as despesas vinculadas.',
+            ]);
+        }
+
         $fornecedor->delete();
         return back()->with('success', 'Fornecedor excluído com sucesso!');
     }

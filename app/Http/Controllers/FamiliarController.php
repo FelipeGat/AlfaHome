@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banco;
+use App\Models\Despesa;
 use App\Models\Familiar;
+use App\Models\Receita;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -176,6 +179,28 @@ class FamiliarController extends Controller
 
         if ($familiar->isMaster()) {
             return back()->withErrors(['nome' => 'O membro master não pode ser excluído.']);
+        }
+
+        // Espelha FamiliarApiController::destroy: avisa o usuário quando
+        // o membro está em uso ATIVO. Todas as FKs aqui são set null /
+        // null-on-delete — soft-deletados não bloqueiam a exclusão.
+        $tenantId = Auth::user()->tenant_id;
+
+        $emUso = [
+            'despesas' => Despesa::where('tenant_id', $tenantId)
+                ->where('quem_comprou', $familiar->id)->exists(),
+            'receitas' => Receita::where('tenant_id', $tenantId)
+                ->where('quem_recebeu', $familiar->id)->exists(),
+            'bancos'   => Banco::where('tenant_id', $tenantId)
+                ->where('titular_id', $familiar->id)->exists(),
+        ];
+
+        $bloqueios = array_keys(array_filter($emUso));
+        if (! empty($bloqueios)) {
+            return back()->withErrors([
+                'nome' => 'Membro em uso e não pode ser excluído. '
+                    . 'Remova primeiro: ' . implode(', ', $bloqueios) . '.',
+            ]);
         }
 
         if ($familiar->membro) {
