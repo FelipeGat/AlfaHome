@@ -153,8 +153,10 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao'])->group(function () {
     Route::post('/bancos', [BancoController::class, 'store'])->name('bancos.store')->middleware('permissao:bancos,criar');
     Route::put('/bancos/{banco}', [BancoController::class, 'update'])->name('bancos.update')->middleware('permissao:bancos,editar');
     Route::post('/bancos/{banco}/ajustar-saldo', [BancoController::class, 'ajustarSaldo'])->name('bancos.ajustar-saldo')->middleware('permissao:bancos,editar');
-    Route::post('/bancos/{banco}/ajustar-saldo-cartao', [BancoController::class, 'ajustarSaldoCartao'])->name('bancos.ajustar-saldo-cartao')->middleware('permissao:bancos,editar');
     Route::post('/bancos/{banco}/ajustar-saldo-poupanca', [BancoController::class, 'ajustarSaldoPoupanca'])->name('bancos.ajustar-saldo-poupanca')->middleware('permissao:bancos,editar');
+    // Rota /ajustar-saldo-cartao removida: saldo_cartao agora é derivado
+    // das despesas pelo DespesaObserver + recálculo no index(). Ajustar
+    // manualmente levava a valor inconsistente (sobrescrito em seguida).
     Route::delete('/bancos/{banco}', [BancoController::class, 'destroy'])->name('bancos.destroy')->middleware('permissao:bancos,excluir');
 
     // Investimentos

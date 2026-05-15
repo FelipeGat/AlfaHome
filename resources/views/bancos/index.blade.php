@@ -154,11 +154,9 @@ $bancosTemplate = [
                         <i class="fa-solid fa-piggy-bank"></i> Poupança
                     </button>
                 @endif
-                @if($banco->tem_cartao_credito && $banco->limite_cartao > 0)
-                    <button onclick="ajustarSaldoCartao({{ $banco->id }}, {{ $banco->saldo_cartao }})" class="btn btn-secondary btn-sm" style="flex:1;justify-content:center;">
-                        <i class="fa-solid fa-credit-card"></i> Cartão
-                    </button>
-                @endif
+                {{-- O botão de "Ajustar Cartão" foi removido: saldo_cartao
+                     é derivado das despesas e mantido em sincronia
+                     automaticamente. Ajustes manuais ficavam sobrescritos. --}}
             </div>
         </div>
     @empty
@@ -460,29 +458,10 @@ $bancosTemplate = [
     </div>
 </div>
 
-{{-- Modal Ajustar Cartão --}}
-<div class="modal-backdrop" id="modal-ajustar-cartao">
-    <div class="modal" style="max-width:380px;">
-        <div class="modal-header">
-            <i class="fa-solid fa-credit-card" style="color:var(--color-warning);"></i>
-            <h3>Ajustar Saldo do Cartão</h3>
-            <button class="modal-close" onclick="closeModal('modal-ajustar-cartao')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form method="POST" action="" id="form-ajustar-cartao">
-                @csrf
-                <div class="form-group">
-                    <label class="form-label">Valor Utilizado no Cartão</label>
-                    <input type="number" name="saldo_cartao" id="ajuste-cartao-val" step="0.01" min="0" class="form-control" required>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" onclick="closeModal('modal-ajustar-cartao')" class="btn btn-secondary">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+{{-- Modal "Ajustar Saldo do Cartão" removido: saldo_cartao é derivado
+     das despesas de crédito em aberto e sincronizado pelo DespesaObserver
+     + recálculo persistido no index(). Aceitar entrada manual aqui
+     causava confusão (o valor salvo era sobrescrito na próxima navegação). --}}
 
 @endsection
 
@@ -610,10 +589,6 @@ function ajustarPoupanca(id, saldo) {
     openModal('modal-ajustar-poupanca');
 }
 
-function ajustarSaldoCartao(id, saldo) {
-    document.getElementById('form-ajustar-cartao').action = `/bancos/${id}/ajustar-saldo-cartao`;
-    document.getElementById('ajuste-cartao-val').value = saldo;
-    openModal('modal-ajustar-cartao');
-}
+// função ajustarSaldoCartao removida — saldo_cartao é automatizado
 </script>
 @endpush
