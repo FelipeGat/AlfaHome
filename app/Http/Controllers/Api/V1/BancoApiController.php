@@ -47,14 +47,23 @@ class BancoApiController extends Controller
 
         $tenantId = $request->user()->tenant_id;
 
+        // withTrashed() é essencial aqui: Despesa, Receita, Investimento
+        // e Transferencia usam SoftDeletes. Mesmo após soft-delete, os
+        // registros físicos permanecem com a FK apontando para bancos.id.
+        // Sem withTrashed() a checagem retornaria false e o $banco->delete()
+        // posterior daria FK violation (500) em vez do 409 idiomático.
         $emUso = [
-            'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
+            'despesas'       => \App\Models\Despesa::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where('forma_pagamento', $banco->id)->exists(),
-            'receitas'       => \App\Models\Receita::where('tenant_id', $tenantId)
+            'receitas'       => \App\Models\Receita::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where('forma_recebimento', $banco->id)->exists(),
-            'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
+            'investimentos'  => \App\Models\Investimento::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where('banco_id', $banco->id)->exists(),
-            'transferencias' => \App\Models\Transferencia::where('tenant_id', $tenantId)
+            'transferencias' => \App\Models\Transferencia::withTrashed()
+                ->where('tenant_id', $tenantId)
                 ->where(function ($q) use ($banco) {
                     $q->where('origem_id', $banco->id)
                       ->orWhere('destino_id', $banco->id);
