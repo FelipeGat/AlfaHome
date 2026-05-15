@@ -49,14 +49,14 @@ class CategoriaApiController extends Controller
 
         $tenantId = $request->user()->tenant_id;
 
-        // withTrashed(): Despesa e Receita usam SoftDeletes — registros
-        // físicos com FK ainda apontam para categoria_id. Sem isso o
-        // delete poderia cair em FK violation (500) em vez de 409.
+        // FKs despesas.categoria_id e receitas.categoria_id são
+        // onDelete('set null') — apagar a categoria apenas zera a
+        // referência nos filhos, sem FK violation. Por isso o check
+        // bloqueia apenas USO ATIVO (sem withTrashed): se a única
+        // referência viva é uma despesa soft-deletada, permite o delete.
         $emUso = [
-            'despesas' => Despesa::withTrashed()
-                ->where('tenant_id', $tenantId)->where('categoria_id', $categoria->id)->exists(),
-            'receitas' => Receita::withTrashed()
-                ->where('tenant_id', $tenantId)->where('categoria_id', $categoria->id)->exists(),
+            'despesas' => Despesa::where('tenant_id', $tenantId)->where('categoria_id', $categoria->id)->exists(),
+            'receitas' => Receita::where('tenant_id', $tenantId)->where('categoria_id', $categoria->id)->exists(),
         ];
 
         if (in_array(true, $emUso, true)) {

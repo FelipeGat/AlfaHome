@@ -15,19 +15,31 @@ use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
- * Regressão: a checagem em_uso usava ->exists() sem withTrashed(), e o
- * default scope do Eloquent filtra deleted_at IS NULL. Registros
- * soft-deleted (Despesa/Receita/Investimento/Transferencia) ainda têm a
- * FK física apontando para o catálogo (banco/categoria/fornecedor/
- * familiar), então um delete subsequente via API caía em FK violation
- * (500) em vez de retornar 409 amigável.
+ * Regressão dirigida ao comportamento das FKs reais nas migrations.
  *
- * Fix: usar ->withTrashed() em todos os checks que consultam tabelas
- * com SoftDeletes.
+ * Regra: usar ->withTrashed() apenas onde a FK é RESTRICT (default).
+ * Para FKs com onDelete('set null') ou nullOnDelete (a maioria deste
+ * domínio), soft-deleted NÃO bloqueia o delete do pai porque o DB
+ * apenas zera a referência sem violar integridade — e seria UX ruim
+ * impedir a limpeza de uma categoria que só tem uma despesa antiga
+ * descartada.
+ *
+ * Mapeamento das FKs (ver 2024_01_01_000050/060/070/040, etc.):
+ *   - despesas.{categoria_id,forma_pagamento,onde_comprou,quem_comprou} → set null
+ *   - receitas.{categoria_id,forma_recebimento,quem_recebeu}            → set null
+ *   - investimentos.banco_id                                            → set null
+ *   - bancos.titular_id                                                 → set null
+ *   - users.familiar_id                                                 → null on delete
+ *   - transferencias.{origem_id,destino_id}                             → RESTRICT
+ *
+ * Único caso que precisa de withTrashed: transferencias → bancos.
  */
 class EmUsoSoftDeletedTest extends TestCase
 {
     use RefreshDatabase;
+
+    // ─── Caso RESTRICT: transferencias → bancos ────────────────────────────
+    //   Soft-deleted DEVE bloquear (FK violation real).
 
     public function test_banco_destroy_returns_409_when_only_soft_deleted_transferencia_exists(): void
     {
@@ -43,10 +55,8 @@ class EmUsoSoftDeletedTest extends TestCase
             'origem_id'  => $origem->id,
             'destino_id' => $destino->id,
         ]);
-        // Soft delete da transferência
         $transf->delete();
-
-        $this->assertNotNull($transf->fresh()->deleted_at, 'Transferência deveria estar soft-deleted');
+        $this->assertNotNull($transf->fresh()->deleted_at);
 
         Sanctum::actingAs($user);
 
@@ -59,7 +69,10 @@ class EmUsoSoftDeletedTest extends TestCase
             ->assertJsonPath('em_uso.transferencias', true);
     }
 
-    public function test_banco_destroy_returns_409_when_only_soft_deleted_despesa_exists(): void
+    // ─── Casos set null: NÃO deve bloquear quando só há soft-deleted ───────
+    //   Se só há filhos soft-deletados, o pai pode ser excluído livremente.
+
+    public function test_banco_destroy_allowed_when_only_soft_deleted_despesa_exists(): void
     {
         $user  = User::factory()->create();
         $banco = Banco::factory()->create(['tenant_id' => $user->tenant_id]);
@@ -74,16 +87,13 @@ class EmUsoSoftDeletedTest extends TestCase
         ]);
         $despesa->delete();
 
-        $this->assertNotNull($despesa->fresh()->deleted_at);
-
         Sanctum::actingAs($user);
 
-        $this->deleteJson("/api/v1/bancos/{$banco->id}")
-            ->assertStatus(409)
-            ->assertJsonPath('em_uso.despesas', true);
+        // forma_pagamento é set null → permite excluir
+        $this->deleteJson("/api/v1/bancos/{$banco->id}")->assertOk();
     }
 
-    public function test_categoria_destroy_returns_409_when_only_soft_deleted_receita_exists(): void
+    public function test_categoria_destroy_allowed_when_only_soft_deleted_receita_exists(): void
     {
         $user      = User::factory()->create();
         $categoria = Categoria::factory()->receita()->create(['tenant_id' => $user->tenant_id]);
@@ -99,12 +109,11 @@ class EmUsoSoftDeletedTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->deleteJson("/api/v1/categorias/{$categoria->id}")
-            ->assertStatus(409)
-            ->assertJsonPath('em_uso.receitas', true);
+        // categoria_id é set null → permite excluir e zerar a ref na receita soft-deletada
+        $this->deleteJson("/api/v1/categorias/{$categoria->id}")->assertOk();
     }
 
-    public function test_fornecedor_destroy_returns_409_when_only_soft_deleted_despesa_exists(): void
+    public function test_fornecedor_destroy_allowed_when_only_soft_deleted_despesa_exists(): void
     {
         $user       = User::factory()->create();
         $fornecedor = Fornecedor::factory()->create(['tenant_id' => $user->tenant_id]);
@@ -120,12 +129,11 @@ class EmUsoSoftDeletedTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->deleteJson("/api/v1/fornecedores/{$fornecedor->id}")
-            ->assertStatus(409)
-            ->assertJsonPath('em_uso.despesas', true);
+        // onde_comprou é set null → permite excluir
+        $this->deleteJson("/api/v1/fornecedores/{$fornecedor->id}")->assertOk();
     }
 
-    public function test_familiar_destroy_returns_409_when_only_soft_deleted_despesa_exists(): void
+    public function test_familiar_destroy_allowed_when_only_soft_deleted_despesa_exists(): void
     {
         $user     = User::factory()->create();
         $familiar = Familiar::factory()->create(['tenant_id' => $user->tenant_id]);
@@ -141,7 +149,28 @@ class EmUsoSoftDeletedTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->deleteJson("/api/v1/familiares/{$familiar->id}")
+        // quem_comprou é set null → permite excluir
+        $this->deleteJson("/api/v1/familiares/{$familiar->id}")->assertOk();
+    }
+
+    // ─── Sanity: casos com filhos ATIVOS continuam bloqueando 409 ──────────
+
+    public function test_categoria_destroy_blocked_when_active_despesa_exists(): void
+    {
+        $user      = User::factory()->create();
+        $categoria = Categoria::factory()->despesa()->create(['tenant_id' => $user->tenant_id]);
+
+        Despesa::create([
+            'tenant_id'    => $user->tenant_id,
+            'user_id'      => $user->id,
+            'valor'        => 50,
+            'data_compra'  => now()->format('Y-m-d'),
+            'categoria_id' => $categoria->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->deleteJson("/api/v1/categorias/{$categoria->id}")
             ->assertStatus(409)
             ->assertJsonPath('em_uso.despesas', true);
     }

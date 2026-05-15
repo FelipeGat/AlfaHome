@@ -47,20 +47,21 @@ class BancoApiController extends Controller
 
         $tenantId = $request->user()->tenant_id;
 
-        // withTrashed() é essencial aqui: Despesa, Receita, Investimento
-        // e Transferencia usam SoftDeletes. Mesmo após soft-delete, os
-        // registros físicos permanecem com a FK apontando para bancos.id.
-        // Sem withTrashed() a checagem retornaria false e o $banco->delete()
-        // posterior daria FK violation (500) em vez do 409 idiomático.
+        // Regras das FKs (ver migrations):
+        //   - despesas.forma_pagamento, receitas.forma_recebimento e
+        //     investimentos.banco_id usam onDelete('set null') — não dão
+        //     FK violation e não devem bloquear o delete quando o filho
+        //     está soft-deletado (sem uso ativo). Checagem sem withTrashed.
+        //   - transferencias.origem_id/destino_id usam o default RESTRICT
+        //     (sem onDelete) — registros soft-deletados ainda têm FK viva
+        //     apontando para bancos.id e dariam FK violation. Por isso
+        //     transferencias usa withTrashed().
         $emUso = [
-            'despesas'       => \App\Models\Despesa::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
                 ->where('forma_pagamento', $banco->id)->exists(),
-            'receitas'       => \App\Models\Receita::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'receitas'       => \App\Models\Receita::where('tenant_id', $tenantId)
                 ->where('forma_recebimento', $banco->id)->exists(),
-            'investimentos'  => \App\Models\Investimento::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
                 ->where('banco_id', $banco->id)->exists(),
             'transferencias' => \App\Models\Transferencia::withTrashed()
                 ->where('tenant_id', $tenantId)

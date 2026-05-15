@@ -48,11 +48,10 @@ class FornecedorApiController extends Controller
 
         $tenantId = $request->user()->tenant_id;
 
-        // withTrashed(): Despesa usa SoftDeletes — registros físicos
-        // com FK ainda apontam para fornecedor_id mesmo após delete.
+        // FK despesas.onde_comprou é onDelete('set null') — sem FK
+        // violation. Checagem sem withTrashed apenas reflete uso ativo.
         $emUso = [
-            'despesas' => Despesa::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'despesas' => Despesa::where('tenant_id', $tenantId)
                 ->where('onde_comprou', $fornecedor->id)->exists(),
         ];
 

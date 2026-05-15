@@ -54,16 +54,15 @@ class FamiliarApiController extends Controller
 
         $tenantId = $request->user()->tenant_id;
 
-        // withTrashed() para Despesa e Receita (usam SoftDeletes):
-        // registros físicos com FK podem existir após soft-delete.
-        // Banco e User não usam SoftDeletes, então a checagem normal
-        // já cobre.
+        // Todas as FKs deste check (despesas.quem_comprou, receitas.quem_recebeu,
+        // bancos.titular_id, users.familiar_id) são onDelete('set null') /
+        // nullOnDelete — não dão FK violation. Checagem sem withTrashed
+        // reflete apenas uso ativo: se a única referência viva é um
+        // registro soft-deletado, permite excluir.
         $emUso = [
-            'despesas' => Despesa::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'despesas' => Despesa::where('tenant_id', $tenantId)
                 ->where('quem_comprou', $familiar->id)->exists(),
-            'receitas' => Receita::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'receitas' => Receita::where('tenant_id', $tenantId)
                 ->where('quem_recebeu', $familiar->id)->exists(),
             'bancos'   => Banco::where('tenant_id', $tenantId)
                 ->where('titular_id', $familiar->id)->exists(),
