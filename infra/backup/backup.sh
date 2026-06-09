@@ -54,6 +54,10 @@ _notify() {
 trap '_notify "❌ Backup AlfaHome GLOBAL falhou — $(date +%H:%M:%S)"' ERR
 
 # Política GFS: diário 7d / semanal 4 semanas / mensal 3 meses
+# IMPORTANTE: no backend Google Drive o rclone usa drive_use_trash=true por padrão,
+# o que move os arquivos para a Lixeira (continuam ocupando cota) em vez de apagar.
+# Por isso todas as remoções abaixo usam --drive-use-trash=false: a contenção
+# precisa liberar espaço de fato. Não remover essa flag.
 _gfs_cleanup() {
   local DAILY_CUT WEEKLY_CUT MONTHLY_CUT SEEN_WEEKS SEEN_MONTHS
   DAILY_CUT=$(date -d "-7 days" +%Y-%m-%d)
@@ -73,7 +77,7 @@ _gfs_cleanup() {
       WEEK=$(date -d "$D" +%G-W%V)
       if echo "$SEEN_WEEKS" | grep -qw "$WEEK"; then
         _log "  GFS semanal — removendo: $D"
-        rclone purge "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
+        rclone purge --drive-use-trash=false "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
       else
         SEEN_WEEKS="$SEEN_WEEKS $WEEK"
       fi
@@ -84,7 +88,7 @@ _gfs_cleanup() {
       MONTH=$(echo "$D" | cut -c1-7)
       if echo "$SEEN_MONTHS" | grep -qw "$MONTH"; then
         _log "  GFS mensal — removendo: $D"
-        rclone purge "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
+        rclone purge --drive-use-trash=false "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
       else
         SEEN_MONTHS="$SEEN_MONTHS $MONTH"
       fi
@@ -92,7 +96,7 @@ _gfs_cleanup() {
     fi
 
     _log "  GFS expirado — removendo: $D"
-    rclone purge "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
+    rclone purge --drive-use-trash=false "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
 
   done < <(rclone lsd "${GDRIVE_REMOTE}/" 2>/dev/null | awk '{print $NF}' \
     | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort -r)

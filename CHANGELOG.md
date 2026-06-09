@@ -1,5 +1,12 @@
 # Changelog
 
+## AlfaHome — 09/06/2026 — Backups antigos passam a liberar espaço de fato
+
+### Correções
+- A rotina de backup remove diariamente as cópias mais antigas para manter o armazenamento sob controle. Foi identificado que essas cópias, em vez de serem apagadas definitivamente, estavam indo para a Lixeira do armazenamento em nuvem e continuavam ocupando espaço. O processo foi ajustado para excluir as cópias antigas de forma permanente, liberando o espaço imediatamente e evitando o consumo desnecessário da cota de armazenamento.
+
+---
+
 ## AlfaHome — 04/05/2026 — Correção de indisponibilidade total do sistema
 
 ### Correções

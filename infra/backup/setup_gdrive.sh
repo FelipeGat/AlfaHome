@@ -51,7 +51,7 @@ fi
 # 4. Testa conexão
 echo "[4/5] Testando conexão com Google Drive..."
 if rclone mkdir "gdrive:AlfaHome Backups/test" 2>/dev/null; then
-  rclone purge "gdrive:AlfaHome Backups/test" 2>/dev/null
+  rclone purge --drive-use-trash=false "gdrive:AlfaHome Backups/test" 2>/dev/null
   echo "  ✓ Google Drive acessível"
 else
   echo "  ✗ Falha ao acessar Google Drive. Verifique a configuração do rclone."
