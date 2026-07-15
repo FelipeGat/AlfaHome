@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AppUpdateController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\PushController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -23,6 +24,16 @@ use App\Http\Controllers\Api\V1\TransferenciaController;
 | web session cookie. They power the existing PWA Service Worker and are
 | kept untouched for backwards compatibility.
 */
+
+/*
+|--------------------------------------------------------------------------
+| Auto-atualização do app mobile (público, sem sessão/token)
+|--------------------------------------------------------------------------
+| Consultado no boot do app pra saber se existe uma versão mais nova
+| publicada — ver AppUpdateController e `php artisan app:publish-update`.
+*/
+Route::get('/app/version', [AppUpdateController::class, 'version'])
+    ->name('api.app.version');
 
 Route::middleware(['auth', 'tenant.ativo'])->group(function () {
 
