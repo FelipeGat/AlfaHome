@@ -32,6 +32,10 @@ Route::get('/landing', function () {
 Route::view('/politica-privacidade', 'legal.politica-privacidade')->name('legal.privacidade');
 Route::view('/termos-de-uso', 'legal.termos-de-uso')->name('legal.termos');
 
+// Baixar o app mobile (Android direto por APK; iOS aponta pro suporte).
+// Pública — quem ainda não tem conta também deve conseguir baixar.
+Route::view('/baixar-app', 'download-app')->name('download-app');
+
 // Redirect dinâmico baseado em role
 Route::get('/', function () {
     if (auth()->check()) {
