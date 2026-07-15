@@ -1221,6 +1221,9 @@
             <a href="{{ route('profile.edit') }}" class="sidebar-user-action" title="Editar perfil">
                 <i class="fa-solid fa-pen-to-square"></i><span>Editar</span>
             </a>
+            <a href="{{ route('download-app') }}" class="sidebar-user-action" title="Baixar o app" target="_blank" rel="noopener">
+                <i class="fa-solid fa-mobile-screen-button"></i><span>App</span>
+            </a>
             <form method="POST" action="{{ route('logout') }}" style="flex:1; display:flex;">
                 @csrf
                 <button type="submit" class="sidebar-user-action sidebar-user-action--danger" title="Sair">
