@@ -103,6 +103,24 @@ class DatabaseSeeder extends Seeder
             'ativo'     => true,
         ]);
 
+        // Conta padrão de STAGING — a equipe inteira valida os stagings com ela.
+        // NUNCA remover: um rebuild que a apague só aparece um dia depois, quando
+        // as sessões antigas caem, e parece "sistema fora do ar" (AlfaJornada,
+        // 2026-07-21). Guardada contra produção: credencial conhecida. Role master
+        // + tenant do seed = cai direto no /dashboard, como o restante da equipe usa.
+        if (! app()->isProduction()) {
+            User::firstOrCreate(
+                ['email' => 'admin@teste.com'],
+                [
+                    'name'      => 'Administrador Teste',
+                    'password'  => Hash::make('Staging@2026'),
+                    'tenant_id' => $tenant->id,
+                    'role'      => 'master',
+                    'ativo'     => true,
+                ]
+            );
+        }
+
         // Login para que o trait BelongsToTenant auto-preencha tenant_id
         Auth::login($user);
 
