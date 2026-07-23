@@ -1,13 +1,19 @@
 name: Deploy to Production
 
+# Só deploya depois do CI (ci.yml) passar na main — main quebrada não chega
+# em produção. workflow_dispatch continua disponível pra deploy manual.
+
 on:
-  push:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
