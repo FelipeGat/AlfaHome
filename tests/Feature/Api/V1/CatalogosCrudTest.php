@@ -136,7 +136,7 @@ class CatalogosCrudTest extends TestCase
             'nome' => 'Maria', 'salario' => 3000.0,
         ])->assertCreated()
           ->assertJsonPath('data.nome', 'Maria')
-          ->assertJsonPath('data.salario', 3000.0)
+          ->assertJsonPath('data.salario', 3000) // a API devolve int quando o valor não tem centavos
           ->assertJsonPath('data.is_master', false);
     }
 

@@ -100,6 +100,12 @@ class AuthUpdatePasswordTest extends TestCase
         $this->withHeader('Authorization', "Bearer {$tokenOutroDispositivo}")
             ->getJson('/api/v1/auth/me')->assertOk();
 
+        // forgetGuards em cada troca de token: o guard do Sanctum fica cacheado
+        // entre requests do mesmo teste — sem limpar, o currentAccessToken da
+        // troca de senha seria o do request de sanidade acima (revogaria o
+        // token errado) e o token revogado continuaria "funcionando".
+        $this->app['auth']->forgetGuards();
+
         // Troca senha usando o token atual
         $this->withHeader('Authorization', "Bearer {$tokenAtual}")
             ->postJson('/api/v1/auth/me/password', [
@@ -109,10 +115,12 @@ class AuthUpdatePasswordTest extends TestCase
             ])->assertOk();
 
         // Token atual ainda funciona
+        $this->app['auth']->forgetGuards();
         $this->withHeader('Authorization', "Bearer {$tokenAtual}")
             ->getJson('/api/v1/auth/me')->assertOk();
 
         // Token do outro dispositivo foi revogado
+        $this->app['auth']->forgetGuards();
         $this->withHeader('Authorization', "Bearer {$tokenOutroDispositivo}")
             ->getJson('/api/v1/auth/me')->assertStatus(401);
     }

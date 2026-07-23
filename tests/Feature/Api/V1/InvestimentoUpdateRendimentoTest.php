@@ -46,7 +46,8 @@ class InvestimentoUpdateRendimentoTest extends TestCase
         $this->putJson("/api/v1/investimentos/{$inv->id}/rendimentos/{$rend->id}", [
             'valor_atual' => 1100.50,
         ])->assertOk()
-          ->assertJsonPath('data.valor_atual', 1100.50);
+          // resposta é FLAT: o campo "data" (a data) faz o Laravel pular o wrapper
+          ->assertJsonPath('valor_atual', 1100.50);
 
         $this->assertEquals(1100.50, (float) $rend->fresh()->valor_atual);
     }

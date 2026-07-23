@@ -63,7 +63,7 @@ class TransferenciaTest extends TestCase
             'data'       => now()->format('Y-m-d'),
             'origem_id'  => $origem->id,
             'destino_id' => $destino->id,
-        ])->json('data.id');
+        ])->json('id'); // resposta é FLAT: o campo "data" (a data) faz o Laravel pular o wrapper
 
         // Após criar: origem=900, destino=100
         $this->putJson("/api/v1/transferencias/{$created}", ['valor' => 300])->assertOk();
@@ -107,7 +107,7 @@ class TransferenciaTest extends TestCase
             'data'       => now()->format('Y-m-d'),
             'origem_id'  => $origem->id,
             'destino_id' => $destino->id,
-        ])->json('data.id');
+        ])->json('id'); // resposta é FLAT: o campo "data" (a data) faz o Laravel pular o wrapper
 
         // Após criar: origem=800, destino=200
         $this->deleteJson("/api/v1/transferencias/{$id}")->assertOk();

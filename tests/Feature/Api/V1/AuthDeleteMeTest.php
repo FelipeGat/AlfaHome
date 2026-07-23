@@ -21,9 +21,13 @@ class AuthDeleteMeTest extends TestCase
 
     public function test_correct_password_deactivates_account(): void
     {
+        // membro: não esbarra na proteção de "último master ativo" (o default
+        // da factory é master, que sozinho no tenant recebe 403 — coberto nos
+        // testes de proteção mais abaixo)
         $user = User::factory()->create([
             'password' => Hash::make('Senha@123'),
             'ativo'    => true,
+            'role'     => 'membro',
         ]);
         $token = $user->createToken('test-device')->plainTextToken;
 
@@ -42,6 +46,7 @@ class AuthDeleteMeTest extends TestCase
     {
         $user = User::factory()->create([
             'password' => Hash::make('Senha@123'),
+            'role'     => 'membro', // vide test_correct_password_deactivates_account
         ]);
         $token1 = $user->createToken('device-1')->plainTextToken;
         $token2 = $user->createToken('device-2')->plainTextToken;
@@ -53,7 +58,10 @@ class AuthDeleteMeTest extends TestCase
             ->deleteJson('/api/v1/auth/me', ['current_password' => 'Senha@123'])
             ->assertOk();
 
-        // Ambos os tokens revogados — qualquer chamada subsequente bate em 401/403
+        // Ambos os tokens revogados — qualquer chamada subsequente bate em 401/403.
+        // forgetGuards: o guard do Sanctum fica cacheado entre requests do mesmo
+        // teste; sem isso o usuário autenticado "sobrevive" à revogação.
+        $this->app['auth']->forgetGuards();
         $r1 = $this->withHeader('Authorization', "Bearer {$token1}")->getJson('/api/v1/auth/me');
         $r2 = $this->withHeader('Authorization', "Bearer {$token2}")->getJson('/api/v1/auth/me');
         $this->assertContains($r1->status(), [401, 403]);
