@@ -1,0 +1,26 @@
+name: Production Deploy
+
+# A tag v* é o gatilho de produção; quem executa é o deploy-tag-watcher na
+# VPS (timer de 5 min): ele confere se a imagem de assets sha-<commit> existe
+# no GHCR (= CI verde), aplica o código, extrai os assets do vite da imagem,
+# faz dump do banco antes de qualquer migração e valida o site no fim.
+# Antes deste fluxo, todo push verde na main ia direto pra produção — sem
+# decisão humana e sem os assets (que nunca eram buildados no deploy).
+# Script/units versionados em alfa-deploy/infra/prod-alfahome/.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  production-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify deployment
+        run: |
+          echo "Tag ${{ github.ref_name }} publicada. O deploy-tag-watcher na VPS"
+          echo "vai detectar a tag, validar o CI no GHCR e aplicar o deploy."
