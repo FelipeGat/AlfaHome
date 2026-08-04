@@ -1,5 +1,16 @@
 # Changelog
 
+## AlfaHome — 04/08/2026 — Mudança de servidor concluída
+
+### Melhorias
+- O AlfaHome passou a funcionar em um servidor próprio, no lugar do serviço alugado usado até agora. O endereço de acesso continua exatamente o mesmo, então nada muda no seu dia a dia: os favoritos, o atalho instalado no celular e a forma de entrar seguem iguais.
+- A publicação de novas versões passou a ser aplicada automaticamente no novo servidor, o que reduz o tempo entre uma melhoria ficar pronta e chegar até você.
+
+### Correções
+- Durante a mudança o sistema ficou indisponível por cerca de dez minutos, exibindo um aviso de manutenção. O acesso foi restabelecido e nenhum lançamento, cadastro ou arquivo foi perdido: todos os registros foram conferidos um a um antes e depois da troca.
+
+---
+
 ## AlfaHome — 09/06/2026 — Backups antigos passam a liberar espaço de fato
 
 ### Correções

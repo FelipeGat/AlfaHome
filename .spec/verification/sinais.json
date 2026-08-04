@@ -1,0 +1,374 @@
+{
+  "schema": 1,
+  "sinais": {
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-001": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-001",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.652Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-002": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-002",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-003": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-003",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-004": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-004",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-005": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-005",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-006": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-006",
+      "ocorrencias": 2,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:28:38.031Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-007": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-007",
+      "ocorrencias": 2,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:28:38.031Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-008": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-008",
+      "ocorrencias": 2,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:28:38.031Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-009": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-009",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_INEXISTENTE::migracao-prod-lxc::T-010": {
+      "codigo": "ARQUIVO_INEXISTENTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-010",
+      "ocorrencias": 2,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:28:38.031Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-001": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-001",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-002": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-002",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-003": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-003",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-004": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-004",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-005": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-005",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-006": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-006",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-007": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-007",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-008": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-008",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-009": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-009",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-010": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-010",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-011": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-011",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-012": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-012",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_TESTE::migracao-prod-lxc::AC-013": {
+      "codigo": "AC_SEM_TESTE",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-013",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "GLOB_SEM_ARQUIVOS::—::P-002": {
+      "codigo": "GLOB_SEM_ARQUIVOS",
+      "feature": "—",
+      "ref": "P-002",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:02:46.653Z",
+      "ultimaVez": "2026-08-04T15:02:46.653Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_FALHOU::migracao-prod-lxc::AC-002": {
+      "codigo": "VERIFY_FALHOU",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-002",
+      "ocorrencias": 3,
+      "primeiraVez": "2026-08-04T15:28:25.910Z",
+      "ultimaVez": "2026-08-04T15:34:32.505Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_FALHOU::migracao-prod-lxc::AC-010": {
+      "codigo": "VERIFY_FALHOU",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-010",
+      "ocorrencias": 6,
+      "primeiraVez": "2026-08-04T15:28:25.910Z",
+      "ultimaVez": "2026-08-04T18:10:45.317Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_FALHOU::migracao-prod-lxc::AC-011": {
+      "codigo": "VERIFY_FALHOU",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-011",
+      "ocorrencias": 5,
+      "primeiraVez": "2026-08-04T15:28:25.910Z",
+      "ultimaVez": "2026-08-04T18:10:06.785Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_FALHOU::migracao-prod-lxc::AC-012": {
+      "codigo": "VERIFY_FALHOU",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-012",
+      "ocorrencias": 7,
+      "primeiraVez": "2026-08-04T15:28:25.910Z",
+      "ultimaVez": "2026-08-04T18:29:21.966Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_FALHOU::migracao-prod-lxc::AC-013": {
+      "codigo": "VERIFY_FALHOU",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-013",
+      "ocorrencias": 3,
+      "primeiraVez": "2026-08-04T15:28:25.910Z",
+      "ultimaVez": "2026-08-04T15:34:32.505Z",
+      "gitRev": "cf4d01c"
+    },
+    "TASK_CONCLUIDA_SEM_PROVA::migracao-prod-lxc::T-003": {
+      "codigo": "TASK_CONCLUIDA_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-003",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:28:38.030Z",
+      "ultimaVez": "2026-08-04T15:28:38.031Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_PROVA::migracao-prod-lxc::AC-002": {
+      "codigo": "AC_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-002",
+      "ocorrencias": 3,
+      "primeiraVez": "2026-08-04T15:28:38.031Z",
+      "ultimaVez": "2026-08-04T15:33:03.797Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_PROVA::migracao-prod-lxc::AC-010": {
+      "codigo": "AC_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-010",
+      "ocorrencias": 5,
+      "primeiraVez": "2026-08-04T15:28:38.031Z",
+      "ultimaVez": "2026-08-04T18:11:09.037Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_PROVA::migracao-prod-lxc::AC-011": {
+      "codigo": "AC_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-011",
+      "ocorrencias": 3,
+      "primeiraVez": "2026-08-04T15:28:38.031Z",
+      "ultimaVez": "2026-08-04T15:33:03.799Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_PROVA::migracao-prod-lxc::AC-012": {
+      "codigo": "AC_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-012",
+      "ocorrencias": 8,
+      "primeiraVez": "2026-08-04T15:28:38.031Z",
+      "ultimaVez": "2026-08-04T18:30:00.902Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_PROVA::migracao-prod-lxc::AC-013": {
+      "codigo": "AC_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-013",
+      "ocorrencias": 3,
+      "primeiraVez": "2026-08-04T15:28:38.031Z",
+      "ultimaVez": "2026-08-04T15:33:03.799Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_OBSOLETO::migracao-prod-lxc::—": {
+      "codigo": "VERIFY_OBSOLETO",
+      "feature": "migracao-prod-lxc",
+      "ref": "—",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:31:25.087Z",
+      "ultimaVez": "2026-08-04T15:31:25.087Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_FALHOU::migracao-prod-lxc::AC-004": {
+      "codigo": "VERIFY_FALHOU",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-004",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:32:57.675Z",
+      "ultimaVez": "2026-08-04T15:32:57.675Z",
+      "gitRev": "cf4d01c"
+    },
+    "AC_SEM_PROVA::migracao-prod-lxc::AC-004": {
+      "codigo": "AC_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-004",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T15:33:03.799Z",
+      "ultimaVez": "2026-08-04T15:33:03.799Z",
+      "gitRev": "cf4d01c"
+    },
+    "VERIFY_FALHOU::migracao-prod-lxc::AC-006": {
+      "codigo": "VERIFY_FALHOU",
+      "feature": "migracao-prod-lxc",
+      "ref": "AC-006",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T17:59:19.953Z",
+      "ultimaVez": "2026-08-04T17:59:19.953Z",
+      "gitRev": "cf4d01c"
+    },
+    "ARQUIVO_ORFAO::—::infra/migracao-lxc/08-rollback.sh": {
+      "codigo": "ARQUIVO_ORFAO",
+      "feature": "—",
+      "ref": "infra/migracao-lxc/08-rollback.sh",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T18:10:45.533Z",
+      "ultimaVez": "2026-08-04T18:10:45.533Z",
+      "gitRev": "cf4d01c"
+    },
+    "TASK_CONCLUIDA_SEM_PROVA::migracao-prod-lxc::T-005": {
+      "codigo": "TASK_CONCLUIDA_SEM_PROVA",
+      "feature": "migracao-prod-lxc",
+      "ref": "T-005",
+      "ocorrencias": 1,
+      "primeiraVez": "2026-08-04T18:30:00.901Z",
+      "ultimaVez": "2026-08-04T18:30:00.901Z",
+      "gitRev": "cf4d01c"
+    }
+  }
+}

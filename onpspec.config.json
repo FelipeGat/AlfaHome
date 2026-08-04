@@ -1,0 +1,10 @@
+{
+  "testCommand": "node --test --test-reporter=tap tests/migracao/migracao.test.mjs tests/migracao/subdominios.test.mjs",
+  "reporter": "tap",
+  "testGlobs": [
+    "tests/migracao/**"
+  ],
+  "srcGlobs": [
+    "infra/migracao-lxc/**"
+  ]
+}

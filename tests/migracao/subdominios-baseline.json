@@ -1,0 +1,17 @@
+{
+  "capturadoEm": "2026-08-04T15:24:54.407Z",
+  "hosts": {
+    "gym": {
+      "status": 200,
+      "server": "cloudflare"
+    },
+    "control": {
+      "status": 200,
+      "server": "cloudflare"
+    },
+    "jornada": {
+      "status": 200,
+      "server": "cloudflare"
+    }
+  }
+}

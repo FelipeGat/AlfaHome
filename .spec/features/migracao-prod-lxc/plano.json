@@ -1,0 +1,162 @@
+{
+  "runId": "AlfaHome-migracao-prod-lxc-mseskxgy",
+  "feature": "migracao-prod-lxc",
+  "agent": "claude",
+  "modo": "sequencial",
+  "paralelizar": null,
+  "modeloForcado": null,
+  "esforcoForcado": null,
+  "geradoEm": "2026-08-04 15:07",
+  "branchTrabalho": "spec/migracao-prod-lxc",
+  "baseDir": ".spec/features/migracao-prod-lxc",
+  "specDir": ".spec",
+  "repoName": "AlfaHome",
+  "logsDir": "../onp-worktrees/AlfaHome-migracao-prod-lxc-logs",
+  "ondas": [],
+  "faixas": [],
+  "sequenciais": [
+    {
+      "id": "T-001",
+      "titulo": "Subir a stack do AlfaHome no LXC 114",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/01-subir-stack.sh"
+      ],
+      "refs": [
+        "AC-002"
+      ]
+    },
+    {
+      "id": "T-002",
+      "titulo": "Publicar o túnel Cloudflare e o endereço de validação",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/02-tunnel.sh"
+      ],
+      "refs": [
+        "AC-001",
+        "AC-003"
+      ]
+    },
+    {
+      "id": "T-003",
+      "titulo": "Canário de origem, IP real e sessão segura atrás do túnel",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/03-canario-e-nginx.sh"
+      ],
+      "refs": [
+        "AC-002",
+        "AC-007",
+        "AC-008"
+      ]
+    },
+    {
+      "id": "T-004",
+      "titulo": "Ensaio de dados: importar dump e arquivos no 114",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/04-restaurar-dados.sh"
+      ],
+      "refs": [
+        "AC-004",
+        "AC-005",
+        "AC-006"
+      ]
+    },
+    {
+      "id": "T-005",
+      "titulo": "Escrever os testes que provam os critérios",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "tests/migracao/migracao.test.mjs"
+      ],
+      "refs": [
+        "AC-001",
+        "AC-002",
+        "AC-003",
+        "AC-004",
+        "AC-005",
+        "AC-006",
+        "AC-007",
+        "AC-008",
+        "AC-010",
+        "AC-011",
+        "AC-012",
+        "AC-013"
+      ]
+    },
+    {
+      "id": "T-006",
+      "titulo": "Janela de corte: congelar a VPS, dados finais e virar o DNS",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/05-cutover.sh"
+      ],
+      "refs": [
+        "AC-001",
+        "AC-002",
+        "AC-004",
+        "AC-006",
+        "AC-013"
+      ]
+    },
+    {
+      "id": "T-007",
+      "titulo": "Ligar o vigia de versões no servidor novo",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/06-watcher.sh"
+      ],
+      "refs": [
+        "AC-010"
+      ]
+    },
+    {
+      "id": "T-008",
+      "titulo": "Cópias de segurança da nova produção",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/07-backups.sh"
+      ],
+      "refs": [
+        "AC-011",
+        "AC-012"
+      ]
+    },
+    {
+      "id": "T-009",
+      "titulo": "Provar que os demais endereços da zona não foram afetados",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "tests/migracao/subdominios.test.mjs"
+      ],
+      "refs": [
+        "AC-009"
+      ]
+    },
+    {
+      "id": "T-010",
+      "titulo": "Documentar o novo acesso e o caminho de volta",
+      "modelo": "claude-sonnet-5",
+      "esforco": "medium",
+      "arquivos": [
+        "infra/migracao-lxc/README.md"
+      ],
+      "refs": [
+        "AC-013"
+      ]
+    }
+  ],
+  "concluidas": [],
+  "avisos": []
+}

@@ -1,0 +1,77 @@
+{
+  "feature": "migracao-prod-lxc",
+  "timestamp": "2026-08-04T18:29:21.936Z",
+  "gitRev": "cf4d01c",
+  "command": "node --test --test-reporter=tap tests/migracao/migracao.test.mjs tests/migracao/subdominios.test.mjs",
+  "reporter": "tap",
+  "exitCode": 1,
+  "testsParsed": 13,
+  "results": {
+    "AC-001": {
+      "status": "pass",
+      "testName": "@spec:AC-001 o endereço de sempre abre a tela de entrada",
+      "method": "tap"
+    },
+    "AC-002": {
+      "status": "pass",
+      "testName": "@spec:AC-002 quem responde é o servidor novo, não a VPS",
+      "method": "tap"
+    },
+    "AC-003": {
+      "status": "pass",
+      "testName": "@spec:AC-003 o acesso continua seguro (HTTPS)",
+      "method": "tap"
+    },
+    "AC-004": {
+      "status": "pass",
+      "testName": "@spec:AC-004 os cadastros conferem dos dois lados",
+      "method": "tap"
+    },
+    "AC-005": {
+      "status": "pass",
+      "testName": "@spec:AC-005 o banco está na versão certa do sistema",
+      "method": "tap"
+    },
+    "AC-006": {
+      "status": "pass",
+      "testName": "@spec:AC-006 os arquivos enviados pelos usuários continuam lá",
+      "method": "tap"
+    },
+    "AC-007": {
+      "status": "pass",
+      "testName": "@spec:AC-007 a entrada no sistema não dá erro de página expirada",
+      "method": "tap"
+    },
+    "AC-008": {
+      "status": "pass",
+      "testName": "@spec:AC-008 os registros mostram o endereço real de quem acessou",
+      "method": "tap"
+    },
+    "AC-009": {
+      "status": "pass",
+      "testName": "@spec:AC-009 os demais endereços da zona seguem respondendo",
+      "method": "tap"
+    },
+    "AC-010": {
+      "status": "pass",
+      "testName": "@spec:AC-010 o servidor novo aplica sozinho a versão publicada",
+      "method": "tap"
+    },
+    "AC-011": {
+      "status": "pass",
+      "testName": "@spec:AC-011 a cópia diária do banco novo existe e está fresca",
+      "method": "tap"
+    },
+    "AC-012": {
+      "status": "fail",
+      "testName": "@spec:AC-012 a cópia externa (nuvem) continua sendo enviada",
+      "method": "tap"
+    },
+    "AC-013": {
+      "status": "pass",
+      "testName": "@spec:AC-013 a VPS fica intacta e pronta para reassumir",
+      "method": "tap"
+    }
+  },
+  "principles": {}
+}
