@@ -1,5 +1,18 @@
 # Changelog
 
+## AlfaHome — 18/08/2026 — Cópia de segurança restabelecida
+
+### Correções
+- **A cópia de segurança diária voltou a funcionar.** De 13 a 18/08 o backup não estava sendo concluído: o espaço da conta de armazenamento em nuvem havia se esgotado e o envio falhava. Como não existia nenhuma cópia guardada no próprio servidor, nesses dias não havia backup em lugar algum. O envio foi restabelecido e a cópia mais recente já está guardada fora do servidor.
+
+### Melhorias
+- **Agora existe também uma cópia de segurança no próprio servidor**, além da cópia na nuvem, mantida pelos últimos 7 dias. Se o envio para a nuvem falhar num dia, o backup daquele dia não se perde mais — antes, uma falha de envio significava ficar sem backup.
+- **Restaurar os dados de um cliente ficou mais rápido**, porque passa a usar a cópia local em vez de baixar tudo da nuvem.
+
+### Segurança
+- **Novo aviso de backup sem cópia externa.** A equipe passa a ser avisada quando o sistema ficar mais de dois dias sem uma cópia de segurança guardada fora do servidor. Antes nada avisava que os backups tinham parado — a falha ficou seis dias sem ser notada.
+- **A limpeza de backups antigos deixou de depender do envio dar certo.** Era essa dependência que travava tudo: com o armazenamento cheio, a única rotina capaz de liberar espaço não chegava a rodar, e o sistema não se recuperava sozinho.
+
 ## AlfaHome — 04/08/2026 — Mudança de servidor concluída
 
 ### Melhorias
