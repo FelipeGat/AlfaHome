@@ -17,7 +17,7 @@
 set -euo pipefail
 
 DATE=$(TZ=America/Sao_Paulo date +%Y-%m-%d)
-TMP_DIR="/tmp/alfahome_backup_${DATE}_$$"
+TMP_DIR="${TMP_ROOT:-/var/tmp}/alfahome_backup_${DATE}_$$"
 LOG_DIR="/opt/alfahome/backup/logs"
 LOG_FILE="${LOG_DIR}/backup_${DATE}.log"
 RUN_DIR="/opt/alfahome/backup/run"
@@ -29,6 +29,15 @@ PROJECT_DIR="/var/www/alfahome"
 mkdir -p "$LOG_DIR" "$TMP_DIR/global" "$TMP_DIR/clientes" "$RUN_DIR"
 
 exec > >(tee -a "$LOG_FILE") 2>&1
+
+# Limpeza garantida do staging, inclusive no caminho de falha. Sem isto cada
+# falha deixava o staging para trás em /tmp — que é tmpfs (RAM): no AlfaGym três
+# dias assim encheram a memória e derrubaram o `docker exec` da VPS (24/07/2026).
+# Por isso o staging também saiu de /tmp para /var/tmp (disco).
+trap 'rm -rf "$TMP_DIR"' EXIT
+find "${TMP_ROOT:-/var/tmp}" -maxdepth 1 -name 'alfahome_backup_*' -mtime +1 -exec rm -rf {} + 2>/dev/null || true
+rm -rf /tmp/alfahome_backup_* 2>/dev/null || true
+
 
 [ -f /opt/alfahome/backup/backup.env ] && source /opt/alfahome/backup/backup.env
 
@@ -58,6 +67,44 @@ trap '_notify "❌ Backup AlfaHome GLOBAL falhou — $(date +%H:%M:%S)"' ERR
 # o que move os arquivos para a Lixeira (continuam ocupando cota) em vez de apagar.
 # Por isso todas as remoções abaixo usam --drive-use-trash=false: a contenção
 # precisa liberar espaço de fato. Não remover essa flag.
+# ─── Faxina: pastas datadas sem dump global ──────────────────────────────────
+# Uma pasta sem o SQL global não é ponto de restauração — é resto de upload
+# interrompido. Em 08/2026 a cota estourada deixou vários dias assim, e a GFS
+# ainda os "protegia" por estarem dentro da janela dos últimos 7 dias.
+# A remoção exige EVIDÊNCIA POSITIVA: listagem que falha preserva a pasta. Sem
+# essa guarda, uma falha transitória da API do Drive (comum sob rate limit) é
+# lida como "pasta sem dump" — foi assim que o snapshot de 11/08 do AlfaGym foi
+# apagado por engano, e sem lixeira não há como voltar.
+_purge_incompletos() {
+  local D LISTAGEM GLOBAL RC
+  while IFS= read -r D; do
+    [[ -z "$D" || "$D" == "$DATE" ]] && continue
+
+    LISTAGEM=$(rclone lsf "${GDRIVE_REMOTE}/${D}/" 2>/dev/null) && RC=0 || RC=$?
+    if [ "$RC" -ne 0 ]; then
+      _log "  listagem de ${D} falhou — preservando por precaução"
+      continue
+    fi
+
+    if [ -z "$LISTAGEM" ]; then
+      _log "  vazia — removendo: $D"
+      rclone purge --drive-use-trash=false "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
+      continue
+    fi
+
+    GLOBAL=$(rclone lsf "${GDRIVE_REMOTE}/${D}/global/" 2>/dev/null) && RC=0 || RC=$?
+    if [ "$RC" -ne 0 ]; then
+      _log "  listagem de ${D}/global falhou — preservando por precaução"
+      continue
+    fi
+    if ! echo "$GLOBAL" | grep -q '^alfahome_full_.*\.sql\.gz$'; then
+      _log "  sem dump global — removendo: $D"
+      rclone purge --drive-use-trash=false "${GDRIVE_REMOTE}/${D}/" 2>/dev/null || true
+    fi
+  done < <(rclone lsd "${GDRIVE_REMOTE}/" 2>/dev/null | awk '{print $NF}' \
+    | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort -r)
+}
+
 _gfs_cleanup() {
   local DAILY_CUT WEEKLY_CUT MONTHLY_CUT SEEN_WEEKS SEEN_MONTHS
   DAILY_CUT=$(date -d "-7 days" +%Y-%m-%d)
@@ -219,25 +266,60 @@ fi
 
 crontab -l > "${CONFIG_DIR}/crontab_root.txt" 2>/dev/null && _log "  ✓ crontab" || true
 
-# ─── 5. UPLOAD GOOGLE DRIVE ──────────────────────────────────────────────────
-_log "[5/5] Enviando ao Google Drive..."
-rclone copy "${TMP_DIR}" "${GDRIVE_REMOTE}/${DATE}/" 2>&1 | tail -3
-_log "  ✓ Upload concluído"
+# ─── 5. CÓPIA LOCAL + FAXINA + UPLOAD ────────────────────────────────────────
+# A cópia local é a base; o Drive é a cópia externa. Nenhuma depende da outra.
+# Até 08/2026 não havia cópia local nenhuma: quando o upload falhava, o backup
+# daquele dia simplesmente deixava de existir. Foi o que aconteceu de 13 a
+# 18/08, com a cota do Drive estourada.
+LOCAL_ROOT="/opt/alfahome/backup/data"
+LOCAL_BACKUP_DIR="${LOCAL_ROOT}/${DATE}"
+rm -rf "$LOCAL_BACKUP_DIR"
+mkdir -p "$LOCAL_BACKUP_DIR"
+cp -r "${TMP_DIR}/." "$LOCAL_BACKUP_DIR/" 2>/dev/null || true
+_log "[5/5] Cópia local: ${LOCAL_BACKUP_DIR} — $(du -sh "$LOCAL_BACKUP_DIR" | cut -f1)"
+find "$LOCAL_ROOT" -maxdepth 1 -type d -name '20*' -mtime +7 -exec rm -rf {} + 2>/dev/null || true
+
+GDRIVE_OK=false
+if rclone lsd "${GDRIVE_REMOTE}/" >/dev/null 2>&1; then
+
+  # FAXINA ANTES DO UPLOAD — ORDEM CRÍTICA. Até 08/2026 ela vinha depois: com
+  # `set -e`, a falha de cota abortava o script antes dela, então a nuvem cheia
+  # impedia a única rotina capaz de esvaziá-la e o estado não se recuperava.
+  _log "  Faxina do Google Drive..."
+  _purge_incompletos
+  _gfs_cleanup
+
+  _log "  Enviando ao Google Drive..."
+  if rclone copy "${TMP_DIR}" "${GDRIVE_REMOTE}/${DATE}/" 2>&1 | tail -3; then
+    GDRIVE_OK=true
+    _log "  ✓ Upload concluído"
+  else
+    _log "  ⚠ Upload falhou — backup mantido localmente"
+  fi
+else
+  _log "  ⚠ Google Drive indisponível — backup apenas local"
+fi
 
 /opt/alfahome/backup/list_backups.sh 2>/dev/null || true
-
-rm -rf "$TMP_DIR"
-
-_log "Aplicando política de retenção GFS..."
-_gfs_cleanup
 
 DURACAO=$(( $(date +%s) - INICIO ))
 [ "$DURACAO" -ge 60 ] && DUR_FMT="$((DURACAO/60))m $((DURACAO%60))s" || DUR_FMT="${DURACAO}s"
 
-_notify "✅ Backup Global AlfaHome concluído
+# O aviso precisa distinguir "completo" de "só local" — backup sem cópia fora
+# do servidor é meio backup.
+if $GDRIVE_OK; then
+  _notify "✅ Backup Global AlfaHome concluído
 🏠 ${TENANTS_COUNT} tenant(s) processado(s)
 📦 SQL global: ${SQL_GLOBAL_SIZE}
+☁️ Local + Google Drive
 📅 ${DATE} | ⏱ ${DUR_FMT}"
-
-_log "=== Backup concluído com sucesso ==="
-_status "success" "Backup global concluído com sucesso."
+  _log "=== Backup concluído com sucesso (local + Drive) ==="
+  _status "success" "Backup global concluído com sucesso."
+else
+  _notify "⚠️ Backup AlfaHome SEM CÓPIA EXTERNA
+🏠 ${TENANTS_COUNT} tenant(s) — cópia local OK em ${LOCAL_BACKUP_DIR}
+❌ Envio ao Google Drive falhou — os dados estão apenas neste servidor
+📅 ${DATE} | ⏱ ${DUR_FMT}"
+  _log "=== Backup local OK — Drive falhou ==="
+  _status "warning" "Backup local concluído; envio ao Google Drive falhou."
+fi
