@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Banco;
+use App\Models\Despesa;
 use App\Models\Familiar;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
@@ -39,18 +40,8 @@ class BancoController extends Controller
                 // Para resincronizar dados legados (pré-observer) sem
                 // depender de uma navegação, use o comando dedicado:
                 //   php artisan bancos:resync-saldo-cartao
-                //
-                // Inclui tipo_pagamento = 'credito' OU NULL (registros sem
-                // tipo definido) — exclui pix/débito/dinheiro/transferencia/boleto.
-                $banco->saldo_cartao = (float) DB::table('despesas')
-                    ->where('tenant_id', $tenantId)
-                    ->whereNull('deleted_at')
+                $banco->saldo_cartao = (float) Despesa::faturaAberta()
                     ->where('forma_pagamento', $banco->id)
-                    ->where(function ($q) {
-                        $q->where('tipo_pagamento', 'credito')
-                          ->orWhereNull('tipo_pagamento');
-                    })
-                    ->whereNull('data_pagamento')
                     ->sum('valor');
             });
 

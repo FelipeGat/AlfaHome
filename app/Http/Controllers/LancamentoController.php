@@ -11,6 +11,7 @@ use App\Models\Receita;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Rule;
 
 class LancamentoController extends Controller
 {
@@ -141,7 +142,7 @@ class LancamentoController extends Controller
     {
         $request->validate([
             'arquivo'  => 'required|file|mimes:ofx,ofc,qfx,csv,txt|max:5120',
-            'banco_id' => 'required|exists:bancos,id',
+            'banco_id' => ['required', Rule::exists('bancos', 'id')->where('tenant_id', Auth::user()->tenant_id)],
         ]);
 
         $conteudo  = file_get_contents($request->file('arquivo')->getRealPath());
@@ -166,7 +167,7 @@ class LancamentoController extends Controller
     public function confirmarImportacao(Request $request)
     {
         $request->validate([
-            'banco_id'     => 'required|exists:bancos,id',
+            'banco_id'     => ['required', Rule::exists('bancos', 'id')->where('tenant_id', Auth::user()->tenant_id)],
             'transacoes'   => 'required|array|min:1',
             'transacoes.*.data'      => 'required|date',
             'transacoes.*.valor'     => 'required|numeric|min:0.01',

@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Models\Despesa;
 use App\Models\Familiar;
+use App\Services\Planejamento\PlanejamentoService;
 
 class DashboardController extends Controller
 {
@@ -236,30 +238,18 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($cartao) use ($tenantId, $inicio, $fim) {
                 // Gastos no período selecionado (para exibição do contexto mensal)
-                // Inclui tipo_pagamento = 'credito' OU NULL (registros legados sem tipo definido)
-                // Exclui explicitamente pix/débito/dinheiro/transferencia/boleto
                 $cartao->gastos_periodo = (float) DB::table('despesas')
                     ->where('tenant_id', $tenantId)
                     ->whereNull('deleted_at')
                     ->where('forma_pagamento', $cartao->id)
-                    ->where(function ($q) {
-                        $q->where('tipo_pagamento', 'credito')
-                          ->orWhereNull('tipo_pagamento');
-                    })
+                    ->where('tipo_pagamento', 'credito')
                     ->whereBetween('data_compra', [$inicio, $fim])
                     ->sum('valor');
 
                 // Saldo total em fatura = despesas não pagas do cartão (sem filtro de período)
                 // Usado para calcular percentual de uso real do limite
-                $cartao->saldo_fatura = (float) DB::table('despesas')
-                    ->where('tenant_id', $tenantId)
-                    ->whereNull('deleted_at')
+                $cartao->saldo_fatura = (float) Despesa::faturaAberta()
                     ->where('forma_pagamento', $cartao->id)
-                    ->where(function ($q) {
-                        $q->where('tipo_pagamento', 'credito')
-                          ->orWhereNull('tipo_pagamento');
-                    })
-                    ->whereNull('data_pagamento')
                     ->sum('valor');
 
                 $cartao->limite_disponivel = (float) $cartao->limite_cartao - $cartao->saldo_fatura;
@@ -271,7 +261,8 @@ class DashboardController extends Controller
 
         $totalGastosCartoes = $cartoes->sum('gastos_periodo');
         $totalLimiteCartoes = $cartoes->sum('limite_cartao');
-        $totalFaturaCartoes = $cartoes->sum('gastos_periodo');
+        // Fatura aberta, a mesma da lista de cartões logo abaixo no painel.
+        $totalFaturaCartoes = $cartoes->sum('saldo_fatura');
 
         // ─── Investimentos ────────────────────────────────────────────────────
 
@@ -294,12 +285,12 @@ class DashboardController extends Controller
         }
 
         // Patrimônio acumulado simulado (taxa 1% a.m.)
+        // Soma acumulada do que foi aportado no ano. Sem rendimento simulado:
+        // o painel só mostra o que foi lançado.
         $patrimonioAcumulado = [];
         $saldoAnt            = 0;
-        $taxaMensal          = 0.01;
         foreach ($investMes as $aporte) {
-            $rendimento = $saldoAnt * $taxaMensal;
-            $saldoAnt   = $saldoAnt + $aporte + $rendimento;
+            $saldoAnt += $aporte;
             $patrimonioAcumulado[] = round($saldoAnt, 2);
         }
 
@@ -396,7 +387,11 @@ class DashboardController extends Controller
             }))
             ->sum('valor');
 
+        // ─── Planejamento da planilha (mesmo serviço das telas e da API) ──────
+        $planilha = app(PlanejamentoService::class)->resumoMes($tenantId, Carbon::parse($inicio));
+
         return view('dashboard', compact(
+            'planilha',
             'inicio', 'fim', 'ano',
             'nomeMes', 'anoMes', 'linkMesAnt', 'linkMesProx',
             'totalReceitas', 'totalDespesas', 'saldo',

@@ -84,6 +84,38 @@
     </div>
 </div>
 
+{{-- ─── Planejamento da planilha ────────────────────────────────────────── --}}
+@if($planilha['ultima_importacao'])
+@php
+    $plBrl = fn ($v) => 'R$ ' . number_format($v, 2, ',', '.');
+    $plPct = fn ($v) => number_format($v, 2, ',', '.') . '%';
+    $plNumeros = [
+        ['Receitas realizadas', $plBrl($planilha['receitas']['realizado']), 'var(--color-success)'],
+        ['Despesas realizadas', $plBrl($planilha['despesas']['realizado']), 'var(--color-danger)'],
+        ['Saldo do mês', $plBrl($planilha['saldo']['realizado']), $planilha['saldo']['realizado'] >= 0 ? 'var(--color-success)' : 'var(--color-danger)'],
+        ['Economia', $plPct($planilha['economia_pct']), 'var(--color-text)'],
+        ['Limite disponível', $plBrl($planilha['cartoes']['limite_disponivel']), 'var(--color-text)'],
+        ['Faturas em aberto', $plBrl($planilha['cartoes']['faturas_abertas']), 'var(--color-text)'],
+        ['Saldo de dívidas', $plBrl($planilha['dividas']['saldo_total']), 'var(--color-text)'],
+        ['Metas — progresso', $plPct($planilha['metas']['progresso_medio_pct']), 'var(--color-text)'],
+    ];
+@endphp
+<div class="card mb-5" style="padding:16px 20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <div class="card-title"><i class="fa-solid fa-scale-balanced" style="color:var(--color-primary);"></i> Planejamento do mês</div>
+        <a href="{{ route('planejamento.index', ['mes' => \Carbon\Carbon::parse($inicio)->format('Y-m')]) }}" style="font-size:12px;font-weight:600;color:var(--color-primary);text-decoration:none;">Ver previsto x realizado &rarr;</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+        @foreach($plNumeros as [$plRotulo, $plValor, $plCor])
+        <div>
+            <div style="font-size:11px;font-weight:600;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;">{{ $plRotulo }}</div>
+            <div style="font-size:17px;font-weight:700;color:{{ $plCor }};">{{ $plValor }}</div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
+
 {{-- ─── Posição Atual (Saldos) ──────────────────────────────────────────── --}}
 @php
     // Saldo em Contas: apenas contas correntes (exclui cartão de crédito, poupança exclusiva, dinheiro)
@@ -453,7 +485,7 @@
     <div class="card">
         <div class="card-title">
             <i class="fa-solid fa-chart-line" style="color:var(--color-warning);"></i>
-            Patrimônio Acumulado {{ $ano }}
+            Aportes acumulados {{ $ano }}
         </div>
         <div class="chart-box">
             <canvas id="investChart"></canvas>
@@ -608,7 +640,7 @@ function _buildDashCharts() {
         type: 'line',
         data: {
             labels: _meses,
-            datasets: [{ label: 'Patrimônio (R$)', data: _investData, borderColor: '#d97706', backgroundColor: 'rgba(217,119,6,.08)', fill: true, tension: .35, pointRadius: 3 }]
+            datasets: [{ label: 'Aportado (R$)', data: _investData, borderColor: '#d97706', backgroundColor: 'rgba(217,119,6,.08)', fill: true, tension: .35, pointRadius: 3 }]
         },
         options: { ...defaults, scales: axisOpts }
     }));

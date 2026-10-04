@@ -2,12 +2,13 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Models\Receita;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreReceitaRequest extends FormRequest
 {
-    public const TIPOS_PAGAMENTO = ['dinheiro', 'pix', 'debito', 'credito', 'transferencia', 'boleto'];
+    public const TIPOS_PAGAMENTO = Receita::TIPOS_PAGAMENTO;
     public const FREQUENCIAS     = ['diaria', 'semanal', 'quinzenal', 'mensal', 'trimestral', 'semestral', 'anual'];
 
     public function authorize(): bool

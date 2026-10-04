@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\DespesaController as ApiDespesaController;
 use App\Http\Controllers\Api\V1\FamiliarApiController;
 use App\Http\Controllers\Api\V1\FornecedorApiController;
 use App\Http\Controllers\Api\V1\InvestimentoApiController;
+use App\Http\Controllers\Api\V1\PlanejamentoApiController;
 use App\Http\Controllers\Api\V1\ReceitaController as ApiReceitaController;
 use App\Http\Controllers\Api\V1\TransferenciaController;
 
@@ -35,7 +36,10 @@ use App\Http\Controllers\Api\V1\TransferenciaController;
 Route::get('/app/version', [AppUpdateController::class, 'version'])
     ->name('api.app.version');
 
-Route::middleware(['auth', 'tenant.ativo'])->group(function () {
+// Chamadas pelo navegador com o cookie de sessão (painel offline, push e
+// sincronização do service worker): precisam do grupo "web" para a sessão
+// existir — sem ele o middleware "auth" respondia 401 em toda página.
+Route::middleware(['web', 'auth', 'tenant.ativo'])->group(function () {
 
     Route::get('/dashboard/snapshot', [DashboardApiController::class, 'snapshot'])
         ->name('api.dashboard.snapshot');
@@ -127,6 +131,20 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get(   'transferencias/{transferencia}',   [TransferenciaController::class, 'show'])->name('transferencias.show');
         Route::put(   'transferencias/{transferencia}',   [TransferenciaController::class, 'update'])->name('transferencias.update');
         Route::delete('transferencias/{transferencia}',   [TransferenciaController::class, 'destroy'])->name('transferencias.destroy');
+
+        // ── Planejamento (planilha da família — somente leitura + envio) ─
+        Route::prefix('planejamento')->name('planejamento.')->group(function () {
+            Route::get( 'resumo',       [PlanejamentoApiController::class, 'resumo'])->name('resumo');
+            Route::get( 'anual',        [PlanejamentoApiController::class, 'anual'])->name('anual');
+            Route::get( 'lancamentos',  [PlanejamentoApiController::class, 'lancamentos'])->name('lancamentos');
+            Route::get( 'cartoes',      [PlanejamentoApiController::class, 'cartoes'])->name('cartoes');
+            Route::get( 'parceladas',   [PlanejamentoApiController::class, 'parceladas'])->name('parceladas');
+            Route::get( 'dividas',      [PlanejamentoApiController::class, 'dividas'])->name('dividas');
+            Route::get( 'metas',        [PlanejamentoApiController::class, 'metas'])->name('metas');
+            Route::get( 'contas-fixas', [PlanejamentoApiController::class, 'contasFixas'])->name('contas-fixas');
+            Route::get( 'importacoes',  [PlanejamentoApiController::class, 'importacoes'])->name('importacoes');
+            Route::post('importar',     [PlanejamentoApiController::class, 'importar'])->name('importar');
+        });
 
         // ── Despesas (CRUD) ──────────────────────────────────────────────
         Route::get(   'despesas',                   [ApiDespesaController::class, 'index'])->name('despesas.index');

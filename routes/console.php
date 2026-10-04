@@ -132,3 +132,52 @@ Artisan::command('bancos:resync-saldo-cartao {--tenant= : ID do tenant (opcional
         $this->info("Sync concluido: {$changed} cartao(oes) atualizados.");
     }
 })->purpose('Resincroniza bancos.saldo_cartao a partir das despesas em aberto (dados legados)');
+
+/**
+ * php artisan planilha:importar {arquivo} {--tenant=}
+ *
+ * Importa a planilha de planejamento (.xlsx) para o tenant informado — mesmo
+ * serviço usado pela tela Planejamento > Importar planilha. Serve para a carga
+ * inicial e para reimportar sem passar pelo navegador.
+ */
+Artisan::command(
+    'planilha:importar {arquivo : Caminho do .xlsx} {--tenant= : ID do tenant (família)}',
+    function (\App\Services\Planejamento\PlanilhaImportService $servico) {
+        $arquivo = $this->argument('arquivo');
+        if (! is_file($arquivo)) {
+            $this->error("Arquivo não encontrado: {$arquivo}");
+
+            return 1;
+        }
+
+        $tenant = \App\Models\Tenant::find($this->option('tenant'));
+        if (! $tenant) {
+            $this->error('Informe um tenant existente com --tenant=<id>.');
+
+            return 1;
+        }
+
+        $importacao = $servico->importar($tenant->id, null, $arquivo, basename($arquivo));
+
+        if ($importacao->status === \App\Models\PlanilhaImportacao::REJEITADA) {
+            $this->error('Planilha rejeitada — nada foi gravado.');
+            foreach ($importacao->erros as $erro) {
+                $this->line(sprintf('  %s%s: %s', $erro['aba'] ?? 'Arquivo', $erro['linha'] ? " linha {$erro['linha']}" : '', $erro['mensagem']));
+            }
+
+            return 1;
+        }
+
+        $abas = \App\Services\Planejamento\PlanilhaParser::abas();
+        $this->table(
+            ['Aba', 'Incluídas', 'Atualizadas', 'Removidas', 'Mantidas'],
+            collect($importacao->resumo)->map(fn ($r, $aba) => [$abas[$aba], $r['incluidas'], $r['atualizadas'], $r['removidas'], $r['mantidas']])->values()->all()
+        );
+        foreach ($importacao->avisos ?? [] as $aviso) {
+            $this->warn(sprintf('  %s linha %s: %s', $aviso['aba'], $aviso['linha'], $aviso['mensagem']));
+        }
+        $this->info($importacao->status === \App\Models\PlanilhaImportacao::SEM_ALTERACOES ? 'Sem alterações.' : 'Planilha importada.');
+
+        return 0;
+    }
+)->purpose('Importa a planilha de planejamento financeiro para um tenant');

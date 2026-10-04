@@ -13,7 +13,6 @@ use Illuminate\Validation\Rule;
 class ReceitaController extends Controller
 {
     /** Tipos de recebimento aceitos */
-    private const TIPOS_PAGAMENTO = ['dinheiro', 'pix', 'transferencia', 'deposito', 'outros'];
 
     public function index(Request $request)
     {
@@ -73,7 +72,7 @@ class ReceitaController extends Controller
             'categoria_id'              => ['nullable', Rule::exists('categorias', 'id')->where('tenant_id', $tenantId)],
             'quem_recebeu'              => ['nullable', Rule::exists('familiares', 'id')->where('tenant_id', $tenantId)],
             'forma_recebimento'         => ['nullable', Rule::exists('bancos', 'id')->where('tenant_id', $tenantId)],
-            'tipo_pagamento'            => ['nullable', Rule::in(self::TIPOS_PAGAMENTO)],
+            'tipo_pagamento'            => ['nullable', Rule::in(Receita::TIPOS_PAGAMENTO)],
             'parcelas'                  => 'nullable|integer|min:0|max:360',
             'frequencia'                => 'nullable|in:diaria,semanal,quinzenal,mensal,trimestral,semestral,anual',
         ]);
@@ -96,7 +95,7 @@ class ReceitaController extends Controller
             'categoria_id'              => ['nullable', Rule::exists('categorias', 'id')->where('tenant_id', $tenantId)],
             'quem_recebeu'              => ['nullable', Rule::exists('familiares', 'id')->where('tenant_id', $tenantId)],
             'forma_recebimento'         => ['nullable', Rule::exists('bancos', 'id')->where('tenant_id', $tenantId)],
-            'tipo_pagamento'            => ['nullable', Rule::in(self::TIPOS_PAGAMENTO)],
+            'tipo_pagamento'            => ['nullable', Rule::in(Receita::TIPOS_PAGAMENTO)],
             'observacoes'               => 'nullable|string|max:2000',
         ]);
 
@@ -106,7 +105,8 @@ class ReceitaController extends Controller
             Receita::where('tenant_id', $tenantId)
                 ->where('grupo_recorrencia_id', $receita->grupo_recorrencia_id)
                 ->where('data_prevista_recebimento', '>=', $receita->data_prevista_recebimento)
-                ->update([
+                ->get()
+                ->each->update([
                     'quem_recebeu'      => $request->quem_recebeu,
                     'categoria_id'      => $request->categoria_id,
                     'forma_recebimento' => $request->forma_recebimento,
@@ -139,10 +139,13 @@ class ReceitaController extends Controller
         $escopo   = $request->get('escopo', 'apenas_esta');
 
         if ($escopo === 'esta_e_futuras' && $receita->grupo_recorrencia_id) {
-            $count = Receita::where('tenant_id', $tenantId)
+            $receitas = Receita::where('tenant_id', $tenantId)
                 ->where('grupo_recorrencia_id', $receita->grupo_recorrencia_id)
                 ->where('data_prevista_recebimento', '>=', $receita->data_prevista_recebimento)
-                ->delete();
+                ->get();
+
+            $count = $receitas->count();
+            $receitas->each->delete(); // dispara observer para cada registro
 
             return back()->with('success', "{$count} receita(s) excluída(s)!");
         }

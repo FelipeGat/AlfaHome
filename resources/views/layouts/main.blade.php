@@ -1152,6 +1152,28 @@
             <i class="fa-solid fa-arrows-left-right"></i> <span>Contas / Baixas</span>
         </a>
 
+        <div class="sidebar-section-label">Planejamento</div>
+        <a href="{{ route('planejamento.index') }}" class="sidebar-link {{ request()->routeIs('planejamento.index', 'planejamento.anual') ? 'active' : '' }}" data-label="Planejamento">
+            <i class="fa-solid fa-scale-balanced"></i> <span>Previsto x Realizado</span>
+        </a>
+        <a href="{{ route('planejamento.cartoes') }}" class="sidebar-link {{ request()->routeIs('planejamento.cartoes') ? 'active' : '' }}" data-label="Cartões e Parceladas">
+            <i class="fa-solid fa-credit-card"></i> <span>Cartões e Parceladas</span>
+        </a>
+        <a href="{{ route('planejamento.dividas') }}" class="sidebar-link {{ request()->routeIs('planejamento.dividas') ? 'active' : '' }}" data-label="Dívidas">
+            <i class="fa-solid fa-hand-holding-dollar"></i> <span>Dívidas</span>
+        </a>
+        <a href="{{ route('planejamento.metas') }}" class="sidebar-link {{ request()->routeIs('planejamento.metas') ? 'active' : '' }}" data-label="Metas">
+            <i class="fa-solid fa-bullseye"></i> <span>Metas</span>
+        </a>
+        <a href="{{ route('planejamento.contas-fixas') }}" class="sidebar-link {{ request()->routeIs('planejamento.contas-fixas') ? 'active' : '' }}" data-label="Contas Fixas">
+            <i class="fa-solid fa-calendar-check"></i> <span>Contas Fixas</span>
+        </a>
+        @if(Auth::user()->role === 'master')
+        <a href="{{ route('planejamento.importar') }}" class="sidebar-link {{ request()->routeIs('planejamento.importar') ? 'active' : '' }}" data-label="Importar Planilha">
+            <i class="fa-solid fa-file-arrow-up"></i> <span>Importar Planilha</span>
+        </a>
+        @endif
+
         <div class="sidebar-section-label">Lançamentos</div>
         @if(Auth::user()->temPermissao('despesas', 'criar'))
         <a href="{{ route('lancamentos.index') }}" class="sidebar-link {{ request()->routeIs('lancamentos.*') ? 'active' : '' }}" data-label="Lançamentos">
@@ -1389,6 +1411,11 @@
             <li>
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('planejamento.index') }}" class="{{ request()->routeIs('planejamento.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-scale-balanced"></i> Planejar
                 </a>
             </li>
             @if(Auth::user()->temPermissao('despesas', 'criar'))
@@ -1657,7 +1684,7 @@
 
             await fetch('/api/push/subscribe', {
                 method:  'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
                 credentials: 'include',
                 body: JSON.stringify(subscription.toJSON()),
             });
@@ -1679,7 +1706,7 @@
 
         await fetch('/api/push/unsubscribe', {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
             credentials: 'include',
             body: JSON.stringify({ endpoint: sub.endpoint }),
         });

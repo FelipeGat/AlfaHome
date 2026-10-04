@@ -15,6 +15,8 @@ use App\Http\Controllers\LancamentoController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\CupomIndicacaoController;
 use App\Http\Controllers\MembroController;
+use App\Http\Controllers\PlanejamentoController;
+use App\Http\Controllers\PlanilhaImportacaoController;
 use App\Http\Controllers\Admin\SaasDashboardController;
 use App\Http\Controllers\Admin\PlanoController;
 use App\Http\Controllers\Admin\RevendaAdminController;
@@ -101,6 +103,18 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao'])->group(function () {
 
     // Alertas financeiros
     Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
+
+    // Planejamento (planilha da família) — somente leitura + importação
+    Route::prefix('planejamento')->name('planejamento.')->group(function () {
+        Route::get('/', [PlanejamentoController::class, 'index'])->name('index');
+        Route::get('/anual', [PlanejamentoController::class, 'anual'])->name('anual');
+        Route::get('/cartoes', [PlanejamentoController::class, 'cartoes'])->name('cartoes');
+        Route::get('/dividas', [PlanejamentoController::class, 'dividas'])->name('dividas');
+        Route::get('/metas', [PlanejamentoController::class, 'metas'])->name('metas');
+        Route::get('/contas-fixas', [PlanejamentoController::class, 'contasFixas'])->name('contas-fixas');
+        Route::get('/importar', [PlanilhaImportacaoController::class, 'index'])->name('importar');
+        Route::post('/importar', [PlanilhaImportacaoController::class, 'store'])->name('importar.store');
+    });
 
     // Fluxo de Caixa / Baixas
     Route::get('/fluxo-caixa', [FluxoCaixaController::class, 'index'])->name('fluxo-caixa.index');

@@ -1,5 +1,27 @@
 # Changelog
 
+## AlfaHome — 04/10/2026 — Planejamento a partir da planilha e revisão geral
+
+### Novidades
+- **Planejamento financeiro a partir da planilha da família.** Em Planejamento > Importar Planilha você envia o arquivo Excel e o sistema passa a mostrar o mesmo que a planilha: previsto x realizado do mês, visão do ano, cartões e compras parceladas, dívidas, metas e contas fixas. Reenviar a planilha atualiza tudo de uma vez — o que é novo entra, o que mudou é atualizado e o que saiu é removido. Se houver algum erro no arquivo, nada é alterado e o sistema diz em que aba e linha está o problema.
+- **Resumo do planejamento no painel inicial**, com receitas, despesas, saldo, economia, limite disponível, faturas em aberto, dívidas e progresso das metas.
+- **Os mesmos dados no aplicativo**, em uma tela de Planejamento somente para consulta.
+
+### Melhorias
+- **Previsto e realizado ficam guardados separadamente.** Ao dar baixa em uma conta com valor diferente do lançado, o sistema mantém o valor previsto e o valor efetivamente pago ou recebido; ao estornar, volta ao previsto.
+- **Mensagens em português.** Avisos de formulário e de acesso que apareciam em inglês ou como código (por exemplo, "auth.failed" ao errar a senha) agora aparecem em português.
+
+### Correções
+- **Editar ou excluir "esta e as futuras"** em despesas e receitas recorrentes não atualizava o saldo da conta nem a fatura do cartão. Agora atualiza.
+- **Fatura do cartão com valores diferentes** entre o painel, a tela de contas e o aplicativo. Passou a haver um único cálculo: compras no crédito ainda não pagas.
+- **Erro silencioso em todas as telas**: a consulta que alimenta o modo offline era recusada pelo servidor. O mesmo problema impedia ativar as notificações e sincronizar lançamentos feitos sem internet.
+- **Lançamentos feitos sem internet** não eram gravados ao voltar a conexão.
+- **Gráfico de investimentos do painel** somava um rendimento estimado de 1% ao mês que não existia. Agora mostra apenas o que foi aportado.
+- Formas de recebimento aceitas em receitas eram diferentes no site e no aplicativo; agora são as mesmas.
+
+### Segurança
+- A importação de extrato e a exclusão de rendimento de investimento passaram a conferir se a conta e o investimento pertencem à sua família.
+
 ## AlfaHome — 18/08/2026 — Cópia de segurança restabelecida
 
 ### Correções

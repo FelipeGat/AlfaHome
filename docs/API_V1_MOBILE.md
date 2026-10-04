@@ -607,3 +607,90 @@ Antes do app virar as flags `USE_REMOTE_*` para `true`:
 
 - Migração de pares legados (despesa + receita com `tipo_pagamento='transferencia'`) → `Transferencia`. Deixar para PR separado após contagem no banco.
 - Remoção de `'transferencia'` de `TIPOS_PAGAMENTO` nos `StoreDespesaRequest`/`StoreReceitaRequest`. PR separado depois da migração de dados.
+
+---
+
+## 14. Planejamento (planilha da família) — leitura + importação
+
+Dados importados da planilha de planejamento financeiro. **Somente leitura**: o
+app não cria, edita nem exclui estes registros — quem altera é a planilha, na
+próxima importação. Todos os números saem de um único serviço no backend
+(`PlanejamentoService`), o mesmo das telas web; o app **não deve recalcular**
+totais nem percentuais.
+
+Convenções: valores monetários como número; percentuais em pontos percentuais
+(30.67 = 30,67%); datas `Y-m-d`; campo não informado na planilha vem `null`.
+
+| Método | Rota | Parâmetros |
+|---|---|---|
+| GET | `/planejamento/resumo` | `mes=YYYY-MM` (opcional; padrão: o mês corrente se já tem lançamento da planilha, senão o último que tiver — o campo `mes` da resposta diz qual foi) |
+| GET | `/planejamento/anual` | `ano=YYYY` (opcional) |
+| GET | `/planejamento/lancamentos` | `mes=YYYY-MM`, `tipo=receita\|despesa` (opcionais) |
+| GET | `/planejamento/cartoes` | — |
+| GET | `/planejamento/parceladas` | — |
+| GET | `/planejamento/dividas` | — |
+| GET | `/planejamento/metas` | — |
+| GET | `/planejamento/contas-fixas` | — |
+| GET | `/planejamento/importacoes` | últimas 20 |
+| POST | `/planejamento/importar` | multipart, campo `arquivo` (.xlsx, até 5 MB); só `role = master` |
+
+### GET `/planejamento/resumo`
+
+```json
+{ "data": {
+  "mes": "2026-08",
+  "receitas": { "previsto": 17261.86, "realizado": 17632.86 },
+  "despesas": { "previsto": 12217.44, "realizado": 12225.1 },
+  "saldo":    { "previsto": 5044.42,  "realizado": 5407.76 },
+  "economia_pct": 30.67,
+  "comprometimento_pct": 69.33,
+  "por_categoria": [ { "categoria": "Investimentos", "realizado": 4683.05, "pct": 38.31 } ],
+  "cartoes": { "limite_total": 25221.33, "limite_utilizado": 23366.18, "limite_disponivel": 1855.15, "faturas_abertas": 5549.77, "utilizado_pct": 92.64 },
+  "dividas": { "saldo_total": 10174.66, "parcela_mensal_total": 1598.18, "quantidade": 2 },
+  "metas":   { "progresso_medio_pct": 0, "quantidade": 2 },
+  "ultima_importacao": { "id": 1, "em": "2026-10-03T20:36:00-03:00", "arquivo": "Planejamento.xlsx" }
+} }
+```
+
+`ultima_importacao` é `null` enquanto a planilha não for importada (nesse caso
+todos os números vêm zerados). `mes` em formato inválido → 422.
+
+### GET `/planejamento/anual`
+
+`{ "data": { "ano", "meses": [12 × { "mes", "receitas", "despesas", "saldo", "economia_pct", "comprometimento_pct" }], "total": { ...mesmas chaves, sem "mes" } } }`
+
+### GET `/planejamento/lancamentos`
+
+Lançamentos do mês: os da planilha e os lançados à mão no sistema.
+
+| Campo | Notas |
+|---|---|
+| `ref` | `planilha:<id>`, `despesa:<id>` ou `receita:<id>` |
+| `origem` | `planilha` ou `manual` |
+| `editavel` | `false` para `planilha`; para `manual`, editar pelas rotas de despesas/receitas |
+| `data`, `tipo`, `descricao`, `categoria`, `forma`, `conta`, `observacao` | `tipo`: `receita`/`despesa` |
+| `valor_previsto`, `valor_realizado`, `diferenca` | `valor_realizado` e `diferenca` são `null` enquanto não realizado |
+| `status` | `concluido`, `pendente` ou `outro` |
+
+### Demais listas
+
+Todas respondem `{ "data": [...], "resumo": {...} }`.
+
+- **cartoes** — item: `id, nome, banco, limite_total, limite_utilizado, limite_disponivel, utilizado_pct, dia_fechamento, dia_vencimento, fatura_atual, status_fatura, observacao`; resumo: `limite_total, limite_utilizado, limite_disponivel, faturas_abertas, utilizado_pct`.
+- **parceladas** — item: `id, compra, cartao, cartao_cadastrado, data, valor_total, parcelas, parcela_atual, valor_parcela, parcelas_pagas, parcelas_restantes, saldo, proximo_vencimento, observacao`; resumo: `saldo_total, parcela_mensal_total`.
+- **dividas** — item: `id, nome, credor, saldo_inicial, saldo_atual, amortizado, amortizado_pct, taxa_mensal_pct, parcela_mensal, dia_vencimento, status, prioridade (alta|media|baixa), previsao_quitacao, observacao`; resumo: `saldo_total, parcela_mensal_total, quantidade`.
+- **metas** — item: `id, nome, objetivo, valor_alvo, valor_atual, falta, concluido_pct, prazo, prioridade, aporte_mensal, observacao`; resumo: `progresso_medio_pct, quantidade`.
+- **contas-fixas** — item: `id, conta, categoria, dia_vencimento, valor_previsto, valor_realizado, forma, recorrente, status, mes_inicial, observacao`; resumo: `previsto_total, realizado_total`. Ordenadas por dia de vencimento; **não** somam nos totais do mês.
+
+### POST `/planejamento/importar`
+
+- **200** — `{ "data": { "id", "em", "arquivo", "status": "sucesso" | "sem_alteracoes", "usuario", "resumo": { "lancamentos": { "incluidas", "atualizadas", "removidas", "mantidas" }, "contas_fixas": {...}, "cartoes": {...}, "parceladas": {...}, "dividas": {...}, "metas": {...} }, "avisos": [ { "aba", "linha", "mensagem" } ], "erros": [] } }`
+- **422** — planilha rejeitada, nada gravado: `{ "message": "A planilha foi rejeitada e nada foi alterado.", "data": { ..., "status": "rejeitada", "erros": [ { "aba", "linha", "mensagem" } ] } }`
+- **403** — usuário que não é o dono da conta.
+
+A importação é idempotente (mesmo arquivo de novo → `sem_alteracoes`) e atômica.
+
+### Pendência de deploy
+
+`php artisan migrate` no servidor — cria `planilha_importacoes`, as seis tabelas
+`plan_*` e a coluna `valor_previsto` em `despesas` e `receitas`.

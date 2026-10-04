@@ -14,14 +14,21 @@ class Receita extends Model
 {
     use HasFactory, SoftDeletes, BelongsToTenant;
 
+    /**
+     * Formas de recebimento aceitas — a mesma lista na web e na API.
+     * 'debito' e 'credito' ficam por compatibilidade com o app já publicado.
+     */
+    public const TIPOS_PAGAMENTO = ['dinheiro', 'pix', 'transferencia', 'deposito', 'boleto', 'debito', 'credito', 'outros'];
+
     protected $fillable = [
         'tenant_id', 'user_id', 'quem_recebeu', 'categoria_id',
         'forma_recebimento', 'tipo_pagamento',
-        'valor', 'data_prevista_recebimento', 'data_recebimento', 'observacoes',
+        'valor', 'valor_previsto', 'data_prevista_recebimento', 'data_recebimento', 'observacoes',
         'recorrente', 'parcelas', 'frequencia', 'grupo_recorrencia_id',
     ];
 
     protected $casts = [
+        'valor_previsto' => 'decimal:2',
         'valor'                      => 'decimal:2',
         'data_prevista_recebimento'  => 'date',
         'data_recebimento'           => 'date',

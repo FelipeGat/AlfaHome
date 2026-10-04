@@ -30,6 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'             => \App\Http\Middleware\CheckRole::class,
             'manutencao'       => \App\Http\Middleware\CheckManutencao::class,
         ]);
+
+        // O service worker reenvia a fila offline sem página aberta, logo sem
+        // token CSRF. O cookie de sessão é SameSite=Lax (não acompanha POST
+        // vindo de outro site) e as rotas só aceitam JSON.
+        $middleware->validateCsrfTokens(except: ['api/sync/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // API requests must always receive JSON, never redirects/HTML.

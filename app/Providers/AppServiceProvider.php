@@ -9,6 +9,7 @@ use App\Observers\DespesaObserver;
 use App\Observers\ReceitaObserver;
 use App\Observers\TransferenciaObserver;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,7 +31,9 @@ class AppServiceProvider extends ServiceProvider
         }
         URL::forceRootUrl(config('app.url'));
 
-        // Locale pt_BR para Carbon (nomes de meses em português)
+        // O sistema é só em português: mensagens (lang/pt_BR) e Carbon (nomes
+        // de meses), independente do APP_LOCALE que estiver no .env do servidor.
+        App::setLocale('pt_BR');
         Carbon::setLocale('pt_BR');
     }
 }

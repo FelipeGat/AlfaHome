@@ -17,12 +17,13 @@ class Despesa extends Model
     protected $fillable = [
         'tenant_id', 'user_id', 'quem_comprou', 'onde_comprou', 'categoria_id',
         'forma_pagamento', 'tipo_pagamento',
-        'valor', 'data_compra', 'data_pagamento', 'observacoes',
+        'valor', 'valor_previsto', 'data_compra', 'data_pagamento', 'observacoes',
         'recorrente', 'parcelas', 'frequencia', 'grupo_recorrencia_id',
         'origem', 'numero_documento',
     ];
 
     protected $casts = [
+        'valor_previsto' => 'decimal:2',
         'valor'          => 'decimal:2',
         'data_compra'    => 'date',
         'data_pagamento' => 'date',
@@ -54,6 +55,18 @@ class Despesa extends Model
     public function banco()
     {
         return $this->belongsTo(Banco::class, 'forma_pagamento');
+    }
+
+    // ─── Escopos ──────────────────────────────────────────────────────────────
+
+    /**
+     * Fatura aberta de cartão: compras no crédito ainda não pagas. É a mesma
+     * regra do DespesaObserver (que mantém bancos.saldo_cartao) — painel, tela
+     * de bancos e validação de limite usam este escopo para não divergir.
+     */
+    public function scopeFaturaAberta($query)
+    {
+        return $query->where('tipo_pagamento', 'credito')->whereNull('data_pagamento');
     }
 
     // ─── Atributos computados ─────────────────────────────────────────────────

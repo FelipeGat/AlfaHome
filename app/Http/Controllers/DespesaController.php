@@ -170,10 +170,12 @@ class DespesaController extends Controller
         $escopo = $request->get('escopo', 'apenas_esta');
 
         if ($escopo === 'esta_e_futuras' && $despesa->grupo_recorrencia_id) {
+            // Um a um, para o observer manter saldo da conta e fatura do cartão.
             Despesa::where('tenant_id', $tenantId)
                 ->where('grupo_recorrencia_id', $despesa->grupo_recorrencia_id)
                 ->where('data_compra', '>=', $despesa->data_compra)
-                ->update([
+                ->get()
+                ->each->update([
                     'quem_comprou'    => $request->quem_comprou,
                     'onde_comprou'    => $request->onde_comprou,
                     'categoria_id'    => $request->categoria_id,
@@ -252,15 +254,10 @@ class DespesaController extends Controller
         }
 
         // ── Cartão de Crédito ─────────────────────────────────────────────────
-        // Comprometido do cartão: apenas despesas com tipo_pagamento = 'credito' ou NULL (legado)
-        // Exclui explicitamente pix/débito/dinheiro que também usam o mesmo banco
+        // Comprometido do cartão: a fatura aberta (Despesa::scopeFaturaAberta)
         if ($tipoPagamento === 'credito') {
-            $comprometido = (float) Despesa::where('forma_pagamento', $bancoId)
-                ->whereNull('data_pagamento')
-                ->where(function ($q) {
-                    $q->where('tipo_pagamento', 'credito')
-                      ->orWhereNull('tipo_pagamento');
-                })
+            $comprometido = (float) Despesa::faturaAberta()
+                ->where('forma_pagamento', $bancoId)
                 ->when($excluirId, fn ($q) => $q->where('id', '!=', $excluirId))
                 ->sum('valor');
             $limite     = (float) $banco->limite_cartao;

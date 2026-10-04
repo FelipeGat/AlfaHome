@@ -70,7 +70,7 @@ class FluxoCaixaController extends Controller
         // o $despesa->valor já atualizado quando a data_pagamento muda.
         $dados = ['data_pagamento' => $request->data_pagamento];
         if ($request->filled('valor')) {
-            $dados['valor'] = (float) $request->valor;
+            $dados += $this->valorRealizado($despesa, (float) $request->valor);
         }
         $despesa->update($dados);
 
@@ -84,6 +84,7 @@ class FluxoCaixaController extends Controller
 
         // O DespesaObserver estorna o saldo do banco automaticamente
         $despesa->update(['data_pagamento' => null]);
+        $this->restaurarPrevisto($despesa);
 
         return back()->with('success', 'Baixa da despesa estornada.');
     }
@@ -102,7 +103,7 @@ class FluxoCaixaController extends Controller
         // o $receita->valor já atualizado quando a data_recebimento muda.
         $dados = ['data_recebimento' => $request->data_recebimento];
         if ($request->filled('valor')) {
-            $dados['valor'] = (float) $request->valor;
+            $dados += $this->valorRealizado($receita, (float) $request->valor);
         }
         $receita->update($dados);
 
@@ -116,7 +117,35 @@ class FluxoCaixaController extends Controller
 
         // O ReceitaObserver estorna o saldo do banco automaticamente
         $receita->update(['data_recebimento' => null]);
+        $this->restaurarPrevisto($receita);
 
         return back()->with('success', 'Baixa da receita estornada.');
+    }
+
+    // ── Previsto x realizado ──────────────────────────────────────────────────
+
+    /**
+     * Baixa com valor diferente do lançado: o valor passa a ser o realizado e
+     * o que estava lançado fica guardado em valor_previsto.
+     */
+    private function valorRealizado(Despesa|Receita $lancamento, float $valor): array
+    {
+        $dados = ['valor' => $valor];
+        if (abs($valor - (float) $lancamento->valor) >= 0.005 && $lancamento->valor_previsto === null) {
+            $dados['valor_previsto'] = $lancamento->valor;
+        }
+
+        return $dados;
+    }
+
+    /**
+     * Estorno devolve o lançamento ao valor previsto. Roda depois de limpar a
+     * data da baixa, para o observer estornar o saldo pelo valor que foi pago.
+     */
+    private function restaurarPrevisto(Despesa|Receita $lancamento): void
+    {
+        if ($lancamento->valor_previsto !== null) {
+            $lancamento->update(['valor' => $lancamento->valor_previsto, 'valor_previsto' => null]);
+        }
     }
 }

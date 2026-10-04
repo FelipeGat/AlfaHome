@@ -150,6 +150,7 @@ class InvestimentoController extends Controller
     public function destroyRendimento(Investimento $investimento, InvestimentoRendimento $rendimento)
     {
         $this->authorize('update', $investimento);
+        abort_unless($rendimento->investimento_id === $investimento->id, 404);
         $rendimento->delete();
 
         return back()->with('success', 'Registro excluído.');
