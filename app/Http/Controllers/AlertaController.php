@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Planejamento\PlanejamentoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -521,7 +522,10 @@ class AlertaController extends Controller
         // ─── Alerta principal (maior impacto/urgência) ───────────────────
         $alertaPrincipal = $alertas->first();
 
-        return view('alertas.index', compact('alertas', 'contadores', 'resumo', 'alertaPrincipal'));
+        // Vencimentos vindos da planilha (atrasado, a pagar, a receber).
+        $vencimentos = app(PlanejamentoService::class)->vencimentos($tenantId);
+
+        return view('alertas.index', compact('alertas', 'contadores', 'resumo', 'alertaPrincipal', 'vencimentos'));
     }
 
     private function fmt($valor)

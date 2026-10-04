@@ -196,6 +196,85 @@ class PlanejamentoService
         ]];
     }
 
+    /**
+     * O que a planilha diz que está atrasado, a pagar e a receber — é o que a
+     * tela de Alertas mostra.
+     *
+     * - Lançamento e conta fixa pendentes: atrasados se a data já passou.
+     * - Fatura aberta e parcela de dívida ativa: a planilha não diz se a do mês
+     *   já foi paga, então entram sempre como "a pagar" no próximo dia de
+     *   vencimento, nunca como atrasadas.
+     * - Compra parcelada não entra: é paga dentro da fatura do cartão.
+     *
+     * @return array{atrasado: array, a_pagar: array, a_receber: array, totais: array}
+     */
+    public function vencimentos(int $tenantId, ?CarbonInterface $hoje = null): array
+    {
+        $hoje   = ($hoje ?? now())->copy()->startOfDay();
+        $grupos = ['atrasado' => [], 'a_pagar' => [], 'a_receber' => []];
+
+        $item = fn (string $origem, string $tipo, string $descricao, $valor, ?CarbonInterface $data, ?string $detalhe = null) => [
+            'origem'    => $origem,
+            'tipo'      => $tipo,
+            'descricao' => $descricao,
+            'valor'     => $valor !== null ? round((float) $valor, 2) : null,
+            'data'      => $data?->format('Y-m-d'),
+            'detalhe'   => $detalhe,
+        ];
+
+        $pendentes = PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
+            ->where('status', 'pendente')->orderBy('data')->orderBy('linha')->get();
+        foreach ($pendentes as $l) {
+            $grupo = $l->data->lt($hoje) ? 'atrasado' : ($l->tipo === 'receita' ? 'a_receber' : 'a_pagar');
+            $grupos[$grupo][] = $item('lancamento', $l->tipo, $l->descricao, $l->valor_previsto, $l->data, $l->categoria);
+        }
+
+        $fixas = PlanContaFixa::withoutGlobalScopes()->where('tenant_id', $tenantId)
+            ->where('status', 'pendente')->whereNotNull('dia_vencimento')->orderBy('dia_vencimento')->get();
+        foreach ($fixas as $c) {
+            $data = $this->diaNoMes($hoje, $c->dia_vencimento);
+            $grupos[$data->lt($hoje) ? 'atrasado' : 'a_pagar'][] = $item('conta_fixa', 'despesa', $c->conta, $c->valor_previsto, $data, 'Conta fixa');
+        }
+
+        $cartoes = PlanCartao::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereNotNull('dia_vencimento')->orderBy('linha')->get();
+        foreach ($cartoes as $c) {
+            if ($this->igual($c->status_fatura, 'aberta') && (float) $c->fatura_atual > 0) {
+                $grupos['a_pagar'][] = $item('fatura', 'despesa', 'Fatura ' . $c->nome, $c->fatura_atual, $this->proximoDia($hoje, $c->dia_vencimento), 'Fatura de cartão');
+            }
+        }
+
+        $dividas = PlanDivida::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereNotNull('dia_vencimento')->orderBy('linha')->get();
+        foreach ($dividas as $d) {
+            if ($this->igual($d->status, 'ativa') && (float) $d->parcela_mensal > 0) {
+                $grupos['a_pagar'][] = $item('divida', 'despesa', 'Parcela ' . $d->nome, $d->parcela_mensal, $this->proximoDia($hoje, $d->dia_vencimento), $d->credor);
+            }
+        }
+
+        foreach ($grupos as &$itens) {
+            usort($itens, fn ($a, $b) => [$a['data'] ?? '9999', $a['descricao']] <=> [$b['data'] ?? '9999', $b['descricao']]);
+        }
+        unset($itens);
+
+        return $grupos + ['totais' => array_map(
+            fn ($itens) => round(array_sum(array_column($itens, 'valor')), 2),
+            $grupos
+        )];
+    }
+
+    /** O dia de vencimento dentro do mês de $ref (dia 31 em mês de 30 vira o último dia). */
+    private function diaNoMes(CarbonInterface $ref, int $dia): Carbon
+    {
+        return Carbon::create($ref->year, $ref->month, min($dia, $ref->daysInMonth))->startOfDay();
+    }
+
+    /** Próxima ocorrência do dia de vencimento a partir de $hoje (hoje conta). */
+    private function proximoDia(CarbonInterface $hoje, int $dia): Carbon
+    {
+        $data = $this->diaNoMes($hoje, $dia);
+
+        return $data->lt($hoje) ? $this->diaNoMes($hoje->copy()->startOfMonth()->addMonth(), $dia) : $data;
+    }
+
     public function ultimaImportacao(int $tenantId): ?array
     {
         $ultima = PlanilhaImportacao::withoutGlobalScopes()->where('tenant_id', $tenantId)

@@ -167,6 +167,12 @@ class PlanejamentoApiController extends Controller
         ]);
     }
 
+    /** GET /api/v1/planejamento/vencimentos */
+    public function vencimentos(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->planejamento->vencimentos($request->user()->tenant_id)]);
+    }
+
     /** GET /api/v1/planejamento/importacoes */
     public function importacoes(Request $request): JsonResponse
     {

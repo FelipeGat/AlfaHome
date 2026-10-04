@@ -4,6 +4,8 @@
 
 @section('content')
 
+@include('alertas._vencimentos')
+
 @php
 $config = [
     'critico'      => ['cor' => 'var(--color-danger)',  'bg' => 'var(--color-danger-soft)',  'borda' => 'var(--color-danger)',  'label' => 'Crítico'],
@@ -296,7 +298,10 @@ $config = [
 {{-- ═══════════════════════════════════════════════════════════════════ --}}
 {{-- 4. LISTA DE ALERTAS (CARDS) --}}
 {{-- ═══════════════════════════════════════════════════════════════════ --}}
-@if($alertas->isEmpty())
+@php $semVencimentos = empty($vencimentos['atrasado']) && empty($vencimentos['a_pagar']) && empty($vencimentos['a_receber']); @endphp
+@if($alertas->isEmpty() && ! $semVencimentos)
+{{-- Sem alertas de análise, mas há vencimentos listados acima: não dizer "tudo em ordem". --}}
+@elseif($alertas->isEmpty())
 <div class="card text-center" style="padding: 40px 20px;">
     <div style="font-size: 48px; margin-bottom: 12px;">🎉</div>
     <h3 style="color:var(--color-success); font-size:18px; margin-bottom:6px;">Tudo em ordem!</h3>

@@ -142,6 +142,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get( 'dividas',      [PlanejamentoApiController::class, 'dividas'])->name('dividas');
             Route::get( 'metas',        [PlanejamentoApiController::class, 'metas'])->name('metas');
             Route::get( 'contas-fixas', [PlanejamentoApiController::class, 'contasFixas'])->name('contas-fixas');
+            Route::get( 'vencimentos',  [PlanejamentoApiController::class, 'vencimentos'])->name('vencimentos');
             Route::get( 'importacoes',  [PlanejamentoApiController::class, 'importacoes'])->name('importacoes');
             Route::post('importar',     [PlanejamentoApiController::class, 'importar'])->name('importar');
             Route::get( 'fonte',        [PlanejamentoApiController::class, 'fonte'])->name('fonte');

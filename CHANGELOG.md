@@ -1,5 +1,16 @@
 # Changelog
 
+## AlfaHome — 04/10/2026 — Alertas com vencimentos da planilha
+
+### Novidades
+- **A tela de Alertas passou a mostrar o que está atrasado, a pagar e a receber**, lido da planilha: lançamentos e contas fixas pendentes, faturas de cartão em aberto e parcelas de dívidas, cada um com data e valor.
+
+### Melhorias
+- **"Contas / Baixas" saiu do menu.** Com a planilha como fonte dos dados, é ela que diz o que foi pago; o que essa tela tinha de útil está agora em Alertas.
+
+### Correções
+- **Fotos e download do aplicativo fora do ar.** As fotos dos membros e o arquivo de atualização do aplicativo deixaram de abrir depois de uma atualização do servidor. O sistema agora restaura esse acesso sozinho.
+
 ## AlfaHome — 04/10/2026 — Planilha analisada automaticamente
 
 ### Novidades

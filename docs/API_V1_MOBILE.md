@@ -690,6 +690,25 @@ Todas respondem `{ "data": [...], "resumo": {...} }`.
 
 A importação é idempotente (mesmo arquivo de novo → `sem_alteracoes`) e atômica.
 
+### GET `/planejamento/vencimentos`
+
+O que a planilha diz que está atrasado, a pagar e a receber (é o que a tela de
+Alertas da web mostra).
+
+```json
+{ "data": {
+  "atrasado":  [ { "origem": "lancamento", "tipo": "despesa", "descricao": "...", "valor": 150.0, "data": "2026-09-20", "detalhe": "Categoria" } ],
+  "a_pagar":   [ { "origem": "fatura", "tipo": "despesa", "descricao": "Fatura Cartão Sicoob", "valor": 3921.44, "data": "2026-10-22", "detalhe": "Fatura de cartão" } ],
+  "a_receber": [],
+  "totais": { "atrasado": 150.0, "a_pagar": 3921.44, "a_receber": 0 }
+} }
+```
+
+`origem`: `lancamento`, `conta_fixa`, `fatura` ou `divida`. `valor` é `null`
+quando a planilha não informa. Faturas abertas e parcelas de dívidas ativas
+aparecem sempre em `a_pagar`, na próxima ocorrência do dia de vencimento — a
+planilha não diz se a do mês já foi paga. Itens ordenados por data.
+
 ### Análise automática (link do OneDrive)
 
 O dono da conta configura, pela web, o link de compartilhamento da planilha no
