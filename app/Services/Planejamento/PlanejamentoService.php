@@ -2,6 +2,7 @@
 
 namespace App\Services\Planejamento;
 
+use App\Models\Banco;
 use App\Models\Despesa;
 use App\Models\PlanCartao;
 use App\Models\PlanCompraParcelada;
@@ -262,6 +263,73 @@ class PlanejamentoService
             fn ($itens) => round(array_sum(array_column($itens, 'valor')), 2),
             $grupos
         )];
+    }
+
+    /**
+     * Painel do dia: quanto há nas contas, o que está atrasado, o que vence na
+     * semana e como o mês fecha. Só compõe o que já existe (vencimentos,
+     * resumo do mês, cartões) com o saldo das contas.
+     */
+    public function hoje(int $tenantId, ?CarbonInterface $hoje = null): array
+    {
+        $hoje   = ($hoje ?? now())->copy()->startOfDay();
+        $semana = $hoje->copy()->addDays(7)->format('Y-m-d');
+        $fimMes = $hoje->copy()->endOfMonth()->format('Y-m-d');
+        $soma   = fn (array $itens) => round(array_sum(array_column($itens, 'valor')), 2);
+
+        $contas = Banco::withoutGlobalScopes()->where('tenant_id', $tenantId)
+            ->where(fn ($q) => $q->where('tem_conta_corrente', true)->orWhere('tem_poupanca', true)->orWhere('eh_dinheiro', true))
+            ->orderBy('nome')->get()
+            ->map(fn ($b) => ['id' => $b->id, 'nome' => $b->nome, 'saldo' => round($b->saldo_total, 2), 'cor' => $b->cor, 'logo' => $b->logo])
+            ->values()->all();
+        $totalContas = round(array_sum(array_column($contas, 'saldo')), 2);
+
+        $v      = $this->vencimentos($tenantId, $hoje);
+        $janela = fn (array $itens, string $ate) => array_values(array_filter($itens, fn ($i) => $i['data'] !== null && $i['data'] <= $ate));
+
+        $atrasadoPagar   = array_values(array_filter($v['atrasado'], fn ($i) => $i['tipo'] !== 'receita'));
+        $atrasadoReceber = array_values(array_filter($v['atrasado'], fn ($i) => $i['tipo'] === 'receita'));
+        $pagar7   = $janela($v['a_pagar'], $semana);
+        $receber7 = $janela($v['a_receber'], $semana);
+        $pagarMes   = $soma($janela($v['a_pagar'], $fimMes)) + $soma($atrasadoPagar);
+        $receberMes = $soma($janela($v['a_receber'], $fimMes)) + $soma($atrasadoReceber);
+
+        $mes     = $this->resumoMes($tenantId, $hoje);
+        $cartoes = $this->cartoes($tenantId)['resumo'];
+        $fatura  = collect($v['a_pagar'])->where('origem', 'fatura')->sortBy('data')->first();
+
+        return [
+            'data'   => $hoje->format('Y-m-d'),
+            'contas' => ['total' => $totalContas, 'itens' => $contas],
+            'atrasado' => [
+                'total_pagar'   => $soma($atrasadoPagar),
+                'total_receber' => $soma($atrasadoReceber),
+                'itens'         => $v['atrasado'],
+            ],
+            'proximos_7_dias' => [
+                'a_pagar'       => $pagar7,
+                'a_receber'     => $receber7,
+                'total_pagar'   => $soma($pagar7),
+                'total_receber' => $soma($receber7),
+            ],
+            'ate_fim_do_mes' => [
+                'a_pagar'        => round($pagarMes, 2),
+                'a_receber'      => round($receberMes, 2),
+                'projecao_saldo' => round($totalContas + $receberMes - $pagarMes, 2),
+            ],
+            'mes' => [
+                'mes'      => $mes['mes'],
+                'receitas' => $mes['receitas']['realizado'],
+                'despesas' => $mes['despesas']['realizado'],
+                'saldo'    => $mes['saldo']['realizado'],
+            ],
+            'cartoes' => [
+                'limite_disponivel' => $cartoes['limite_disponivel'],
+                'utilizado_pct'     => $cartoes['utilizado_pct'],
+                'proxima_fatura'    => $fatura ? ['descricao' => $fatura['descricao'], 'valor' => $fatura['valor'], 'data' => $fatura['data']] : null,
+            ],
+            'planilha_importada' => $mes['ultima_importacao'] !== null,
+        ];
     }
 
     /** O dia de vencimento dentro do mês de $ref (dia 31 em mês de 30 vira o último dia). */

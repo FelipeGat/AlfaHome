@@ -690,6 +690,10 @@ Todas respondem `{ "data": [...], "resumo": {...} }`.
 
 A importação é idempotente (mesmo arquivo de novo → `sem_alteracoes`) e atômica.
 
+### GET `/planejamento/hoje`
+
+Painel do dia da tela inicial. `{ "data": { "data", "contas": { "total", "itens": [{ "id", "nome", "saldo", "cor", "logo" }] }, "atrasado": { "total_pagar", "total_receber", "itens" }, "proximos_7_dias": { "a_pagar", "a_receber", "total_pagar", "total_receber" }, "ate_fim_do_mes": { "a_pagar", "a_receber", "projecao_saldo" }, "mes": { "mes", "receitas", "despesas", "saldo" }, "cartoes": { "limite_disponivel", "utilizado_pct", "proxima_fatura": { "descricao", "valor", "data" } | null }, "planilha_importada" } }`. Os itens têm o formato de `/planejamento/vencimentos`. Contas só de cartão não entram no saldo; a projeção é saldo em contas + a receber − a pagar até o fim do mês, atrasados incluídos.
+
 ### GET `/planejamento/vencimentos`
 
 O que a planilha diz que está atrasado, a pagar e a receber (é o que a tela de

@@ -4,6 +4,10 @@
 
 @section('content')
 
+@if($hoje['planilha_importada'])
+@include('planejamento._hoje')
+@endif
+
 {{-- ─── Filtros Dashboard ───────────────────────────────────────────────── --}}
 @php
     $dtDB         = \Carbon\Carbon::parse($inicio);
@@ -116,6 +120,8 @@
 </div>
 @endif
 
+{{-- Blocos que leem só lançamentos manuais: com a planilha, o painel do dia os substitui. --}}
+@if(! $hoje['planilha_importada'])
 {{-- ─── Posição Atual (Saldos) ──────────────────────────────────────────── --}}
 @php
     // Saldo em Contas: apenas contas correntes (exclui cartão de crédito, poupança exclusiva, dinheiro)
@@ -577,9 +583,11 @@
     </div>
 </div>
 
+@endif
 @endsection
 
 @push('scripts')
+@if(! $hoje['planilha_importada'])
 <script>
 const _meses = {!! json_encode($mesesLabels) !!};
 const _colors = ['#4f46e5','#16a34a','#d97706','#dc2626','#7c3aed','#db2777','#0891b2','#ea580c','#0d9488','#65a30d','#9333ea','#2563eb'];
@@ -668,4 +676,5 @@ document.getElementById('theme-toggle')?.addEventListener('click', () => {
     setTimeout(_buildDashCharts, 50);
 });
 </script>
+@endif
 @endpush

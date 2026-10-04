@@ -1,5 +1,10 @@
 # Changelog
 
+## AlfaHome — 04/10/2026 — Painel do dia
+
+### Novidades
+- **A tela inicial abre com o seu dia**: saldo somado das contas (e de cada uma), o que está atrasado, o que vence nos próximos 7 dias, a previsão do saldo no fim do mês, quanto entrou e saiu no mês, o limite livre nos cartões e a próxima fatura. Vale no site e no aplicativo.
+
 ## AlfaHome — 04/10/2026 — Alertas com vencimentos da planilha
 
 ### Novidades

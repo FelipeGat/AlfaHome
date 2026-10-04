@@ -389,9 +389,10 @@ class DashboardController extends Controller
 
         // ─── Planejamento da planilha (mesmo serviço das telas e da API) ──────
         $planilha = app(PlanejamentoService::class)->resumoMes($tenantId, Carbon::parse($inicio));
+        $hoje     = app(PlanejamentoService::class)->hoje($tenantId);
 
         return view('dashboard', compact(
-            'planilha',
+            'planilha', 'hoje',
             'inicio', 'fim', 'ano',
             'nomeMes', 'anoMes', 'linkMesAnt', 'linkMesProx',
             'totalReceitas', 'totalDespesas', 'saldo',
