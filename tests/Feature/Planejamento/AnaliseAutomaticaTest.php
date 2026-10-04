@@ -19,15 +19,26 @@ class AnaliseAutomaticaTest extends TestCase
 
     private const LINK = 'https://1drv.ms/x/s!planilha-da-familia';
 
-    /** O que o OneDrive devolve agora; trocado ao longo de cada teste. */
+    private const DOWNLOAD = 'https://my.microsoftpersonalcontent.com/personal/abc/_layouts/15/download.aspx?id=1';
+
+    /** O que o download do OneDrive devolve agora; trocado ao longo de cada teste. */
     private \Closure $onedrive;
+
+    /** Resposta da consulta do item do link (por padrão, o endereço de download). */
+    private \Closure $item;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->onedrive = fn () => Http::response('', 404);
-        Http::fake(['api.onedrive.com/*' => fn ($request) => ($this->onedrive)($request)]);
+        $this->item     = fn () => Http::response(['name' => 'Planilha.xlsx', 'size' => 65000, '@content.downloadUrl' => self::DOWNLOAD]);
+
+        Http::fake([
+            'api-badgerp.svc.ms/*'                                 => Http::response(['token' => 'token-de-visitante']),
+            'my.microsoftpersonalcontent.com/_api/v2.0/shares/*'   => fn ($request) => ($this->item)($request),
+            'my.microsoftpersonalcontent.com/personal/*'           => fn ($request) => ($this->onedrive)($request),
+        ]);
     }
 
     private function onedriveDevolve(string $caminho): void
@@ -38,6 +49,17 @@ class AnaliseAutomaticaTest extends TestCase
     private function onedriveResponde($resposta): void
     {
         $this->onedrive = fn () => $resposta;
+    }
+
+    private function linkResponde($resposta): void
+    {
+        $this->item = fn () => $resposta;
+    }
+
+    /** Quantas vezes a planilha foi baixada. */
+    private function downloads(): int
+    {
+        return Http::recorded(fn ($request) => str_contains($request->url(), '/personal/'))->count();
     }
 
     private function comLink(?User $user = null): User
@@ -72,10 +94,13 @@ class AnaliseAutomaticaTest extends TestCase
         $this->get(route('planejamento.importar'))->assertOk()
             ->assertSee('Analisar agora')->assertSee('Última verificação')->assertDontSee('s!planilha-da-familia');
 
-        // O servidor só fala com a API do OneDrive, com o link codificado.
-        Http::assertSent(fn ($r) => str_starts_with($r->url(), 'https://api.onedrive.com/v1.0/shares/u!')
-            && str_ends_with($r->url(), '/root/content')
-            && str_contains($r->url(), rtrim(strtr(base64_encode(self::LINK), '+/', '-_'), '=')));
+        // O servidor nunca acessa o link colado: ele vai codificado na consulta,
+        // com o token de visitante.
+        $codificado = rtrim(strtr(base64_encode(self::LINK), '+/', '-_'), '=');
+        Http::assertSent(fn ($r) => $r->url() === "https://my.microsoftpersonalcontent.com/_api/v2.0/shares/u!{$codificado}/driveitem"
+            && $r->header('Authorization')[0] === 'Badger token-de-visitante'
+            && $r->header('Prefer')[0] === 'autoredeem');
+        Http::assertNotSent(fn ($r) => str_contains($r->url(), '1drv.ms'));
     }
 
     public function test_link_de_outro_site_e_recusado_sem_nenhum_acesso(): void
@@ -103,8 +128,20 @@ class AnaliseAutomaticaTest extends TestCase
         $this->post(route('planejamento.fonte.salvar'), ['url' => self::LINK])
             ->assertSessionHasErrors(['url' => 'O arquivo do link tem mais de 5 MB.']);
 
-        $this->onedriveResponde(Http::response('', 403));
+        // Link revogado: a consulta do item é recusada.
+        $this->linkResponde(Http::response(['error' => ['code' => 'accessDenied']], 403));
+        $this->post(route('planejamento.fonte.salvar'), ['url' => self::LINK])
+            ->assertSessionHasErrors(['url' => 'O OneDrive recusou o link (código 403). Confira se o compartilhamento continua ativo para "qualquer pessoa com o link".']);
+
+        // Link de pasta: não há endereço de download.
+        $this->linkResponde(Http::response(['name' => 'Pasta', 'folder' => ['childCount' => 3]]));
         $this->post(route('planejamento.fonte.salvar'), ['url' => self::LINK])->assertSessionHasErrors('url');
+
+        // Endereço de download fora do OneDrive nunca é seguido.
+        $antes = Http::recorded()->count();
+        $this->linkResponde(Http::response(['@content.downloadUrl' => 'https://exemplo.com/planilha.xlsx']));
+        $this->post(route('planejamento.fonte.salvar'), ['url' => self::LINK])->assertSessionHasErrors('url');
+        Http::assertNotSent(fn ($r) => str_contains($r->url(), 'exemplo.com'));
 
         $this->assertSame(0, PlanilhaFonte::count());
         $this->assertSame(0, PlanLancamento::count());
@@ -168,7 +205,7 @@ class AnaliseAutomaticaTest extends TestCase
         $this->onedriveResponde(Http::response('', 404));
         $this->post(route('planejamento.analisar'))->assertSessionHas('error');
         $this->assertSame(PlanilhaFonte::FALHA, PlanilhaFonte::first()->status);
-        $this->assertStringContainsString('O OneDrive recusou o link (código 404)', PlanilhaFonte::first()->erro);
+        $this->assertStringContainsString('O OneDrive não entregou o arquivo (código 404)', PlanilhaFonte::first()->erro);
         $this->assertSame(52, PlanLancamento::count());
     }
 
@@ -189,7 +226,7 @@ class AnaliseAutomaticaTest extends TestCase
 
         $this->travelTo(now()->addDay()->setTime(8, 0));
         $this->onedriveDevolve($this->planilhaAtualizada());
-        $antes = Http::recorded()->count();
+        $antes = $this->downloads();
 
         $this->get(route('dashboard'))->assertOk();
         $this->assertSame(54, PlanLancamento::count(), 'a planilha nova entrou no primeiro acesso do dia');
@@ -197,7 +234,7 @@ class AnaliseAutomaticaTest extends TestCase
 
         $this->get(route('dashboard'))->assertOk();
         $this->get(route('planejamento.index'))->assertOk();
-        $this->assertSame(1, Http::recorded()->count() - $antes, 'uma única verificação no dia');
+        $this->assertSame(1, $this->downloads() - $antes, 'uma única verificação no dia');
     }
 
     public function test_acesso_pelo_app_tambem_dispara_a_verificacao_do_dia(): void
@@ -236,7 +273,9 @@ class AnaliseAutomaticaTest extends TestCase
         $linkB = 'https://1drv.ms/x/s!outra-familia';
         PlanilhaFonte::withoutGlobalScopes()->where('tenant_id', $b->tenant_id)->first()->update(['url' => $linkB]);
         $codB = rtrim(strtr(base64_encode($linkB), '+/', '-_'), '=');
-        $this->onedrive = fn ($request) => str_contains($request->url(), $codB)
+        // O link de B aponta para um arquivo que não é planilha.
+        $this->item = fn ($request) => Http::response(['@content.downloadUrl' => self::DOWNLOAD . (str_contains($request->url(), $codB) ? '&familia=b' : '')]);
+        $this->onedrive = fn ($request) => str_contains($request->url(), 'familia=b')
             ? Http::response('<html>erro</html>')
             : Http::response(file_get_contents($this->planilhaAtualizada()));
 

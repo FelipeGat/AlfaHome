@@ -25,28 +25,37 @@ NEEDS CLARIFICATION: nenhum.
 
 ### Decision 1 — Baixar a planilha a partir do link de compartilhamento
 
-**Decision**: converter o link em chamada à API de compartilhamento do OneDrive:
-`https://api.onedrive.com/v1.0/shares/u!{base64url(link)}/root/content`, seguindo
-o redirecionamento até o arquivo. `{base64url(link)}` é o link em Base64 sem
-`=` no fim, com `/`→`_` e `+`→`-`.
+**Decision**: ler o link como visitante anônimo, do mesmo jeito que o navegador
+faz ao abrir um link compartilhado do OneDrive pessoal:
 
-**Rationale**: é a forma documentada pela Microsoft para ler um item a partir de
-um link de compartilhamento sem autenticação (links "qualquer pessoa com o
-link"). Não depende do formato do link curto (`1drv.ms`).
+1. `POST https://api-badgerp.svc.ms/v1.0/token` com `{"appId": "5cbed6ac-a083-4e14-b191-b4ba07653de2"}` → `token`;
+2. `GET https://my.microsoftpersonalcontent.com/_api/v2.0/shares/u!{base64url(link)}/driveitem`
+   com `Authorization: Badger {token}` e `Prefer: autoredeem` → item com
+   `@content.downloadUrl`, `name`, `size`;
+3. `GET` no `@content.downloadUrl`, seguido só se o host for do OneDrive.
 
-**Validação pendente**: só há como confirmar com o link real do Felipe; os
-testes usam `Http::fake`. Se a Microsoft recusar a chamada anônima para a conta
-dele, a mensagem ao usuário é a de FR-008 e o envio manual continua disponível.
+`{base64url(link)}` é o link em Base64 sem `=` no fim, com `/`→`_` e `+`→`-`.
 
-**Alternatives considered**: acrescentar `download=1` ao link — depende do
-formato do link e devolve HTML em alguns casos; Microsoft Graph com login —
-exige registrar aplicativo e guardar token com validade.
+**Rationale**: validado em 04/10/2026 com o link real da família (resposta 200,
+arquivo de 65.343 bytes idêntico ao do OneDrive). A primeira tentativa,
+`https://api.onedrive.com/v1.0/shares/u!{…}/root/content`, respondeu **401
+unauthenticated**: as contas pessoais migraram e a API antiga deixou de aceitar
+acesso anônimo. Acrescentar `download=1` ao link responde 403.
+
+**Risco**: o fluxo de visitante não é uma API pública documentada pela
+Microsoft; se mudar, a análise falha com mensagem clara (FR-008) e o envio
+manual continua disponível.
+
+**Alternatives considered**: Microsoft Graph com login — exige registrar
+aplicativo e guardar token com validade.
 
 ### Decision 2 — Endereços aceitos
 
 **Decision**: aceitar apenas `https` nos hosts `1drv.ms`, `onedrive.live.com` e
-`*.sharepoint.com`. O sistema nunca acessa o link colado diretamente: só chama
-`api.onedrive.com` com o link codificado.
+`*.sharepoint.com`. O sistema nunca acessa o link colado diretamente: ele só vai
+codificado na consulta do item, e o endereço de download devolvido só é seguido
+se for de `*.microsoftpersonalcontent.com`, `*.sharepoint.com`, `*.1drv.com` ou
+`*.onedrive.live.com`.
 
 **Rationale**: impede que o campo seja usado para fazer o servidor acessar
 endereços internos (FR-002).
@@ -72,7 +81,7 @@ Analisar sempre passa pela importação e mostra o relatório.
 
 | Principio | Status | Notas |
 |-----------|--------|-------|
-| I. Veracidade | PASS | endpoint do OneDrive marcado como pendente de validação com link real |
+| I. Veracidade | PASS | endpoints do OneDrive conferidos com o link real em 04/10/2026 |
 | II. Planilha é a fonte; importação idempotente | PASS | reusa `PlanilhaImportService` |
 | III. Números batem | PASS | nenhum cálculo novo |
 | IV. Uma definição | PASS | um serviço para os três gatilhos |

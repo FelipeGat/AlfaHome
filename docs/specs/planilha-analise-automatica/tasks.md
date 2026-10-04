@@ -69,7 +69,7 @@ Ref: FR-016
 
 - [x] 3.1.1 Suíte PHPUnit completa verde
 - [x] 3.1.2 Conferência no navegador do fluxo de salvar link e analisar (local)
-- [ ] 3.1.3 Validação com o link real do OneDrive do Felipe <!-- depende do link que o Felipe vai gerar -->
+- [x] 3.1.3 Validação com o link real do OneDrive do Felipe <!-- 04/10/2026: a API antiga respondeu 401; trocada pelo acesso de visitante, que baixou a planilha -->
 
 ---
 
