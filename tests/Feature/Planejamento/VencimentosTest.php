@@ -92,6 +92,21 @@ class VencimentosTest extends TestCase
         $this->assertSame(3000.00, $v['totais']['a_receber']);
     }
 
+    public function test_compra_pendente_no_cartao_nao_aparece_porque_ja_esta_na_fatura(): void
+    {
+        $this->lancamento('despesa', '2026-10-22', 'Compra parcelada no cartão', 219.90);
+        PlanLancamento::withoutGlobalScopes()->where('descricao', 'Compra parcelada no cartão')->first()->update(['forma' => 'cartao', 'conta' => 'Sicoob']);
+        $this->lancamento('despesa', '2026-10-22', 'Boleto do mesmo dia', 80.00);
+
+        $v = $this->vencimentos();
+        $descricoes = array_column($v['a_pagar'], 'descricao');
+
+        $this->assertNotContains('Compra parcelada no cartão', $descricoes);
+        $this->assertContains('Boleto do mesmo dia', $descricoes);
+        $this->assertContains('Fatura Cartão Sicoob', $descricoes);
+        $this->assertSame(7227.95, $v['totais']['a_pagar'], 'faturas e dívidas (7.147,95) + o boleto (80,00), sem a compra do cartão');
+    }
+
     public function test_conta_fixa_pendente_atrasa_depois_do_dia_de_vencimento(): void
     {
         PlanContaFixa::withoutGlobalScopes()->where('conta', 'Internet Claro')->first()->update(['status' => 'pendente']); // dia 5

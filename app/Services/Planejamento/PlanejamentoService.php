@@ -204,7 +204,8 @@ class PlanejamentoService
      * - Fatura aberta e parcela de dívida ativa: a planilha não diz se a do mês
      *   já foi paga, então entram sempre como "a pagar" no próximo dia de
      *   vencimento, nunca como atrasadas.
-     * - Compra parcelada não entra: é paga dentro da fatura do cartão.
+     * - Compra no cartão (lançamento pendente com forma "cartão" e compra
+     *   parcelada) não entra: é paga dentro da fatura, que já está na lista.
      *
      * @return array{atrasado: array, a_pagar: array, a_receber: array, totais: array}
      */
@@ -223,7 +224,9 @@ class PlanejamentoService
         ];
 
         $pendentes = PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
-            ->where('status', 'pendente')->orderBy('data')->orderBy('linha')->get();
+            ->where('status', 'pendente')
+            ->where(fn ($q) => $q->whereNull('forma')->orWhere('forma', '!=', 'cartao'))
+            ->orderBy('data')->orderBy('linha')->get();
         foreach ($pendentes as $l) {
             $grupo = $l->data->lt($hoje) ? 'atrasado' : ($l->tipo === 'receita' ? 'a_receber' : 'a_pagar');
             $grupos[$grupo][] = $item('lancamento', $l->tipo, $l->descricao, $l->valor_previsto, $l->data, $l->categoria);
