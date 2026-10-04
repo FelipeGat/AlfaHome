@@ -239,7 +239,9 @@ class PlanejamentoService
                 'observacao'      => $l->observacao,
             ]);
 
-        $despesas = Despesa::withoutGlobalScopes()->where('tenant_id', $tenantId)
+        // Só o escopo de tenant é dispensado (o tenant vem por parâmetro); o de
+        // exclusão continua valendo — lançamento excluído não entra em conta.
+        $despesas = Despesa::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)
             ->where(fn ($q) => $q->whereBetween('data_compra', [$de, $ate])->orWhereBetween('data_pagamento', [$de, $ate]))
             ->with(['categoria', 'fornecedor', 'banco'])->get()
             ->map(fn ($d) => [
@@ -259,7 +261,7 @@ class PlanejamentoService
                 'observacao'      => $d->observacoes,
             ]);
 
-        $receitas = Receita::withoutGlobalScopes()->where('tenant_id', $tenantId)
+        $receitas = Receita::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)
             ->where(fn ($q) => $q->whereBetween('data_prevista_recebimento', [$de, $ate])->orWhereBetween('data_recebimento', [$de, $ate]))
             ->with(['categoria', 'banco'])->get()
             ->map(fn ($r) => [

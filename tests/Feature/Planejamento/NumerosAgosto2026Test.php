@@ -230,6 +230,29 @@ class NumerosAgosto2026Test extends TestCase
         $this->assertTrue($feira['editavel']);
     }
 
+    public function test_lancamento_manual_excluido_nao_entra_em_nenhum_total(): void
+    {
+        $this->actingAs($this->user);
+        $banco = Banco::create(['tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'nome' => 'Conta', 'tem_conta_corrente' => true, 'saldo' => 5000]);
+        $despesa = Despesa::create([
+            'tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'forma_pagamento' => $banco->id,
+            'tipo_pagamento' => 'pix', 'valor' => 900, 'data_compra' => '2026-08-12', 'data_pagamento' => '2026-08-12',
+        ]);
+        $receita = Receita::create([
+            'tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'forma_recebimento' => $banco->id,
+            'valor' => 700, 'data_prevista_recebimento' => '2026-08-12', 'data_recebimento' => '2026-08-12',
+        ]);
+
+        $despesa->delete();
+        $receita->delete();
+
+        $r = $this->agosto();
+        $this->assertSame(['previsto' => 17261.86, 'realizado' => 17632.86], $r['receitas']);
+        $this->assertSame(['previsto' => 12217.44, 'realizado' => 12225.10], $r['despesas']);
+        $this->assertCount(52, $this->servico->lancamentos($this->user->tenant_id, Carbon::create(2026, 8, 1)));
+        $this->assertSame(17632.86, $this->servico->anual($this->user->tenant_id, 2026)['total']['receitas']['realizado']);
+    }
+
     public function test_baixa_com_valor_diferente_preserva_o_previsto(): void
     {
         $this->actingAs($this->user);
