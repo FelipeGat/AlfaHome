@@ -15,6 +15,47 @@
 <style>.plan-num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }</style>
 
 <div class="card" style="padding:20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+        <div class="card-title">Análise automática pelo OneDrive</div>
+        @if($fonte)
+            <span class="badge {{ $fonte->teveProblema() ? 'badge-danger' : 'badge-success' }}">{{ $fonte->teveProblema() ? 'Com problema' : 'Ativa' }}</span>
+        @endif
+    </div>
+
+    @if($fonte)
+        <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:12px;">
+            O link da planilha está configurado. O sistema confere a planilha uma vez por dia e sempre que você apertar Analisar.
+            @if($fonte->verificada_em) Última verificação: <strong>{{ $fonte->verificada_em->format('d/m/Y H:i') }}</strong>.@endif
+        </p>
+        @if($fonte->teveProblema())
+            <div class="alert alert-warning" style="margin-bottom:12px;"><i class="fa-solid fa-triangle-exclamation"></i> <span>{{ $fonte->erro }}</span></div>
+        @endif
+        <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <form method="POST" action="{{ route('planejamento.analisar') }}">
+                @csrf
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-rotate"></i> Analisar agora</button>
+            </form>
+            <form method="POST" action="{{ route('planejamento.fonte.remover') }}" onsubmit="return confirm('Remover o link? A planilha deixa de ser analisada automaticamente.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-ghost"><i class="fa-solid fa-link-slash"></i> Remover link</button>
+            </form>
+        </div>
+    @else
+        <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:14px;">
+            Para não precisar enviar o arquivo, cole aqui o link de compartilhamento da planilha no OneDrive
+            (no OneDrive: Compartilhar &gt; "Qualquer pessoa com o link pode exibir" &gt; Copiar link).
+            O sistema testa o link na hora, passa a conferir a planilha todo dia e ganha o botão Analisar.
+        </p>
+        <form method="POST" action="{{ route('planejamento.fonte.salvar') }}" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+            @csrf
+            <input type="url" name="url" required placeholder="https://1drv.ms/x/..." class="form-control" style="flex:1;min-width:260px;" autocomplete="off">
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-link"></i> Salvar link</button>
+        </form>
+    @endif
+</div>
+
+<div class="card" style="padding:20px;margin-bottom:20px;">
     <div class="card-title" style="margin-bottom:6px;">Enviar a planilha de planejamento</div>
     <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:14px;">
         Escolha o arquivo Excel (.xlsx) do planejamento da casa. O sistema fica igual à planilha: inclui o que é novo,

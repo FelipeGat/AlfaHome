@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.ativo.api' => \App\Http\Middleware\EnsureTenantActiveApi::class,
             'role'             => \App\Http\Middleware\CheckRole::class,
             'manutencao'       => \App\Http\Middleware\CheckManutencao::class,
+            'planilha.dia'     => \App\Http\Middleware\VerificarPlanilhaDoDia::class,
         ]);
 
         // O service worker reenvia a fila offline sem página aberta, logo sem

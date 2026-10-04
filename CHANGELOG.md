@@ -1,5 +1,16 @@
 # Changelog
 
+## AlfaHome — 04/10/2026 — Planilha analisada automaticamente
+
+### Novidades
+- **A planilha passa a ser conferida sozinha.** Em Planejamento > Importar Planilha, cole uma vez o link de compartilhamento da planilha no OneDrive. A partir daí o sistema confere a planilha todo dia e traz o que mudou, sem ninguém precisar enviar o arquivo.
+- **Botão Analisar** nas telas de planejamento: busca na hora a versão atual da planilha e mostra o que foi incluído, alterado ou removido.
+- Se a planilha tiver algum erro ou o link deixar de funcionar, as telas avisam o motivo e continuam mostrando os dados da última análise que deu certo.
+
+### Correções
+- **Lançamentos excluídos continuavam somando** no previsto e no realizado do planejamento. Agora não entram em nenhum total.
+- O relatório da importação mostrava as abas fora de ordem; agora segue a ordem da planilha.
+
 ## AlfaHome — 04/10/2026 — Planejamento a partir da planilha e revisão geral
 
 ### Novidades

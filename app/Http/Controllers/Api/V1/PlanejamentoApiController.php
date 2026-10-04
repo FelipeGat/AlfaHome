@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\PlanilhaFonte;
 use App\Models\PlanilhaImportacao;
+use App\Services\Planejamento\PlanilhaFonteService;
 use App\Services\Planejamento\PlanejamentoService;
 use App\Services\Planejamento\PlanilhaImportService;
 use Carbon\Carbon;
@@ -201,6 +203,47 @@ class PlanejamentoApiController extends Controller
         }
 
         return response()->json(['data' => $this->importacao($importacao)]);
+    }
+
+    /** GET /api/v1/planejamento/fonte */
+    public function fonte(Request $request): JsonResponse
+    {
+        $fonte = PlanilhaFonte::where('tenant_id', $request->user()->tenant_id)->first();
+
+        return response()->json(['data' => [
+            'configurada'   => $fonte !== null,
+            'verificada_em' => $fonte?->verificada_em?->toIso8601String(),
+            'status'        => $fonte?->status,
+            'erro'          => $fonte?->erro,
+        ]]);
+    }
+
+    /** POST /api/v1/planejamento/analisar */
+    public function analisar(Request $request, PlanilhaFonteService $servico): JsonResponse
+    {
+        if ($request->user()->role !== 'master') {
+            return response()->json(['message' => 'Somente o dono da conta pode analisar a planilha.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $fonte = PlanilhaFonte::where('tenant_id', $request->user()->tenant_id)->first();
+        if (! $fonte) {
+            return response()->json(['message' => 'O link da planilha no OneDrive ainda não foi configurado.'], Response::HTTP_CONFLICT);
+        }
+
+        $r = $servico->analisar($fonte, $request->user()->id);
+
+        if ($r['erro']) {
+            return response()->json(['message' => $r['erro']], Response::HTTP_BAD_GATEWAY);
+        }
+
+        if ($r['importacao']->status === PlanilhaImportacao::REJEITADA) {
+            return response()->json([
+                'message' => 'A planilha foi rejeitada e nada foi alterado.',
+                'data'    => $this->importacao($r['importacao']),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return response()->json(['data' => $this->importacao($r['importacao'])]);
     }
 
     private function importacao(PlanilhaImportacao $i): array

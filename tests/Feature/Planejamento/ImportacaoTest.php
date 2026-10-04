@@ -51,9 +51,10 @@ class ImportacaoTest extends TestCase
         $this->assertSame(2, PlanMeta::withoutGlobalScopes()->count());
 
         $this->assertSame(['incluidas' => 52, 'atualizadas' => 0, 'removidas' => 0, 'mantidas' => 0], $importacao->resumo['lancamentos']);
+        // Relida do banco (que reordena chaves de JSON), a ordem continua a das abas.
         $this->assertSame(
             ['lancamentos', 'contas_fixas', 'cartoes', 'parceladas', 'dividas', 'metas'],
-            array_keys($importacao->resumo)
+            array_keys(PlanilhaImportacao::withoutGlobalScopes()->find($importacao->id)->resumo)
         );
     }
 

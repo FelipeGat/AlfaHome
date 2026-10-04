@@ -181,3 +181,29 @@ Artisan::command(
         return 0;
     }
 )->purpose('Importa a planilha de planejamento financeiro para um tenant');
+
+/**
+ * php artisan planilha:analisar
+ *
+ * Verifica a planilha de todas as famílias que configuraram o link do
+ * OneDrive. É a mesma verificação que o primeiro acesso do dia dispara; com o
+ * cron do servidor chamando `schedule:run`, ela acontece às 06:00 sem depender
+ * de ninguém entrar no sistema.
+ */
+Artisan::command('planilha:analisar', function (\App\Services\Planejamento\PlanilhaFonteService $servico) {
+    $fontes = \App\Models\PlanilhaFonte::withoutGlobalScopes()->get();
+
+    foreach ($fontes as $fonte) {
+        try {
+            $r = $servico->analisar($fonte, null, automatica: true);
+            $this->line(sprintf('tenant %d: %s', $fonte->tenant_id, $r['erro'] ?? $fonte->fresh()->status));
+        } catch (\Throwable $e) {
+            // Uma família com problema não impede as demais.
+            $this->error(sprintf('tenant %d: %s', $fonte->tenant_id, $e->getMessage()));
+        }
+    }
+
+    $this->info($fontes->count() . ' planilha(s) verificada(s).');
+})->purpose('Verifica a planilha do OneDrive de cada família');
+
+\Illuminate\Support\Facades\Schedule::command('planilha:analisar')->dailyAt('06:00');

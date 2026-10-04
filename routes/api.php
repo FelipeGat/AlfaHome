@@ -70,7 +70,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::post('auth/login', [AuthController::class, 'login'])->name('auth.login');
 
     // ── Authenticated (Sanctum) ──────────────────────────────────────────
-    Route::middleware(['auth:sanctum', 'tenant.ativo.api'])->group(function () {
+    Route::middleware(['auth:sanctum', 'tenant.ativo.api', 'planilha.dia'])->group(function () {
 
         // Auth
         Route::get(   'auth/me',           [AuthController::class, 'me'])->name('auth.me');
@@ -144,6 +144,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get( 'contas-fixas', [PlanejamentoApiController::class, 'contasFixas'])->name('contas-fixas');
             Route::get( 'importacoes',  [PlanejamentoApiController::class, 'importacoes'])->name('importacoes');
             Route::post('importar',     [PlanejamentoApiController::class, 'importar'])->name('importar');
+            Route::get( 'fonte',        [PlanejamentoApiController::class, 'fonte'])->name('fonte');
+            Route::post('analisar',     [PlanejamentoApiController::class, 'analisar'])->name('analisar');
         });
 
         // ── Despesas (CRUD) ──────────────────────────────────────────────

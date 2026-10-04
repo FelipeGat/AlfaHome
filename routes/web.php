@@ -98,7 +98,7 @@ Route::middleware(['auth', 'role:admin_revenda', 'manutencao'])->prefix('revenda
 });
 
 // ─── Tenant (Master / Membro) ───────────────────────────────────────────────
-Route::middleware(['auth', 'tenant.ativo', 'manutencao'])->group(function () {
+Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Alertas financeiros
@@ -114,6 +114,9 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao'])->group(function () {
         Route::get('/contas-fixas', [PlanejamentoController::class, 'contasFixas'])->name('contas-fixas');
         Route::get('/importar', [PlanilhaImportacaoController::class, 'index'])->name('importar');
         Route::post('/importar', [PlanilhaImportacaoController::class, 'store'])->name('importar.store');
+        Route::post('/fonte', [PlanilhaImportacaoController::class, 'salvarFonte'])->name('fonte.salvar');
+        Route::delete('/fonte', [PlanilhaImportacaoController::class, 'removerFonte'])->name('fonte.remover');
+        Route::post('/analisar', [PlanilhaImportacaoController::class, 'analisar'])->name('analisar');
     });
 
     // Fluxo de Caixa / Baixas

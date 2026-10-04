@@ -17,15 +17,32 @@
             </a>
         @endforeach
     </div>
-    <div style="font-size:12px;color:var(--color-text-muted);">
-        <i class="fa-solid fa-file-excel"></i>
-        @if($ultima)
-            Dados da planilha — última importação em {{ \Carbon\Carbon::parse($ultima['em'])->format('d/m/Y H:i') }}
-        @else
-            A planilha ainda não foi importada
-        @endif
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--color-text-muted);">
+        <span>
+            <i class="fa-solid fa-file-excel"></i>
+            @if($fontePlanilha?->verificada_em)
+                Planilha verificada em {{ $fontePlanilha->verificada_em->format('d/m/Y H:i') }}
+            @elseif($ultima)
+                Dados da planilha — última importação em {{ \Carbon\Carbon::parse($ultima['em'])->format('d/m/Y H:i') }}
+            @else
+                A planilha ainda não foi importada
+            @endif
+        </span>
         @if(Auth::user()->role === 'master')
-            · <a href="{{ route('planejamento.importar') }}" style="color:var(--color-primary);font-weight:600;">Importar</a>
+            @if($fontePlanilha)
+                <form method="POST" action="{{ route('planejamento.analisar') }}" style="display:inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-sm btn-primary" title="Buscar a versão atual da planilha no OneDrive"><i class="fa-solid fa-rotate"></i> Analisar</button>
+                </form>
+            @else
+                <a href="{{ route('planejamento.importar') }}" style="color:var(--color-primary);font-weight:600;">Importar</a>
+            @endif
         @endif
     </div>
 </div>
+@if($fontePlanilha?->teveProblema())
+    <div class="alert alert-warning" style="margin-bottom:18px;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>A última análise da planilha não foi aplicada: {{ $fontePlanilha->erro }} Os dados abaixo são os da análise anterior.</span>
+    </div>
+@endif

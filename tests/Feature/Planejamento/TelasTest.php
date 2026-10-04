@@ -125,11 +125,14 @@ class TelasTest extends TestCase
             ->assertSee('são mantidos na planilha', false);
 
         // Não existe rota de escrita para os dados da planilha, na web nem na API:
-        // a única que grava é a de importar.
+        // só gravam as que trazem a planilha (importar, analisar e o link dela).
         $escrita = collect(app('router')->getRoutes()->getRoutes())
             ->filter(fn ($r) => str_contains($r->uri(), 'planejamento') && array_diff($r->methods(), ['GET', 'HEAD']))
-            ->map(fn ($r) => $r->uri())->values()->all();
-        $this->assertSame(['api/v1/planejamento/importar', 'planejamento/importar'], $escrita);
+            ->map(fn ($r) => $r->uri())->unique()->sort()->values()->all();
+        $this->assertSame([
+            'api/v1/planejamento/analisar', 'api/v1/planejamento/importar',
+            'planejamento/analisar', 'planejamento/fonte', 'planejamento/importar',
+        ], $escrita);
 
         $lancamento = PlanLancamento::first();
         $this->put('/planejamento/' . $lancamento->id, [])->assertNotFound();

@@ -690,6 +690,25 @@ Todas respondem `{ "data": [...], "resumo": {...} }`.
 
 A importação é idempotente (mesmo arquivo de novo → `sem_alteracoes`) e atômica.
 
+### Análise automática (link do OneDrive)
+
+O dono da conta configura, pela web, o link de compartilhamento da planilha no
+OneDrive. O backend confere a planilha uma vez por dia (no primeiro acesso do
+dia de qualquer pessoa da família, inclusive pelo app) e sob demanda.
+
+| Método | Rota | Resposta |
+|---|---|---|
+| GET | `/planejamento/fonte` | `{ "data": { "configurada": bool, "verificada_em": ISO-8601 \| null, "status": "sucesso" \| "sem_alteracoes" \| "rejeitada" \| "falha" \| null, "erro": string \| null } }` — o link nunca é devolvido |
+| POST | `/planejamento/analisar` | busca a versão atual e importa; só `role = master` |
+
+`POST /planejamento/analisar`:
+
+- **200** — mesmo corpo de `POST /planejamento/importar` (`status` `sucesso` ou `sem_alteracoes`).
+- **422** — planilha rejeitada, nada alterado (`data.erros`).
+- **409** — link ainda não configurado.
+- **502** — o OneDrive não devolveu a planilha (`message` com o motivo).
+- **403** — usuário que não é o dono da conta.
+
 ### Pendência de deploy
 
 `php artisan migrate` no servidor — cria `planilha_importacoes`, as seis tabelas
