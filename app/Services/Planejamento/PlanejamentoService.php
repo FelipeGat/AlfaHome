@@ -3,6 +3,7 @@
 namespace App\Services\Planejamento;
 
 use App\Models\Banco;
+use App\Services\Financeiro\FinanceiroService;
 use App\Models\Despesa;
 use App\Models\PlanCartao;
 use App\Models\PlanCompraParcelada;
@@ -277,12 +278,10 @@ class PlanejamentoService
         $fimMes = $hoje->copy()->endOfMonth()->format('Y-m-d');
         $soma   = fn (array $itens) => round(array_sum(array_column($itens, 'valor')), 2);
 
-        $contas = Banco::withoutGlobalScopes()->where('tenant_id', $tenantId)
-            ->where(fn ($q) => $q->where('tem_conta_corrente', true)->orWhere('tem_poupanca', true)->orWhere('eh_dinheiro', true))
-            ->orderBy('nome')->get()
-            ->map(fn ($b) => ['id' => $b->id, 'nome' => $b->nome, 'saldo' => round($b->saldo_total, 2), 'cor' => $b->cor, 'logo' => $b->logo])
-            ->values()->all();
-        $totalContas = round(array_sum(array_column($contas, 'saldo')), 2);
+        // Saldo das contas: a definição única do FinanceiroService.
+        $saldos = app(FinanceiroService::class)->contas($tenantId, $hoje);
+        $contas = array_map(fn ($c) => ['id' => $c['id'], 'nome' => $c['nome'], 'saldo' => $c['saldo'], 'cor' => $c['cor'], 'logo' => $c['logo']], $saldos['itens']);
+        $totalContas = $saldos['total'];
 
         $v      = $this->vencimentos($tenantId, $hoje);
         $janela = fn (array $itens, string $ate) => array_values(array_filter($itens, fn ($i) => $i['data'] !== null && $i['data'] <= $ate));
@@ -364,7 +363,7 @@ class PlanejamentoService
      * Tudo o que se move no período, num formato só. `data` é quando estava
      * previsto; `realizado_em` é quando aconteceu (nulo se ainda não).
      */
-    private function movimentos(int $tenantId, CarbonInterface $inicio, CarbonInterface $fim): Collection
+    public function movimentos(int $tenantId, CarbonInterface $inicio, CarbonInterface $fim): Collection
     {
         $de  = $inicio->format('Y-m-d');
         $ate = $fim->format('Y-m-d');
@@ -383,6 +382,8 @@ class PlanejamentoService
                 'categoria'       => $l->categoria,
                 'forma'           => $l->forma,
                 'conta'           => $l->conta,
+                'banco_id'        => null,
+                'registrado_em'   => $l->created_at,
                 'valor_previsto'  => $l->valor_previsto !== null ? (float) $l->valor_previsto : null,
                 'valor_realizado' => $l->valor_realizado !== null ? (float) $l->valor_realizado : null,
                 'status'          => $l->status,
@@ -405,6 +406,8 @@ class PlanejamentoService
                 'categoria'       => $d->categoria?->nome,
                 'forma'           => $d->tipo_pagamento,
                 'conta'           => $d->banco?->nome,
+                'banco_id'        => $d->forma_pagamento,
+                'registrado_em'   => $d->created_at,
                 'valor_previsto'  => (float) ($d->valor_previsto ?? $d->valor),
                 'valor_realizado' => $d->data_pagamento ? (float) $d->valor : null,
                 'status'          => $d->data_pagamento ? 'concluido' : 'pendente',
@@ -425,6 +428,8 @@ class PlanejamentoService
                 'categoria'       => $r->categoria?->nome,
                 'forma'           => $r->tipo_pagamento,
                 'conta'           => $r->banco?->nome,
+                'banco_id'        => $r->forma_recebimento,
+                'registrado_em'   => $r->created_at,
                 'valor_previsto'  => (float) ($r->valor_previsto ?? $r->valor),
                 'valor_realizado' => $r->data_recebimento ? (float) $r->valor : null,
                 'status'          => $r->data_recebimento ? 'concluido' : 'pendente',

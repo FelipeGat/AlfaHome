@@ -4,14 +4,16 @@ namespace App\Observers;
 
 use App\Models\Banco;
 use App\Models\Despesa;
+use App\Services\Financeiro\RecalcularSaldos;
 
 /**
  * Mantém saldos de banco em sincronia com despesas.
  *
  * Dois eixos independentes:
  *
- *  A) Saldo da conta corrente (bancos.saldo) — só é afetado quando
- *     uma despesa NÃO-crédito é marcada como paga / desmarcada / excluída.
+ *  A) Saldo da conta corrente (bancos.saldo) — calculado pelo
+ *     FinanceiroService (último ajuste + movimentos realizados); a cada
+ *     mudança este observer só pede o recálculo.
  *
  *  B) Saldo do cartão de crédito / fatura aberta (bancos.saldo_cartao)
  *     — é afetado por qualquer despesa de crédito EM ABERTO. Quando a
@@ -27,29 +29,12 @@ class DespesaObserver
 {
     public function created(Despesa $despesa): void
     {
-        // A) Conta corrente: despesa criada já como paga → debitar
-        if ($despesa->data_pagamento && $despesa->tipo_pagamento !== 'credito') {
-            $this->debitarBanco($despesa);
-        }
-
         // B) Cartão: se entra na fatura aberta, soma ao saldo_cartao
         $this->aplicarFatura($despesa, +1);
     }
 
     public function updating(Despesa $despesa): void
     {
-        // A) Conta corrente — só muda quando data_pagamento muda E não é crédito
-        if ($despesa->isDirty('data_pagamento') && $despesa->tipo_pagamento !== 'credito') {
-            $antigo = $despesa->getOriginal('data_pagamento');
-            $novo   = $despesa->data_pagamento;
-
-            if (is_null($antigo) && ! is_null($novo)) {
-                $this->debitarBanco($despesa);
-            } elseif (! is_null($antigo) && is_null($novo)) {
-                $this->creditarBanco($despesa);
-            }
-        }
-
         // B) Cartão — reverter contribuição antiga e aplicar a nova.
         //    Cobre mudanças de valor, forma_pagamento, tipo_pagamento e
         //    data_pagamento de forma uniforme.
@@ -61,31 +46,24 @@ class DespesaObserver
 
     public function deleted(Despesa $despesa): void
     {
-        // A) Conta corrente: se estava paga, devolver o saldo
-        if ($despesa->data_pagamento && $despesa->tipo_pagamento !== 'credito') {
-            $this->creditarBanco($despesa);
-        }
-
         // B) Cartão: se contribuía para a fatura aberta, recuar
         $this->aplicarFatura($despesa, -1);
+
+        RecalcularSaldos::para($despesa->tenant_id);
     }
 
     // ─── Conta corrente ────────────────────────────────────────────────────
+    // O saldo da conta é calculado pelo FinanceiroService (último ajuste +
+    // movimentos); aqui só se pede o recálculo depois de cada mudança.
 
-    private function debitarBanco(Despesa $despesa): void
+    public function saved(Despesa $despesa): void
     {
-        $banco = Banco::find($despesa->forma_pagamento);
-        if ($banco) {
-            $banco->decrement('saldo', (float) $despesa->valor);
-        }
+        RecalcularSaldos::para($despesa->tenant_id);
     }
 
-    private function creditarBanco(Despesa $despesa): void
+    public function restored(Despesa $despesa): void
     {
-        $banco = Banco::find($despesa->forma_pagamento);
-        if ($banco) {
-            $banco->increment('saldo', (float) $despesa->valor);
-        }
+        RecalcularSaldos::para($despesa->tenant_id);
     }
 
     // ─── Cartão de crédito (fatura aberta) ─────────────────────────────────

@@ -6,22 +6,23 @@ use App\Models\Banco;
 use App\Models\Despesa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ContaDesdeSempre;
 use Tests\TestCase;
 
 class DespesaSaldoValidationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ContaDesdeSempre;
 
     private function criarBanco(User $user, array $attrs = []): Banco
     {
-        return Banco::create(array_merge([
+        return $this->desdeSempre(Banco::create(array_merge([
             'tenant_id'          => $user->tenant_id,
             'user_id'            => $user->id,
             'nome'               => 'Conta Teste',
             'tem_conta_corrente' => true,
             'saldo'              => 0,
             'cheque_especial'    => 0,
-        ], $attrs));
+        ], $attrs)));
     }
 
     public function test_pagar_despesa_imediata_passa_mesmo_com_outras_em_aberto_acima_do_saldo(): void

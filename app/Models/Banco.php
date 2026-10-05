@@ -35,6 +35,33 @@ class Banco extends Model
         'dia_fechamento_cartao' => 'integer',
     ];
 
+    /**
+     * O saldo digitado no cadastro (conta nova ou saldo editado) vira um ajuste:
+     * é a base do saldo calculado pelo FinanceiroService. O recálculo grava a
+     * coluna direto no banco, sem passar por aqui.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (Banco $banco) {
+            if ($banco->wasRecentlyCreated || $banco->wasChanged('saldo')) {
+                SaldoAjuste::withoutGlobalScopes()->create([
+                    'tenant_id'  => $banco->tenant_id,
+                    'banco_id'   => $banco->id,
+                    'user_id'    => auth()->id(),
+                    'data'       => now()->toDateString(),
+                    'saldo'      => $banco->saldo ?? 0,
+                    'diferenca'  => $banco->wasRecentlyCreated ? 0 : round((float) $banco->saldo - (float) $banco->getOriginal('saldo'), 2),
+                    'observacao' => $banco->wasRecentlyCreated ? 'Saldo inicial (cadastro da conta)' : 'Saldo editado no cadastro',
+                ]);
+            }
+        });
+    }
+
+    public function ajustes()
+    {
+        return $this->hasMany(SaldoAjuste::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

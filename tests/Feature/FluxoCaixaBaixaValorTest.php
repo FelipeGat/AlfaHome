@@ -7,21 +7,22 @@ use App\Models\Despesa;
 use App\Models\Receita;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ContaDesdeSempre;
 use Tests\TestCase;
 
 class FluxoCaixaBaixaValorTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ContaDesdeSempre;
 
     private function criarConta(User $user, float $saldo = 5000.00): Banco
     {
-        return Banco::create([
+        return $this->desdeSempre(Banco::create([
             'tenant_id'          => $user->tenant_id,
             'user_id'            => $user->id,
             'nome'               => 'Conta Fluxo',
             'tem_conta_corrente' => true,
             'saldo'              => $saldo,
-        ]);
+        ]));
     }
 
     public function test_baixar_receita_com_valor_diferente_atualiza_valor_e_saldo(): void

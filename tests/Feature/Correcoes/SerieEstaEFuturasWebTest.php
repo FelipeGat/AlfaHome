@@ -7,6 +7,7 @@ use App\Models\Despesa;
 use App\Models\Receita;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\ContaDesdeSempre;
 use Tests\TestCase;
 
 /**
@@ -16,7 +17,7 @@ use Tests\TestCase;
  */
 class SerieEstaEFuturasWebTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ContaDesdeSempre;
 
     private User $user;
 
@@ -29,7 +30,7 @@ class SerieEstaEFuturasWebTest extends TestCase
 
     private function banco(array $extra = []): Banco
     {
-        return Banco::create(['tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'nome' => 'Banco', 'tem_conta_corrente' => true, 'saldo' => 1000] + $extra);
+        return $this->desdeSempre(Banco::create(['tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'nome' => 'Banco', 'tem_conta_corrente' => true, 'saldo' => 1000] + $extra));
     }
 
     private function serieDeDespesas(Banco $banco, string $tipo, float $valor): array

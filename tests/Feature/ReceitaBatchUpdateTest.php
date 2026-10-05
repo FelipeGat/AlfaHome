@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\ContaDesdeSempre;
 use Tests\TestCase;
 
 /**
@@ -20,7 +21,7 @@ use Tests\TestCase;
  */
 class ReceitaBatchUpdateTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, ContaDesdeSempre;
 
     public function test_update_esta_e_futuras_triggers_observer_for_all(): void
     {
@@ -30,6 +31,7 @@ class ReceitaBatchUpdateTest extends TestCase
             'user_id'   => $user->id,
             'saldo'     => 0,
         ]);
+        $this->desdeSempre($banco);
         $grupo = (string) Str::uuid();
 
         Sanctum::actingAs($user);

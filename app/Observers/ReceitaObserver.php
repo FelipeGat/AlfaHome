@@ -2,58 +2,28 @@
 
 namespace App\Observers;
 
-use App\Models\Banco;
 use App\Models\Receita;
+use App\Services\Financeiro\RecalcularSaldos;
 
+/**
+ * O saldo da conta é calculado pelo FinanceiroService (último ajuste +
+ * movimentos realizados); receita criada, alterada, excluída ou restaurada só
+ * pede o recálculo.
+ */
 class ReceitaObserver
 {
-    public function created(Receita $receita): void
+    public function saved(Receita $receita): void
     {
-        // Receita criada já como recebida → creditar saldo do banco
-        if ($receita->data_recebimento) {
-            $this->creditarBanco($receita);
-        }
-    }
-
-    public function updating(Receita $receita): void
-    {
-        if (! $receita->isDirty('data_recebimento')) {
-            return;
-        }
-
-        $antigo = $receita->getOriginal('data_recebimento');
-        $novo   = $receita->data_recebimento;
-
-        if (is_null($antigo) && ! is_null($novo)) {
-            // Marcou como recebida → creditar
-            $this->creditarBanco($receita);
-        } elseif (! is_null($antigo) && is_null($novo)) {
-            // Estornou → debitar
-            $this->debitarBanco($receita);
-        }
+        RecalcularSaldos::para($receita->tenant_id);
     }
 
     public function deleted(Receita $receita): void
     {
-        // Se a receita excluída estava recebida, estornar o saldo
-        if ($receita->data_recebimento) {
-            $this->debitarBanco($receita);
-        }
+        RecalcularSaldos::para($receita->tenant_id);
     }
 
-    private function creditarBanco(Receita $receita): void
+    public function restored(Receita $receita): void
     {
-        $banco = Banco::find($receita->forma_recebimento);
-        if ($banco) {
-            $banco->increment('saldo', (float) $receita->valor);
-        }
-    }
-
-    private function debitarBanco(Receita $receita): void
-    {
-        $banco = Banco::find($receita->forma_recebimento);
-        if ($banco) {
-            $banco->decrement('saldo', (float) $receita->valor);
-        }
+        RecalcularSaldos::para($receita->tenant_id);
     }
 }

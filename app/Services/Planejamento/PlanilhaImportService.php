@@ -11,8 +11,10 @@ use App\Models\PlanilhaImportacao;
 use App\Models\PlanLancamento;
 use App\Models\PlanMeta;
 use App\Models\User;
+use App\Services\Financeiro\RecalcularSaldos;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+
 
 /**
  * Deixa as tabelas plan_* do tenant iguais à planilha enviada: inclui o que é
@@ -61,7 +63,7 @@ class PlanilhaImportService
             ]);
         }
 
-        return DB::transaction(function () use ($tenantId, $userId, $registro, $resultado) {
+        $importacao = DB::transaction(function () use ($tenantId, $userId, $registro, $resultado) {
             $importacao = PlanilhaImportacao::create($registro + ['status' => PlanilhaImportacao::SUCESSO]);
             $avisos     = $resultado['avisos'];
             $resumo     = [];
@@ -101,6 +103,11 @@ class PlanilhaImportService
 
             return $importacao;
         });
+
+        // Lançamento novo ou alterado na planilha move o saldo das contas.
+        RecalcularSaldos::para($tenantId);
+
+        return $importacao;
     }
 
     /**

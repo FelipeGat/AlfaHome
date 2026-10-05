@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\DespesaController as ApiDespesaController;
 use App\Http\Controllers\Api\V1\FamiliarApiController;
 use App\Http\Controllers\Api\V1\FornecedorApiController;
 use App\Http\Controllers\Api\V1\InvestimentoApiController;
+use App\Http\Controllers\Api\V1\FinanceiroApiController;
 use App\Http\Controllers\Api\V1\PlanejamentoApiController;
 use App\Http\Controllers\Api\V1\ReceitaController as ApiReceitaController;
 use App\Http\Controllers\Api\V1\TransferenciaController;
@@ -133,6 +134,15 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::delete('transferencias/{transferencia}',   [TransferenciaController::class, 'destroy'])->name('transferencias.destroy');
 
         // ── Planejamento (planilha da família — somente leitura + envio) ─
+        // ── Fonte única dos números (Início, Resumo do mês, Contas) ─────
+        Route::prefix('financeiro')->name('financeiro.')->group(function () {
+            Route::get('inicio', [FinanceiroApiController::class, 'inicio'])->name('inicio');
+            Route::get('resumo', [FinanceiroApiController::class, 'resumo'])->name('resumo');
+            Route::get('contas', [FinanceiroApiController::class, 'contas'])->name('contas');
+            Route::get('contas/{banco}', [FinanceiroApiController::class, 'conta'])->name('conta');
+            Route::post('contas/{banco}/ajustar', [FinanceiroApiController::class, 'ajustar'])->name('ajustar');
+        });
+
         Route::prefix('planejamento')->name('planejamento.')->group(function () {
             Route::get( 'resumo',       [PlanejamentoApiController::class, 'resumo'])->name('resumo');
             Route::get( 'anual',        [PlanejamentoApiController::class, 'anual'])->name('anual');

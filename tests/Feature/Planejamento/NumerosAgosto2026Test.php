@@ -13,6 +13,7 @@ use App\Services\Planejamento\PlanilhaImportService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\PlanilhaFixture;
+use Tests\Support\ContaDesdeSempre;
 use Tests\TestCase;
 
 /**
@@ -21,7 +22,7 @@ use Tests\TestCase;
  */
 class NumerosAgosto2026Test extends TestCase
 {
-    use RefreshDatabase, PlanilhaFixture;
+    use RefreshDatabase, PlanilhaFixture, ContaDesdeSempre;
 
     private User $user;
     private PlanejamentoService $servico;
@@ -256,7 +257,7 @@ class NumerosAgosto2026Test extends TestCase
     public function test_baixa_com_valor_diferente_preserva_o_previsto(): void
     {
         $this->actingAs($this->user);
-        $banco   = Banco::create(['tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'nome' => 'Conta', 'tem_conta_corrente' => true, 'saldo' => 2000]);
+        $banco   = $this->desdeSempre(Banco::create(['tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'nome' => 'Conta', 'tem_conta_corrente' => true, 'saldo' => 2000]));
         $despesa = Despesa::create([
             'tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'forma_pagamento' => $banco->id,
             'tipo_pagamento' => 'pix', 'valor' => 800, 'data_compra' => '2026-08-05', 'data_pagamento' => null,
