@@ -64,6 +64,13 @@ class NotificacaoService
             return ['enfileirados' => 0, 'enviados' => 0, 'falhas' => 0];
         }
 
+        // Sem ninguém vinculado não se detecta nada: um alerta contínuo (saldo,
+        // limite) marcado como dado sem destinatário nunca mais seria enviado.
+        $temQuemRecebe = TelegramDestinatario::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('ativo', true)->exists();
+        if (! $temQuemRecebe) {
+            return ['enfileirados' => 0, 'enviados' => 0, 'falhas' => 0];
+        }
+
         try {
             $enfileirados = $this->enfileirar($config, $this->detectar($config, $agora ?? now()));
             $config->forceFill(['processado_em' => now()])->save();

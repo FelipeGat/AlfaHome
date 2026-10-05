@@ -136,6 +136,20 @@ class AvisosTest extends NotificacoesTestCase
         $this->assertStringContainsString('Sicoob: R$ -10,00', $textos[1]);
     }
 
+    public function test_alerta_de_saldo_nao_se_perde_quando_ninguem_esta_vinculado(): void
+    {
+        $this->travelTo('2026-10-05 13:00:00');
+        $this->configurar();
+        $this->conta(-189.02);
+
+        $this->processar();
+        $this->destinatario();
+        $this->processar();
+
+        $this->assertCount(1, $this->enviadas());
+        $this->assertStringContainsString('Saldo negativo', $this->enviadas()[0]);
+    }
+
     public function test_limite_acima_de_80_avisa_sem_repetir(): void
     {
         $this->travelTo('2026-10-05 13:00:00');
