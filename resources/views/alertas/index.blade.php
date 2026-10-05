@@ -16,62 +16,6 @@ $config = [
 @endphp
 
 {{-- ═══════════════════════════════════════════════════════════════════ --}}
-{{-- 1. RESUMO EXECUTIVO --}}
-{{-- ═══════════════════════════════════════════════════════════════════ --}}
-<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(min(180px,100%), 1fr)); gap:12px; margin-bottom:20px;">
-    {{-- Saldo projetado --}}
-    <div style="background:var(--color-bg-card); border-radius:12px; padding:16px 20px; border:1px solid {{ $resumo['saldo_projetado'] < 0 ? 'var(--color-danger)' : 'var(--color-border)' }};">
-        <div style="font-size:11px; color:var(--color-text-subtle); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Saldo projetado</div>
-        <div style="font-size:22px; font-weight:800; color:{{ $resumo['saldo_projetado'] < 0 ? 'var(--color-danger)' : 'var(--color-success)' }};">
-            R$ {{ number_format($resumo['saldo_projetado'], 2, ',', '.') }}
-        </div>
-    </div>
-
-    {{-- Tendência --}}
-    @php
-        $tendCor = match($resumo['tendencia']) {
-            'POSITIVA' => 'var(--color-success)',
-            'NEGATIVA' => 'var(--color-danger)',
-            default    => 'var(--color-text-muted)',
-        };
-        $tendIcone = match($resumo['tendencia']) {
-            'POSITIVA' => 'fa-arrow-trend-up',
-            'NEGATIVA' => 'fa-arrow-trend-down',
-            default    => 'fa-minus',
-        };
-    @endphp
-    <div style="background:var(--color-bg-card); border-radius:12px; padding:16px 20px; border:1px solid var(--color-border);">
-        <div style="font-size:11px; color:var(--color-text-subtle); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Tendência</div>
-        <div style="font-size:22px; font-weight:800; color:{{ $tendCor }}; display:flex; align-items:center; gap:8px;">
-            <i class="fa-solid {{ $tendIcone }}" style="font-size:18px;"></i>
-            {{ $resumo['tendencia'] }}
-        </div>
-    </div>
-
-    {{-- Alertas críticos --}}
-    <div style="background:var(--color-bg-card); border-radius:12px; padding:16px 20px; border:1px solid {{ $resumo['alertas_criticos'] > 0 ? 'var(--color-danger)' : 'var(--color-border)' }};">
-        <div style="font-size:11px; color:var(--color-text-subtle); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Alertas críticos</div>
-        <div style="font-size:22px; font-weight:800; color:{{ $resumo['alertas_criticos'] > 0 ? 'var(--color-danger)' : 'var(--color-success)' }};">
-            {{ $resumo['alertas_criticos'] }}
-        </div>
-    </div>
-
-    {{-- Score financeiro --}}
-    @php
-        $scoreCor = $resumo['score'] >= 70 ? 'var(--color-success)' : ($resumo['score'] >= 40 ? 'var(--color-amber)' : 'var(--color-danger)');
-    @endphp
-    <div style="background:var(--color-bg-card); border-radius:12px; padding:16px 20px; border:1px solid var(--color-border);">
-        <div style="font-size:11px; color:var(--color-text-subtle); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Score financeiro</div>
-        <div style="display:flex; align-items:center; gap:12px;">
-            <div style="font-size:22px; font-weight:800; color:{{ $scoreCor }};">{{ $resumo['score'] }}<span style="font-size:14px; font-weight:600; color:var(--color-text-subtle);">/100</span></div>
-            <div style="flex:1; height:8px; background:var(--color-bg-inset); border-radius:99px; overflow:hidden;">
-                <div style="width:{{ $resumo['score'] }}%; height:100%; background:{{ $scoreCor }}; border-radius:99px; transition:width .6s;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ═══════════════════════════════════════════════════════════════════ --}}
 {{-- 2. ALERTA PRINCIPAL (DESTAQUE) --}}
 {{-- ═══════════════════════════════════════════════════════════════════ --}}
 
@@ -256,44 +200,6 @@ $config = [
     </a>
 </div>
 @endif
-
-{{-- ═══════════════════════════════════════════════════════════════════ --}}
-{{-- 3. FILTROS POR INTENÇÃO --}}
-{{-- ═══════════════════════════════════════════════════════════════════ --}}
-<div style="display:flex; align-items:center; gap:8px; margin-bottom:16px; flex-wrap:wrap; justify-content:center;">
-    <span style="font-size:12px; color:var(--color-text-subtle); font-weight:600; margin-right:4px;">FILTRAR:</span>
-
-    <button onclick="filtrar('todos')" id="filtro-todos"
-            style="border:1px solid var(--color-border); background:var(--color-text); color:var(--color-bg-card); padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s;">
-        Todos ({{ $contadores['total'] }})
-    </button>
-
-    <button onclick="filtrar('resolver')" id="filtro-resolver"
-            style="border:1px solid var(--color-danger); background:var(--color-danger-soft); color:var(--color-danger); padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s;">
-        <i class="fa-solid fa-bolt" style="font-size:10px; margin-right:3px;"></i>Resolver agora ({{ $alertas->where('intencao', 'resolver')->count() }})
-    </button>
-
-    <button onclick="filtrar('economizar')" id="filtro-economizar"
-            style="border:1px solid var(--color-success); background:var(--color-success-soft); color:var(--color-success); padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s;">
-        <i class="fa-solid fa-piggy-bank" style="font-size:10px; margin-right:3px;"></i>Economizar ({{ $alertas->where('intencao', 'economizar')->count() }})
-    </button>
-
-    <button onclick="filtrar('entender')" id="filtro-entender"
-            style="border:1px solid var(--color-info); background:var(--color-info-soft); color:var(--color-info); padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s;">
-        <i class="fa-solid fa-magnifying-glass" style="font-size:10px; margin-right:3px;"></i>Entender gastos ({{ $alertas->where('intencao', 'entender')->count() }})
-    </button>
-
-    {{-- Pills de tipo --}}
-    <span style="width:1px; height:20px; background:var(--color-border); margin:0 4px;"></span>
-    @foreach(['critico','atencao','info','oportunidade'] as $tipo)
-    @if($contadores[$tipo] > 0)
-    <button onclick="filtrarTipo('{{ $tipo }}')" id="tipo-{{ $tipo }}"
-            style="border:1px solid {{ $config[$tipo]['borda'] }}; background:{{ $config[$tipo]['bg'] }}; color:{{ $config[$tipo]['cor'] }}; padding:4px 10px; border-radius:99px; font-size:11px; font-weight:600; cursor:pointer; transition:all .2s;">
-        {{ $config[$tipo]['label'] }}: {{ $contadores[$tipo] }}
-    </button>
-    @endif
-    @endforeach
-</div>
 
 {{-- ═══════════════════════════════════════════════════════════════════ --}}
 {{-- 4. LISTA DE ALERTAS (CARDS) --}}

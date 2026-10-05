@@ -5,6 +5,7 @@
 ### Novidades
 - **Lançamentos agora mostra o que está na planilha**: totais do mês (entrou, saiu, falta receber, falta pagar), lista dia a dia e filtros por saídas/entradas, pagos/pendentes, categoria, conta ou cartão e busca por texto. As telas Despesas e Receitas, que ficavam zeradas, saíram do menu.
 - **Menu reorganizado**: Planilha e Avisos no Telegram ficam em Configurações.
+- **Telas mais limpas**: o Dashboard mostra só o painel do dia (saiu o resumo repetido e os filtros antigos) e avisa quando a planilha ainda não tem receitas previstas no mês; Previsto x Realizado mostra só os 4 números do mês e os itens em que o realizado fugiu do previsto, com atalho para os lançamentos; Alertas perdeu o "saldo projetado", a "tendência" e o "score", que vinham do sistema antigo e contradiziam o Dashboard.
 
 ## AlfaHome — 04/10/2026 — Avisos no Telegram
 

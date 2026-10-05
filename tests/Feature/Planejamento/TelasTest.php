@@ -56,12 +56,10 @@ class TelasTest extends TestCase
             ->assertSee('R$ 5.407,76')
             ->assertSee('30,67%')
             ->assertSee('69,33%')
-            ->assertSee('R$ 1.855,15')
-            ->assertSee('R$ 5.549,77')
-            ->assertSee('R$ 10.174,66')
             ->assertSee('Salário (Gdl)')
             ->assertSee('+371,00')
             ->assertSee('Tarifa báncaria')
+            ->assertSee(route('planejamento.lancamentos', ['mes' => '2026-08']), false)
             ->assertSee('última importação em')
             ->assertDontSee('Nenhum lançamento neste mês.');
     }
@@ -139,16 +137,16 @@ class TelasTest extends TestCase
         $this->delete('/planejamento/' . $lancamento->id)->assertNotFound();
     }
 
-    public function test_painel_inicial_mostra_o_bloco_da_planilha_so_depois_de_importar(): void
+    public function test_painel_inicial_com_planilha_mostra_o_painel_do_dia_sem_resumo_repetido(): void
     {
         $this->actingAs(User::factory()->create());
         $this->get(route('dashboard'))->assertOk()->assertDontSee('Planejamento do mês');
 
         $this->actingAs($this->comPlanilha());
         $this->get(route('dashboard', ['inicio' => '2026-08-01', 'fim' => '2026-08-31']))->assertOk()
-            ->assertSee('Planejamento do mês')
-            ->assertSee('R$ 17.632,86')->assertSee('R$ 12.225,10')->assertSee('R$ 5.407,76')
-            ->assertSee('30,67%')->assertSee('R$ 1.855,15')->assertSee('R$ 5.549,77')->assertSee('R$ 10.174,66');
+            // Com a planilha, o painel do dia é o Dashboard: sem o resumo repetido.
+            ->assertSee('Saldo em contas')->assertSee('Próximos 7 dias')
+            ->assertDontSee('Planejamento do mês');
     }
 
     public function test_importar_pela_tela(): void

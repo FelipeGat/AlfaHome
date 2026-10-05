@@ -43,6 +43,9 @@
         <div class="hoje-rotulo">Fim do mês (previsão)</div>
         <div class="hoje-num" style="font-size:28px;font-weight:700;color:{{ $hCor($hoje['ate_fim_do_mes']['projecao_saldo']) }};">{{ $hBrl($hoje['ate_fim_do_mes']['projecao_saldo']) }}</div>
         <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:8px;">saldo em contas + a receber − a pagar até {{ now()->endOfMonth()->format('d/m') }}</div>
+        @if($hoje['ate_fim_do_mes']['a_receber'] == 0)
+            <div style="font-size:12px;color:var(--color-warning);margin-bottom:8px;"><i class="fa-solid fa-circle-info"></i> A planilha ainda não tem nenhuma receita prevista até {{ now()->endOfMonth()->format('d/m') }} — salários e entradas do mês não entram nesta conta.</div>
+        @endif
         <div class="hoje-item"><span>A receber</span><span class="hoje-num" style="color:var(--color-success);font-weight:600;">+ {{ $hBrl($hoje['ate_fim_do_mes']['a_receber']) }}</span></div>
         <div class="hoje-item"><span>A pagar</span><span class="hoje-num" style="color:var(--color-danger);font-weight:600;">− {{ $hBrl($hoje['ate_fim_do_mes']['a_pagar']) }}</span></div>
     </div>

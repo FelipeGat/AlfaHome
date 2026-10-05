@@ -8,7 +8,6 @@
     $pct = fn ($v) => number_format($v, 2, ',', '.') . '%';
     $meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
     $tituloMes = ucfirst($meses[$mes->month - 1]) . ' de ' . $mes->year;
-    $formas = ['dinheiro' => 'Dinheiro', 'pix' => 'PIX', 'debito' => 'Débito', 'cartao' => 'Cartão', 'credito' => 'Crédito', 'transferencia' => 'Transferência', 'boleto' => 'Boleto', 'deposito' => 'Depósito', 'outros' => 'Outros'];
     $saldoReal = $resumo['saldo']['realizado'];
 @endphp
 
@@ -40,14 +39,6 @@
     @include('planejamento._kpi', ['rotulo' => 'Despesas realizadas', 'valor' => $brl($resumo['despesas']['realizado']), 'cor' => 'var(--color-danger)', 'nota' => 'Previsto ' . $brl($resumo['despesas']['previsto'])])
     @include('planejamento._kpi', ['rotulo' => 'Saldo do mês', 'valor' => $brl($saldoReal), 'cor' => $saldoReal >= 0 ? 'var(--color-success)' : 'var(--color-danger)', 'nota' => 'Previsto ' . $brl($resumo['saldo']['previsto'])])
     @include('planejamento._kpi', ['rotulo' => 'Economia', 'valor' => $pct($resumo['economia_pct']), 'nota' => 'Comprometimento da renda ' . $pct($resumo['comprometimento_pct'])])
-</div>
-
-{{-- Posição --}}
-<div class="plan-grid" style="margin-bottom:20px;">
-    @include('planejamento._kpi', ['rotulo' => 'Limite disponível', 'valor' => $brl($resumo['cartoes']['limite_disponivel']), 'nota' => $pct($resumo['cartoes']['utilizado_pct']) . ' do limite utilizado'])
-    @include('planejamento._kpi', ['rotulo' => 'Faturas em aberto', 'valor' => $brl($resumo['cartoes']['faturas_abertas'])])
-    @include('planejamento._kpi', ['rotulo' => 'Saldo de dívidas', 'valor' => $brl($resumo['dividas']['saldo_total']), 'nota' => $resumo['dividas']['quantidade'] . ' ' . ($resumo['dividas']['quantidade'] === 1 ? 'dívida' : 'dívidas')])
-    @include('planejamento._kpi', ['rotulo' => 'Metas — progresso médio', 'valor' => $pct($resumo['metas']['progresso_medio_pct']), 'nota' => $resumo['metas']['quantidade'] . ' ' . ($resumo['metas']['quantidade'] === 1 ? 'meta' : 'metas')])
 </div>
 
 <div class="plan-duo">
@@ -91,65 +82,43 @@
     </div>
 </div>
 
-{{-- Lançamentos do mês --}}
+{{-- Onde o mês fugiu do previsto: a lista completa fica em Lançamentos --}}
+@php $diferentes = array_values(array_filter($lancamentos, fn ($l) => $l['diferenca'] !== null && $l['diferenca'] != 0)); @endphp
 <div class="card" style="padding:18px 20px;">
-    <div class="card-title" style="margin-bottom:12px;">Lançamentos de {{ $tituloMes }} <span style="font-weight:400;color:var(--color-text-muted);">({{ count($lancamentos) }})</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <div class="card-title">Realizado diferente do previsto <span style="font-weight:400;color:var(--color-text-muted);">({{ count($diferentes) }})</span></div>
+        <a href="{{ route('planejamento.lancamentos', ['mes' => $mes->format('Y-m')]) }}" style="font-size:13px;font-weight:600;color:var(--color-primary);text-decoration:none;">Ver os {{ count($lancamentos) }} lançamentos do mês &rarr;</a>
+    </div>
     @if(empty($lancamentos))
         <div class="empty-state"><i class="fa-solid fa-list-ul"></i><p>Nenhum lançamento neste mês.</p></div>
+    @elseif(empty($diferentes))
+        <p style="font-size:13px;color:var(--color-text-muted);">Tudo o que já foi pago ou recebido bateu com o previsto.</p>
     @else
         <div class="table-wrapper">
             <table class="table">
                 <thead>
-                    <tr>
-                        <th>Data</th><th>Descrição</th><th>Categoria</th><th>Forma</th><th>Conta</th>
-                        <th class="plan-num">Previsto</th><th class="plan-num">Realizado</th><th class="plan-num">Diferença</th><th>Situação</th><th>Origem</th>
-                    </tr>
+                    <tr><th>Data</th><th>Descrição</th><th class="plan-num">Previsto</th><th class="plan-num">Realizado</th><th class="plan-num">Diferença</th></tr>
                 </thead>
                 <tbody>
-                    @foreach($lancamentos as $l)
+                    @foreach($diferentes as $l)
                         <tr>
                             <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($l['data'])->format('d/m') }}</td>
                             <td>
-                                <i class="fa-solid {{ $l['tipo'] === 'receita' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}" style="color:{{ $l['tipo'] === 'receita' ? 'var(--color-success)' : 'var(--color-danger)' }};" title="{{ $l['tipo'] === 'receita' ? 'Receita' : 'Despesa' }}"></i>
+                                <i class="fa-solid {{ $l['tipo'] === 'receita' ? 'fa-arrow-down' : 'fa-arrow-up' }}" style="color:{{ $l['tipo'] === 'receita' ? 'var(--color-success)' : 'var(--color-danger)' }};"></i>
                                 {{ $l['descricao'] }}
-                                @if($l['observacao'] && $l['observacao'] !== $l['descricao'])
-                                    <div style="font-size:11px;color:var(--color-text-muted);">{{ $l['observacao'] }}</div>
-                                @endif
+                                <div style="font-size:11px;color:var(--color-text-muted);">{{ $l['categoria'] ?? '—' }}</div>
                             </td>
-                            <td>{{ $l['categoria'] ?? '—' }}</td>
-                            <td>{{ $formas[$l['forma']] ?? ($l['forma'] ?? '—') }}</td>
-                            <td>{{ $l['conta'] ?? '—' }}</td>
                             <td class="plan-num">{{ $brl($l['valor_previsto']) }}</td>
                             <td class="plan-num">{{ $brl($l['valor_realizado']) }}</td>
-                            <td class="plan-num">
-                                @if($l['diferenca'] !== null && $l['diferenca'] != 0)
-                                    <strong style="color:var(--color-warning);">{{ $l['diferenca'] > 0 ? '+' : '' }}{{ number_format($l['diferenca'], 2, ',', '.') }}</strong>
-                                @else
-                                    <span style="color:var(--color-text-faint);">—</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($l['status'] === 'concluido')
-                                    <span class="badge badge-success">{{ $l['tipo'] === 'receita' ? 'Recebido' : 'Pago' }}</span>
-                                @else
-                                    <span class="badge badge-warning">Pendente</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if($l['origem'] === 'planilha')
-                                    <span class="badge badge-gray" title="Mantido na planilha — altere lá e importe de novo">Planilha</span>
-                                @else
-                                    <span class="badge badge-blue" title="Lançado no sistema">Sistema</span>
-                                @endif
-                            </td>
+                            <td class="plan-num"><strong style="color:var(--color-warning);">{{ $l['diferenca'] > 0 ? '+' : '' }}{{ number_format($l['diferenca'], 2, ',', '.') }}</strong></td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
-        <p style="font-size:12px;color:var(--color-text-muted);margin-top:10px;">
-            Lançamentos com origem <strong>Planilha</strong> são mantidos na planilha: para alterar, edite lá e importe de novo.
-        </p>
     @endif
+    <p style="font-size:12px;color:var(--color-text-muted);margin-top:10px;">
+        Os lançamentos são mantidos na planilha: para alterar, edite lá e importe de novo.
+    </p>
 </div>
 @endsection
