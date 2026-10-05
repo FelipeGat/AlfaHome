@@ -14,6 +14,7 @@ class RelogioController extends Controller
 {
     public function __invoke(int $tenant, string $chave, NotificacaoService $servico)
     {
+        abort_unless(NotificacaoConfig::liberado($tenant), 404);
         abort_unless(hash_equals(NotificacaoConfig::chaveRelogio($tenant), $chave), 403);
 
         return response()->json($servico->relogio($tenant));

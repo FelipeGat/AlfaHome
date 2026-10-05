@@ -16,7 +16,7 @@ class RelogioTest extends NotificacoesTestCase
         $tenant = $this->user->tenant_id;
 
         $this->post("/relogio/notificacoes/{$tenant}/chave-errada")->assertForbidden();
-        $this->post('/relogio/notificacoes/' . ($tenant + 1) . '/' . NotificacaoConfig::chaveRelogio($tenant))->assertForbidden();
+        $this->post('/relogio/notificacoes/' . ($tenant + 1) . '/' . NotificacaoConfig::chaveRelogio($tenant))->assertNotFound();
         $this->assertSame([], $this->enviadas());
 
         $this->post(route('notificacoes.relogio', ['tenant' => $tenant, 'chave' => NotificacaoConfig::chaveRelogio($tenant)]))

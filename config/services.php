@@ -41,4 +41,10 @@ return [
         'private_key' => env('VAPID_PRIVATE_KEY'),
     ],
 
+    // Avisos pelo Telegram: só as famílias desta lista (ids de tenant) têm
+    // acesso — tela, vínculo, relógio e envio. Hoje, só a família do Felipe.
+    'notificacoes' => [
+        'tenants' => array_map('intval', array_filter(explode(',', (string) env('NOTIFICACOES_TENANTS', '2')))),
+    ],
+
 ];

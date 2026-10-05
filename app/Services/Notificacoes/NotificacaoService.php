@@ -40,6 +40,10 @@ class NotificacaoService
     /** O que o relógio faz: atualiza a planilha se a última verificação passou de 1 h e processa os avisos. */
     public function relogio(int $tenantId): array
     {
+        if (! NotificacaoConfig::liberado($tenantId)) {
+            return ['enfileirados' => 0, 'enviados' => 0, 'falhas' => 0];
+        }
+
         $fonte = PlanilhaFonte::withoutGlobalScopes()->where('tenant_id', $tenantId)->first();
         if ($fonte && ($fonte->verificada_em === null || $fonte->verificada_em->lt(now()->subHour()))) {
             try {
@@ -56,7 +60,7 @@ class NotificacaoService
     public function processar(int $tenantId, ?CarbonInterface $agora = null): array
     {
         $config = $this->config($tenantId);
-        if (! $config?->telegram_token) {
+        if (! $config?->telegram_token || ! NotificacaoConfig::liberado($tenantId)) {
             return ['enfileirados' => 0, 'enviados' => 0, 'falhas' => 0];
         }
 
@@ -76,6 +80,9 @@ class NotificacaoService
     public function enviarTeste(int $tenantId): array
     {
         $config = $this->config($tenantId);
+        if (! $config?->telegram_token || ! NotificacaoConfig::liberado($tenantId)) {
+            return ['enviados' => 0, 'falhas' => 0];
+        }
         $this->enfileirar($config, [[
             'tipo'  => 'teste',
             'chave' => 'teste:' . now()->format('YmdHisv'),

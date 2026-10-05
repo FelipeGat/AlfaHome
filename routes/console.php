@@ -216,7 +216,8 @@ Artisan::command('planilha:analisar', function (\App\Services\Planejamento\Plani
  * na hora e envia pelo Telegram.
  */
 Artisan::command('notificacoes:processar', function (\App\Services\Notificacoes\NotificacaoService $servico) {
-    $tenants = \App\Models\NotificacaoConfig::withoutGlobalScopes()->whereNotNull('telegram_token')->pluck('tenant_id');
+    $tenants = \App\Models\NotificacaoConfig::withoutGlobalScopes()->whereNotNull('telegram_token')
+        ->whereIn('tenant_id', config('services.notificacoes.tenants', []))->pluck('tenant_id');
 
     foreach ($tenants as $tenantId) {
         $r = $servico->relogio($tenantId);

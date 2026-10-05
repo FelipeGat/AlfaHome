@@ -31,6 +31,12 @@ class NotificacaoConfig extends Model
         'processado_em'      => 'datetime',
     ];
 
+    /** Só as famílias liberadas em `services.notificacoes.tenants` usam os avisos. */
+    public static function liberado(?int $tenantId): bool
+    {
+        return $tenantId !== null && in_array($tenantId, config('services.notificacoes.tenants', []), true);
+    }
+
     public function ligado(string $tipo): bool
     {
         return ! in_array($tipo, $this->tipos_desligados ?? [], true);

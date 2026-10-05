@@ -16,6 +16,7 @@ class TelegramWebhookController extends Controller
 {
     public function __invoke(Request $request, int $tenant, TelegramClient $telegram)
     {
+        abort_unless(NotificacaoConfig::liberado($tenant), 404);
         $segredo = (string) $request->header('X-Telegram-Bot-Api-Secret-Token');
         abort_unless(hash_equals(NotificacaoConfig::segredoWebhook($tenant), $segredo), 403);
 

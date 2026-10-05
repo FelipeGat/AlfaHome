@@ -117,6 +117,7 @@ class NotificacaoController extends Controller
 
     private function somenteDono(): void
     {
+        abort_unless(NotificacaoConfig::liberado(Auth::user()->tenant_id), 404);
         abort_unless(Auth::user()->role === 'master', 403, 'Somente o dono da conta configura os avisos.');
     }
 }

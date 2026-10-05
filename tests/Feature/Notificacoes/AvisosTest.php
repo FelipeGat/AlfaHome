@@ -246,6 +246,7 @@ class AvisosTest extends NotificacoesTestCase
     {
         $this->travelTo('2026-10-05 13:00:00');
         $outra = User::factory()->create();
+        $this->liberar($outra);
         $this->configurar();
         $this->configurar($outra);
         $this->destinatario(1001);

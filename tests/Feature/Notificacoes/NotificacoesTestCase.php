@@ -27,6 +27,9 @@ abstract class NotificacoesTestCase extends TestCase
     {
         parent::setUp();
         $this->user  = User::factory()->create();
+        // Nos testes os ids de família variam: a lista começa vazia e cada teste libera quem precisa.
+        config(['services.notificacoes.tenants' => []]);
+        $this->liberar($this->user);
         $this->envio = fn () => Http::response(['ok' => true, 'result' => ['message_id' => 1]]);
         $this->getMe = fn () => Http::response(['ok' => true, 'result' => ['id' => 1, 'is_bot' => true, 'username' => 'familia_bot']]);
 
@@ -35,6 +38,12 @@ abstract class NotificacoesTestCase extends TestCase
             'api.telegram.org/*/setWebhook'  => Http::response(['ok' => true, 'result' => true]),
             'api.telegram.org/*/sendMessage' => fn ($r) => ($this->envio)($r),
         ]);
+    }
+
+    /** Inclui a família na lista das que podem usar os avisos. */
+    protected function liberar(User $user): void
+    {
+        config(['services.notificacoes.tenants' => array_merge(config('services.notificacoes.tenants'), [$user->tenant_id])]);
     }
 
     protected function configurar(?User $user = null, array $extra = []): NotificacaoConfig

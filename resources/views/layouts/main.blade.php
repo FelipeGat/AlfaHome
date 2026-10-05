@@ -1148,7 +1148,7 @@
             <i class="fa-solid fa-bell"></i>
             <span>Alertas</span>
         </a>
-        @if(auth()->user()->role === 'master')
+        @if(auth()->user()->role === 'master' && \App\Models\NotificacaoConfig::liberado(auth()->user()->tenant_id))
         <a href="{{ route('notificacoes.index') }}" class="sidebar-link {{ request()->routeIs('notificacoes.*') ? 'active' : '' }}" data-label="Avisos no Telegram">
             <i class="fa-brands fa-telegram"></i> <span>Avisos no Telegram</span>
         </a>
