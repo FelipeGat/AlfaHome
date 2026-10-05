@@ -1,5 +1,11 @@
 # Changelog
 
+## AlfaHome — 05/10/2026 — Lançamentos numa tela só
+
+### Novidades
+- **Lançamentos agora mostra o que está na planilha**: totais do mês (entrou, saiu, falta receber, falta pagar), lista dia a dia e filtros por saídas/entradas, pagos/pendentes, categoria, conta ou cartão e busca por texto. As telas Despesas e Receitas, que ficavam zeradas, saíram do menu.
+- **Menu reorganizado**: Planilha e Avisos no Telegram ficam em Configurações.
+
 ## AlfaHome — 04/10/2026 — Avisos no Telegram
 
 ### Novidades

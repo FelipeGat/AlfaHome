@@ -126,6 +126,7 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group
     // Planejamento (planilha da família) — somente leitura + importação
     Route::prefix('planejamento')->name('planejamento.')->group(function () {
         Route::get('/', [PlanejamentoController::class, 'index'])->name('index');
+        Route::get('/lancamentos', [PlanejamentoController::class, 'lancamentos'])->name('lancamentos');
         Route::get('/anual', [PlanejamentoController::class, 'anual'])->name('anual');
         Route::get('/cartoes', [PlanejamentoController::class, 'cartoes'])->name('cartoes');
         Route::get('/dividas', [PlanejamentoController::class, 'dividas'])->name('dividas');

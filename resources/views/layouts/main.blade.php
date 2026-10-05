@@ -1148,11 +1148,6 @@
             <i class="fa-solid fa-bell"></i>
             <span>Alertas</span>
         </a>
-        @if(auth()->user()->role === 'master' && \App\Models\NotificacaoConfig::liberado(auth()->user()->tenant_id))
-        <a href="{{ route('notificacoes.index') }}" class="sidebar-link {{ request()->routeIs('notificacoes.*') ? 'active' : '' }}" data-label="Avisos no Telegram">
-            <i class="fa-brands fa-telegram"></i> <span>Avisos no Telegram</span>
-        </a>
-        @endif
 
         <div class="sidebar-section-label">Planejamento</div>
         <a href="{{ route('planejamento.index') }}" class="sidebar-link {{ request()->routeIs('planejamento.index', 'planejamento.anual') ? 'active' : '' }}" data-label="Planejamento">
@@ -1170,28 +1165,11 @@
         <a href="{{ route('planejamento.contas-fixas') }}" class="sidebar-link {{ request()->routeIs('planejamento.contas-fixas') ? 'active' : '' }}" data-label="Contas Fixas">
             <i class="fa-solid fa-calendar-check"></i> <span>Contas Fixas</span>
         </a>
-        @if(Auth::user()->role === 'master')
-        <a href="{{ route('planejamento.importar') }}" class="sidebar-link {{ request()->routeIs('planejamento.importar') ? 'active' : '' }}" data-label="Importar Planilha">
-            <i class="fa-solid fa-file-arrow-up"></i> <span>Importar Planilha</span>
-        </a>
-        @endif
 
         <div class="sidebar-section-label">Lançamentos</div>
-        @if(Auth::user()->temPermissao('despesas', 'criar'))
-        <a href="{{ route('lancamentos.index') }}" class="sidebar-link {{ request()->routeIs('lancamentos.*') ? 'active' : '' }}" data-label="Lançamentos">
+        <a href="{{ route('planejamento.lancamentos') }}" class="sidebar-link {{ request()->routeIs('planejamento.lancamentos') ? 'active' : '' }}" data-label="Lançamentos">
             <i class="fa-solid fa-list-ul"></i> <span>Lançamentos</span>
         </a>
-        @endif
-        @if(Auth::user()->temPermissao('despesas', 'ver'))
-        <a href="{{ route('despesas.index') }}" class="sidebar-link {{ request()->routeIs('despesas.*') ? 'active' : '' }}" data-label="Despesas">
-            <i class="fa-solid fa-arrow-trend-down"></i> <span>Despesas</span>
-        </a>
-        @endif
-        @if(Auth::user()->temPermissao('receitas', 'ver'))
-        <a href="{{ route('receitas.index') }}" class="sidebar-link {{ request()->routeIs('receitas.*') ? 'active' : '' }}" data-label="Receitas">
-            <i class="fa-solid fa-arrow-trend-up"></i> <span>Receitas</span>
-        </a>
-        @endif
         @if(Auth::user()->temPermissao('investimentos', 'ver'))
         <a href="{{ route('investimentos.index') }}" class="sidebar-link {{ request()->routeIs('investimentos.*') ? 'active' : '' }}" data-label="Investimentos">
             <i class="fa-solid fa-seedling"></i> <span>Investimentos</span>
@@ -1218,6 +1196,18 @@
         <a href="{{ route('categorias.index') }}" class="sidebar-link {{ request()->routeIs('categorias.*') ? 'active' : '' }}" data-label="Categorias">
             <i class="fa-solid fa-tags"></i> <span>Categorias</span>
         </a>
+        @endif
+
+        @if(Auth::user()->role === 'master')
+        <div class="sidebar-section-label">Configurações</div>
+        <a href="{{ route('planejamento.importar') }}" class="sidebar-link {{ request()->routeIs('planejamento.importar') ? 'active' : '' }}" data-label="Planilha">
+            <i class="fa-solid fa-file-arrow-up"></i> <span>Planilha</span>
+        </a>
+        @if(\App\Models\NotificacaoConfig::liberado(auth()->user()->tenant_id))
+        <a href="{{ route('notificacoes.index') }}" class="sidebar-link {{ request()->routeIs('notificacoes.*') ? 'active' : '' }}" data-label="Avisos no Telegram">
+            <i class="fa-brands fa-telegram"></i> <span>Avisos no Telegram</span>
+        </a>
+        @endif
         @endif
 
         <div class="sidebar-section-label">Indicação</div>
@@ -1422,31 +1412,20 @@
                 </a>
             </li>
             <li>
-                <a href="{{ route('planejamento.index') }}" class="{{ request()->routeIs('planejamento.*') ? 'active' : '' }}">
+                <a href="{{ route('planejamento.index') }}" class="{{ request()->routeIs('planejamento.*') && ! request()->routeIs('planejamento.lancamentos', 'planejamento.importar') ? 'active' : '' }}">
                     <i class="fa-solid fa-scale-balanced"></i> Planejar
                 </a>
             </li>
-            @if(Auth::user()->temPermissao('despesas', 'criar'))
             <li>
-                <a href="{{ route('lancamentos.index') }}" class="{{ request()->routeIs('lancamentos.*') ? 'active' : '' }}">
+                <a href="{{ route('planejamento.lancamentos') }}" class="{{ request()->routeIs('planejamento.lancamentos') ? 'active' : '' }}">
                     <i class="fa-solid fa-list-ul"></i> Lançamentos
                 </a>
             </li>
-            @endif
-            @if(Auth::user()->temPermissao('despesas', 'ver'))
             <li>
-                <a href="{{ route('despesas.index') }}" class="{{ request()->routeIs('despesas.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-arrow-trend-down"></i> Despesas
+                <a href="{{ route('alertas.index') }}" class="{{ request()->routeIs('alertas.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-bell"></i> Alertas
                 </a>
             </li>
-            @endif
-            @if(Auth::user()->temPermissao('receitas', 'ver'))
-            <li>
-                <a href="{{ route('receitas.index') }}" class="{{ request()->routeIs('receitas.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-arrow-trend-up"></i> Receitas
-                </a>
-            </li>
-            @endif
             @if(Auth::user()->temPermissao('bancos', 'ver'))
             <li>
                 <a href="{{ route('bancos.index') }}" class="{{ request()->routeIs('bancos.*') ? 'active' : '' }}">
