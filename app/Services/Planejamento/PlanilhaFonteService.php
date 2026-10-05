@@ -4,6 +4,7 @@ namespace App\Services\Planejamento;
 
 use App\Models\PlanilhaFonte;
 use App\Models\PlanilhaImportacao;
+use App\Services\Notificacoes\NotificacaoService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -105,6 +106,11 @@ class PlanilhaFonteService
                 'erro'          => $rejeitada ? $this->resumoDosErros($importacao) : null,
                 'arquivo_hash'  => $rejeitada ? $fonte->arquivo_hash : $hash,
             ]);
+
+            // Compra nova no cartão é avisada na hora em que a planilha chega.
+            if (! $rejeitada) {
+                app(NotificacaoService::class)->processar($fonte->tenant_id);
+            }
 
             return $importacao;
         } finally {

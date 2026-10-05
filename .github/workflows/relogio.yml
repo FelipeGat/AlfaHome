@@ -1,0 +1,28 @@
+name: relogio
+
+# Relógio dos avisos do Telegram: o servidor de produção não tem agendador,
+# então este agendamento chama a cada 15 minutos o endereço do relógio da
+# família (tela Avisos no Telegram), guardado no segredo ALFAHOME_RELOGIO_URL.
+# O GitHub pode atrasar alguns minutos; o sistema decide o que está na hora.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Chamar o relógio
+        env:
+          URL: ${{ secrets.ALFAHOME_RELOGIO_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "Segredo ALFAHOME_RELOGIO_URL não configurado; nada a fazer."
+            exit 0
+          fi
+          curl -fsS -X POST --max-time 120 -A "alfahome-relogio" "$URL"

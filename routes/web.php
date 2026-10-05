@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificacaoController;
+use App\Http\Controllers\RelogioController;
+use App\Http\Controllers\TelegramWebhookController;
 use App\Http\Controllers\DespesaController;
 use App\Http\Controllers\ReceitaController;
 use App\Http\Controllers\CategoriaController;
@@ -97,12 +100,28 @@ Route::middleware(['auth', 'role:admin_revenda', 'manutencao'])->prefix('revenda
     Route::post('/clientes/{tenant}/renovar', [ClienteController::class, 'renovar'])->name('revenda.clientes.renovar');
 });
 
+// ─── Telegram e relógio dos avisos (sem sessão; protegidos por segredo) ─────
+Route::post('/telegram/webhook/{tenant}', TelegramWebhookController::class)
+    ->whereNumber('tenant')->middleware('throttle:60,1')->name('telegram.webhook');
+Route::match(['get', 'post'], '/relogio/notificacoes/{tenant}/{chave}', RelogioController::class)
+    ->whereNumber('tenant')->middleware('throttle:12,1')->name('notificacoes.relogio');
+
 // ─── Tenant (Master / Membro) ───────────────────────────────────────────────
 Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Alertas financeiros
     Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
+
+    // Notificações pelo Telegram
+    Route::prefix('notificacoes')->name('notificacoes.')->group(function () {
+        Route::get('/', [NotificacaoController::class, 'index'])->name('index');
+        Route::post('/token', [NotificacaoController::class, 'salvarToken'])->name('token');
+        Route::post('/link', [NotificacaoController::class, 'gerarLink'])->name('link');
+        Route::post('/tipos', [NotificacaoController::class, 'tipos'])->name('tipos');
+        Route::post('/teste', [NotificacaoController::class, 'teste'])->name('teste');
+        Route::delete('/destinatarios/{destinatario}', [NotificacaoController::class, 'removerDestinatario'])->name('destinatarios.remover');
+    });
 
     // Planejamento (planilha da família) — somente leitura + importação
     Route::prefix('planejamento')->name('planejamento.')->group(function () {

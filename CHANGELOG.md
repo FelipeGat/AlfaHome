@@ -1,5 +1,11 @@
 # Changelog
 
+## AlfaHome — 04/10/2026 — Avisos no Telegram
+
+### Novidades
+- **Avisos da família no Telegram**: resumo do dia às 7h (saldo, atrasados, o que vence hoje e nos próximos 7 dias, previsão do fim do mês) e alertas na hora para contas a pagar (3 dias antes e no dia), contas a receber (no dia e em atraso), saldo negativo, compra nova no cartão e limite acima de 80%.
+- Nova tela **Avisos no Telegram** (só o dono da conta): token do bot, link para cada pessoa se vincular, escolha do que avisar, envio de teste e histórico dos últimos envios.
+
 ## AlfaHome — 04/10/2026 — Painel do dia
 
 ### Novidades

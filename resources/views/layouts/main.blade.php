@@ -1148,6 +1148,11 @@
             <i class="fa-solid fa-bell"></i>
             <span>Alertas</span>
         </a>
+        @if(auth()->user()->role === 'master')
+        <a href="{{ route('notificacoes.index') }}" class="sidebar-link {{ request()->routeIs('notificacoes.*') ? 'active' : '' }}" data-label="Avisos no Telegram">
+            <i class="fa-brands fa-telegram"></i> <span>Avisos no Telegram</span>
+        </a>
+        @endif
 
         <div class="sidebar-section-label">Planejamento</div>
         <a href="{{ route('planejamento.index') }}" class="sidebar-link {{ request()->routeIs('planejamento.index', 'planejamento.anual') ? 'active' : '' }}" data-label="Planejamento">
@@ -1321,6 +1326,12 @@
             <div class="alert alert-success">
                 <i class="fa-solid fa-circle-check"></i>
                 <span>{{ session('success') }}</span>
+            </div>
+        @endif
+        @if(session('warning'))
+            <div class="alert alert-warning">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>{{ session('warning') }}</span>
             </div>
         @endif
         @if(session('error'))

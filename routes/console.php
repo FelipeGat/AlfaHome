@@ -207,3 +207,21 @@ Artisan::command('planilha:analisar', function (\App\Services\Planejamento\Plani
 })->purpose('Verifica a planilha do OneDrive de cada família');
 
 \Illuminate\Support\Facades\Schedule::command('planilha:analisar')->dailyAt('06:00');
+
+/**
+ * php artisan notificacoes:processar
+ *
+ * O mesmo trabalho do relógio externo (RelogioController) para cada família
+ * com bot configurado: atualiza a planilha se passou 1 h, detecta o que está
+ * na hora e envia pelo Telegram.
+ */
+Artisan::command('notificacoes:processar', function (\App\Services\Notificacoes\NotificacaoService $servico) {
+    $tenants = \App\Models\NotificacaoConfig::withoutGlobalScopes()->whereNotNull('telegram_token')->pluck('tenant_id');
+
+    foreach ($tenants as $tenantId) {
+        $r = $servico->relogio($tenantId);
+        $this->line(sprintf('tenant %d: %d na fila, %d enviados, %d falhas', $tenantId, $r['enfileirados'], $r['enviados'], $r['falhas']));
+    }
+})->purpose('Envia os avisos do Telegram que estiverem na hora');
+
+\Illuminate\Support\Facades\Schedule::command('notificacoes:processar')->everyFifteenMinutes();
