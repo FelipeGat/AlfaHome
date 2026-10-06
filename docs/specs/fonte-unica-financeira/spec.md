@@ -18,6 +18,7 @@ negativo pintado de verde e moeda formatada de três jeitos.
 - Q: Como se comporta o saldo da conta? → A: Calculado + ajuste (Felipe): último saldo informado + movimentos realizados depois dele; "Ajustar saldo" registra o saldo real.
 - Q: Transferência na planilha? → A: Na planilha, "transferência" é forma de pagamento (TED/PIX de terceiros); continua entrada/saída. Transferência entre contas próprias só existe no sistema (tabela `transferencias`) e nunca é entrada/saída.
 - Q: Cartão? → A: A compra é a saída, na data da fatura em que a planilha a registra; a planilha não registra o pagamento da fatura, então não há duplicação. Limite nunca é saldo.
+- Q: O que é "realizado" na planilha? → A: A situação Pago/Realizado (06/10/2026: a Ju preenche o valor realizado de contas futuras, que seguem pendentes). Pago sem valor realizado vale o previsto.
 - Q: Navegação do app? → A: Início | Extrato | Contas | Mais (sem "+", pois o app só visualiza).
 
 ## User Scenarios & Testing

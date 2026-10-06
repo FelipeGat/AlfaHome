@@ -369,26 +369,33 @@ class PlanejamentoService
         $ate = $fim->format('Y-m-d');
 
         // Na planilha o lançamento tem uma data só: vale para previsto e realizado.
+        // Realizado é o que está com situação Pago/Realizado — a família às vezes
+        // preenche o valor realizado de contas futuras, que continuam pendentes.
+        // Pago sem valor realizado vale o previsto.
         $planilha = PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
             ->whereBetween('data', [$de, $ate])->get()
-            ->map(fn ($l) => [
-                'ref'             => 'planilha:' . $l->id,
-                'origem'          => 'planilha',
-                'ordem'           => $l->linha,
-                'tipo'            => $l->tipo,
-                'data'            => $l->data,
-                'realizado_em'    => $l->valor_realizado !== null ? $l->data : null,
-                'descricao'       => $l->descricao,
-                'categoria'       => $l->categoria,
-                'forma'           => $l->forma,
-                'conta'           => $l->conta,
-                'banco_id'        => null,
-                'registrado_em'   => $l->created_at,
-                'valor_previsto'  => $l->valor_previsto !== null ? (float) $l->valor_previsto : null,
-                'valor_realizado' => $l->valor_realizado !== null ? (float) $l->valor_realizado : null,
-                'status'          => $l->status,
-                'observacao'      => $l->observacao,
-            ]);
+            ->map(function ($l) {
+                $realizado = $l->status === 'concluido' ? ($l->valor_realizado ?? $l->valor_previsto) : null;
+
+                return [
+                    'ref'             => 'planilha:' . $l->id,
+                    'origem'          => 'planilha',
+                    'ordem'           => $l->linha,
+                    'tipo'            => $l->tipo,
+                    'data'            => $l->data,
+                    'realizado_em'    => $realizado !== null ? $l->data : null,
+                    'descricao'       => $l->descricao,
+                    'categoria'       => $l->categoria,
+                    'forma'           => $l->forma,
+                    'conta'           => $l->conta,
+                    'banco_id'        => null,
+                    'registrado_em'   => $l->created_at,
+                    'valor_previsto'  => $l->valor_previsto !== null ? (float) $l->valor_previsto : null,
+                    'valor_realizado' => $realizado !== null ? (float) $realizado : null,
+                    'status'          => $l->status,
+                    'observacao'      => $l->observacao,
+                ];
+            });
 
         // Só o escopo de tenant é dispensado (o tenant vem por parâmetro); o de
         // exclusão continua valendo — lançamento excluído não entra em conta.

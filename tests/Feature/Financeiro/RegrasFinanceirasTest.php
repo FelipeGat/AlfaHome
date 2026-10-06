@@ -200,6 +200,28 @@ class RegrasFinanceirasTest extends TestCase
         $this->assertSame([], $vazio['categorias']);
     }
 
+    public function test_realizado_e_a_situacao_pago_nao_o_valor_preenchido(): void
+    {
+        $this->travelTo('2026-10-08 10:00:00');
+        // A Ju preenche o realizado de contas futuras; continuam pendentes.
+        PlanLancamento::withoutGlobalScopes()->create([
+            'tenant_id' => $this->user->tenant_id, 'chave' => sha1('pend'), 'conteudo_hash' => sha1('x'), 'linha' => 90,
+            'data' => '2026-10-07', 'tipo' => 'despesa', 'descricao' => 'Água Ago/2026', 'conta' => 'Sicoob', 'forma' => 'boleto',
+            'valor_previsto' => 80, 'valor_realizado' => 80, 'status' => 'pendente',
+        ]);
+        // Pago sem valor realizado vale o previsto.
+        PlanLancamento::withoutGlobalScopes()->create([
+            'tenant_id' => $this->user->tenant_id, 'chave' => sha1('pago'), 'conteudo_hash' => sha1('x'), 'linha' => 91,
+            'data' => '2026-10-07', 'tipo' => 'despesa', 'descricao' => 'Computador', 'conta' => 'Sicoob', 'forma' => 'pix',
+            'valor_previsto' => 177.77, 'valor_realizado' => null, 'status' => 'concluido',
+        ]);
+
+        $mes = $this->servico()->mes($this->user->tenant_id, now());
+        $this->assertSame(177.77, $mes['saiu']);
+        $this->assertSame(-366.79, $this->saldo($this->sicoob));
+        $this->assertSame('Água Ago/2026', $this->servico()->proximosPagamentos($this->user->tenant_id)[0]['descricao'], 'continua a pagar');
+    }
+
     public function test_virada_de_mes(): void
     {
         $this->travelTo('2026-10-31 10:00:00');
