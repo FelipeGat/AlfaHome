@@ -169,7 +169,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Impacto: -' . brl($totalVencido),
                 'previsao'         => $jurosEstimado > 0 ? 'Possíveis encargos estimados: ' . brl($jurosEstimado) : null,
                 'acao_label'       => 'Pagar agora',
-                'acao_url'         => route('fluxo-caixa.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => $vencidas->take(10)->map(fn($d) => Carbon::parse($d->data_compra)->format('d/m') . ' — ' . $d->descricao . ' (' . brl($d->valor) . ')')->toArray(),
             ]);
         }
@@ -208,7 +208,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Limite restante: ' . brl($cartoesCriticos->sum(fn($c) => $c->limite_cartao - $c->gastos)),
                 'previsao'         => null,
                 'acao_label'       => 'Revisar cartões',
-                'acao_url'         => route('despesas.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => $cartoesCriticos->map(fn($c) => $c->nome . ': ' . number_format($c->pct, 1) . '% usado (' . brl($c->gastos) . ' de ' . brl($c->limite_cartao) . ')')->values()->toArray(),
             ]);
         }
@@ -226,7 +226,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Impacto no saldo: ' . brl($projecaoMes),
                 'previsao'         => $diaAtual < $diasNoMes ? 'Projeção final: ' . brl($projecaoMes) . ' (faltam ' . ($diasNoMes - $diaAtual) . ' dias)' : null,
                 'acao_label'       => 'Ajustar gastos',
-                'acao_url'         => route('despesas.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => [],
             ]);
         }
@@ -260,7 +260,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Impacto: -' . brl($totalAVencer),
                 'previsao'         => 'Se não pagas, entrarão na lista de vencidas',
                 'acao_label'       => 'Evitar juros',
-                'acao_url'         => route('fluxo-caixa.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => $aVencer->map(fn($d) => Carbon::parse($d->data_compra)->format('d/m') . ' — ' . $d->descricao . ' (' . brl($d->valor) . ')')->toArray(),
             ]);
         }
@@ -286,7 +286,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Impacto positivo: +' . brl($totalAReceber),
                 'previsao'         => null,
                 'acao_label'       => 'Confirmar recebimentos',
-                'acao_url'         => route('receitas.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => $aReceber->map(fn($r) => Carbon::parse($r->data_prevista_recebimento)->format('d/m') . ' — ' . ($r->observacoes ?: 'Receita prevista') . ' (' . brl($r->valor) . ')')->toArray(),
             ]);
         }
@@ -304,7 +304,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Limite restante: ' . brl($cartoesAtencao->sum(fn($c) => $c->limite_cartao - $c->gastos)),
                 'previsao'         => null,
                 'acao_label'       => 'Revisar cartões',
-                'acao_url'         => route('despesas.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => $cartoesAtencao->map(fn($c) => $c->nome . ': ' . number_format($c->pct, 1) . '% usado')->values()->toArray(),
             ]);
         }
@@ -377,7 +377,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Impacto no saldo: -' . brl($cat['excesso']),
                 'previsao'         => 'Se continuar neste ritmo, chegará a ' . brl($cat['projecao']) . ' no fim do mês',
                 'acao_label'       => 'Ajustar gastos',
-                'acao_url'         => route('despesas.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => [],
             ]);
         }
@@ -397,7 +397,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Pendente: ' . brl($faltaReceber),
                 'previsao'         => null,
                 'acao_label'       => 'Confirmar recebimentos',
-                'acao_url'         => route('receitas.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => [],
             ]);
         }
@@ -473,7 +473,7 @@ class AlertaController extends Controller
                 'impacto'          => 'Total top 3: ' . brl($topCats->sum('total')),
                 'previsao'         => null,
                 'acao_label'       => 'Revisar categorias',
-                'acao_url'         => route('despesas.index'),
+                'acao_url'         => route('planejamento.lancamentos'),
                 'contas_afetadas'  => $topCats->map(fn($c) => $c->cat_nome . ': ' . brl($c->total) . ' (' . ($totalDespMes > 0 ? number_format(($c->total / $totalDespMes) * 100, 0) : '0') . '%)')->toArray(),
             ]);
         }

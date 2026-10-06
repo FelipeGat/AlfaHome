@@ -9,7 +9,6 @@ use App\Models\InvestimentoRendimento;
 use App\Models\Receita;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 /** Constitution IV (uma definição por número, web = API) e VI (isolamento por família). */
@@ -57,26 +56,11 @@ class RegrasUnificadasTest extends TestCase
         $this->assertEqualsWithDelta(500.0, (float) $bancos->viewData('bancos')->firstWhere('id', $cartao->id)->saldo_cartao, 0.001, 'tela de bancos');
     }
 
-    public function test_limite_disponivel_desconta_so_compras_no_credito(): void
-    {
-        $cartao = $this->cartao();
-        $this->despesa($cartao, null, 900, now()->format('Y-m-d'));
-
-        // Com R$ 900 de extrato importado (sem tipo), ainda cabem R$ 800 no crédito.
-        $this->post(route('despesas.store'), [
-            'forma_pagamento' => $cartao->id, 'tipo_pagamento' => 'credito', 'valor' => 800,
-            'data_compra' => now()->format('Y-m-d'), 'parcelas' => 1,
-        ])->assertSessionHasNoErrors();
-    }
-
-    public function test_receita_aceita_as_mesmas_formas_na_web_e_na_api(): void
+    public function test_receita_aceita_todas_as_formas_na_api(): void
     {
         $token = $this->user->createToken('t')->plainTextToken;
 
         foreach (Receita::TIPOS_PAGAMENTO as $tipo) {
-            $this->post(route('receitas.store'), ['valor' => 10, 'data_prevista_recebimento' => '2026-08-01', 'tipo_pagamento' => $tipo, 'parcelas' => 1])
-                ->assertSessionHasNoErrors();
-
             $this->withHeader('Authorization', "Bearer {$token}")
                 ->postJson('/api/v1/receitas', ['valor' => 10, 'data_prevista_recebimento' => '2026-08-01', 'tipo_pagamento' => $tipo])
                 ->assertCreated();
@@ -84,24 +68,6 @@ class RegrasUnificadasTest extends TestCase
 
         $this->assertContains('deposito', Receita::TIPOS_PAGAMENTO);
         $this->assertContains('boleto', Receita::TIPOS_PAGAMENTO);
-    }
-
-    public function test_importacao_de_extrato_recusa_conta_de_outra_familia(): void
-    {
-        $outro     = User::factory()->create();
-        $bancoDele = Banco::withoutGlobalScopes()->create(['tenant_id' => $outro->tenant_id, 'user_id' => $outro->id, 'nome' => 'Alheio', 'tem_conta_corrente' => true, 'saldo' => 0]);
-
-        $csv = UploadedFile::fake()->createWithContent('extrato.csv', "data;descricao;valor\n01/08/2026;Mercado;-50,00\n");
-
-        $this->postJson(route('lancamentos.importar-extrato'), ['arquivo' => $csv, 'banco_id' => $bancoDele->id])
-            ->assertStatus(422)->assertJsonValidationErrors('banco_id');
-
-        $this->postJson(route('lancamentos.confirmar-importacao'), [
-            'banco_id' => $bancoDele->id,
-            'transacoes' => [['data' => '2026-08-01', 'valor' => 50, 'descricao' => 'Mercado', 'tipo' => 'despesa']],
-        ])->assertStatus(422)->assertJsonValidationErrors('banco_id');
-
-        $this->assertSame(0, Despesa::withoutGlobalScopes()->count());
     }
 
     public function test_excluir_rendimento_exige_que_ele_seja_do_investimento_da_url(): void

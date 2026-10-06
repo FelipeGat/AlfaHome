@@ -74,7 +74,7 @@ class LancamentosTelaTest extends TestCase
         $this->tela(['q' => 'nao-existe-xyz'])->assertSee('Nenhum lançamento com esses filtros.');
     }
 
-    public function test_menu_sem_telas_manuais_e_rotas_antigas_respondem(): void
+    public function test_menu_sem_telas_manuais_e_enderecos_antigos_levam_ao_extrato(): void
     {
         $this->get(route('dashboard'))->assertOk()
             ->assertSee(route('planejamento.lancamentos'), false)
@@ -82,8 +82,9 @@ class LancamentosTelaTest extends TestCase
             ->assertDontSee('data-label="Receitas"', false)
             ->assertSee('Configurações');
 
-        $this->get(route('despesas.index'))->assertOk();
-        $this->get(route('receitas.index'))->assertOk();
+        // Endereços antigos levam ao Extrato.
+        $this->get('/despesas')->assertRedirect('/planejamento/lancamentos');
+        $this->get('/fluxo-caixa')->assertRedirect('/planejamento/lancamentos');
     }
 
     public function test_outra_familia_nao_ve_lancamentos_desta(): void

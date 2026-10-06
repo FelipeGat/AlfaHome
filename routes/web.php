@@ -5,16 +5,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\RelogioController;
 use App\Http\Controllers\TelegramWebhookController;
-use App\Http\Controllers\DespesaController;
-use App\Http\Controllers\ReceitaController;
 use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\FamiliarController;
 use App\Http\Controllers\FornecedorController;
 use App\Http\Controllers\BancoController;
 use App\Http\Controllers\InvestimentoController;
-use App\Http\Controllers\FluxoCaixaController;
-use App\Http\Controllers\LancamentoDiarioController;
-use App\Http\Controllers\LancamentoController;
 use App\Http\Controllers\AlertaController;
 use App\Http\Controllers\CupomIndicacaoController;
 use App\Http\Controllers\MembroController;
@@ -113,6 +108,13 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group
     // Alertas financeiros
     Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
 
+    // Telas antigas de lançamento manual: os endereços levam ao Extrato.
+    Route::redirect('/despesas', '/planejamento/lancamentos');
+    Route::redirect('/receitas', '/planejamento/lancamentos');
+    Route::redirect('/fluxo-caixa', '/planejamento/lancamentos');
+    Route::redirect('/lancamentos', '/planejamento/lancamentos');
+    Route::redirect('/lancamentos-diarios', '/planejamento/lancamentos');
+
     // Notificações pelo Telegram
     Route::prefix('notificacoes')->name('notificacoes.')->group(function () {
         Route::get('/', [NotificacaoController::class, 'index'])->name('index');
@@ -138,34 +140,6 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group
         Route::delete('/fonte', [PlanilhaImportacaoController::class, 'removerFonte'])->name('fonte.remover');
         Route::post('/analisar', [PlanilhaImportacaoController::class, 'analisar'])->name('analisar');
     });
-
-    // Fluxo de Caixa / Baixas
-    Route::get('/fluxo-caixa', [FluxoCaixaController::class, 'index'])->name('fluxo-caixa.index');
-    Route::post('/fluxo-caixa/baixar-despesa/{despesa}', [FluxoCaixaController::class, 'baixarDespesa'])->name('fluxo-caixa.baixar-despesa');
-    Route::post('/fluxo-caixa/estornar-despesa/{despesa}', [FluxoCaixaController::class, 'estornarDespesa'])->name('fluxo-caixa.estornar-despesa');
-    Route::post('/fluxo-caixa/baixar-receita/{receita}', [FluxoCaixaController::class, 'baixarReceita'])->name('fluxo-caixa.baixar-receita');
-    Route::post('/fluxo-caixa/estornar-receita/{receita}', [FluxoCaixaController::class, 'estornarReceita'])->name('fluxo-caixa.estornar-receita');
-
-    // Lançamentos (extrato bancário)
-    Route::get('/lancamentos', [LancamentoController::class, 'index'])->name('lancamentos.index')->middleware('permissao:despesas,criar');
-    Route::post('/lancamentos/escanear', [LancamentoController::class, 'escanear'])->name('lancamentos.escanear')->middleware('permissao:despesas,criar');
-    Route::post('/lancamentos/importar-extrato', [LancamentoController::class, 'importarExtrato'])->name('lancamentos.importar-extrato')->middleware('permissao:despesas,criar');
-    Route::post('/lancamentos/confirmar-importacao', [LancamentoController::class, 'confirmarImportacao'])->name('lancamentos.confirmar-importacao')->middleware('permissao:despesas,criar');
-    // Retrocompatibilidade
-    Route::get('/lancamentos-diarios', fn() => redirect()->route('lancamentos.index'))->name('lancamentos-diarios.index');
-    Route::post('/lancamentos-diarios/escanear', [LancamentoDiarioController::class, 'escanear'])->name('lancamentos-diarios.escanear');
-
-    // Despesas
-    Route::get('/despesas', [DespesaController::class, 'index'])->name('despesas.index')->middleware('permissao:despesas,ver');
-    Route::post('/despesas', [DespesaController::class, 'store'])->name('despesas.store')->middleware('permissao:despesas,criar');
-    Route::put('/despesas/{despesa}', [DespesaController::class, 'update'])->name('despesas.update')->middleware('permissao:despesas,editar');
-    Route::delete('/despesas/{despesa}', [DespesaController::class, 'destroy'])->name('despesas.destroy')->middleware('permissao:despesas,excluir');
-
-    // Receitas
-    Route::get('/receitas', [ReceitaController::class, 'index'])->name('receitas.index')->middleware('permissao:receitas,ver');
-    Route::post('/receitas', [ReceitaController::class, 'store'])->name('receitas.store')->middleware('permissao:receitas,criar');
-    Route::put('/receitas/{receita}', [ReceitaController::class, 'update'])->name('receitas.update')->middleware('permissao:receitas,editar');
-    Route::delete('/receitas/{receita}', [ReceitaController::class, 'destroy'])->name('receitas.destroy')->middleware('permissao:receitas,excluir');
 
     // Categorias
     Route::get('/categorias', [CategoriaController::class, 'index'])->name('categorias.index')->middleware('permissao:categorias,ver');

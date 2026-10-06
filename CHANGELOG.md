@@ -10,7 +10,10 @@
 - **Dinheiro sempre no mesmo formato**: "R$ 1.250,00" e "-R$ 98,15"; valor negativo nunca aparece em verde.
 - **Busca do Extrato por valor** (ex.: "96,85").
 
+- **Telas antigas removidas**: Despesas, Receitas, Fluxo de caixa e o extrato bancário antigo do site, e Relatórios do app. Os endereços antigos levam ao Extrato.
+
 ### Correções
+- Lançamento da planilha só conta como pago quando a situação é Pago/Realizado — valor realizado preenchido em conta futura continua pendente.
 - Relatórios mostrava despesas R$ 0,00 enquanto Lançamentos mostrava R$ 389,13.
 - "Você economizou neste mês" aparecia mesmo sem nenhuma movimentação.
 - Contas mostrava saldo negativo em verde.

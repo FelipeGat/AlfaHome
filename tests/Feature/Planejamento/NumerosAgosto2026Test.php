@@ -253,33 +253,4 @@ class NumerosAgosto2026Test extends TestCase
         $this->assertCount(52, $this->servico->lancamentos($this->user->tenant_id, Carbon::create(2026, 8, 1)));
         $this->assertSame(17632.86, $this->servico->anual($this->user->tenant_id, 2026)['total']['receitas']['realizado']);
     }
-
-    public function test_baixa_com_valor_diferente_preserva_o_previsto(): void
-    {
-        $this->actingAs($this->user);
-        $banco   = $this->desdeSempre(Banco::create(['tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'nome' => 'Conta', 'tem_conta_corrente' => true, 'saldo' => 2000]));
-        $despesa = Despesa::create([
-            'tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'forma_pagamento' => $banco->id,
-            'tipo_pagamento' => 'pix', 'valor' => 800, 'data_compra' => '2026-08-05', 'data_pagamento' => null,
-        ]);
-
-        $this->post(route('fluxo-caixa.baixar-despesa', $despesa), ['data_pagamento' => '2026-08-05', 'valor' => 750])
-            ->assertSessionHasNoErrors();
-
-        $despesa->refresh();
-        $this->assertSame('750.00', $despesa->valor);
-        $this->assertSame('800.00', $despesa->valor_previsto);
-        $this->assertEqualsWithDelta(1250.00, (float) $banco->fresh()->saldo, 0.001);
-
-        $r = $this->agosto();
-        $this->assertSame(13017.44, $r['despesas']['previsto']);
-        $this->assertSame(12975.10, $r['despesas']['realizado']);
-
-        // Estorno devolve o saldo pelo que foi pago e o lançamento ao valor previsto.
-        $this->post(route('fluxo-caixa.estornar-despesa', $despesa))->assertSessionHasNoErrors();
-        $despesa->refresh();
-        $this->assertSame('800.00', $despesa->valor);
-        $this->assertNull($despesa->valor_previsto);
-        $this->assertEqualsWithDelta(2000.00, (float) $banco->fresh()->saldo, 0.001);
-    }
 }
