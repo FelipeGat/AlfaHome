@@ -12,7 +12,7 @@
         @if($lancamentosHoje->count() > 0)
         <div style="font-size:13px;margin-top:2px;" class="text-muted">
             {{ $lancamentosHoje->count() }} lançamento(s) hoje —
-            <span class="fw-600" style="color:#dc2626;">R$ {{ number_format($totalHoje, 2, ',', '.') }}</span>
+            <span class="fw-600" style="color:#dc2626;">{{ brl($totalHoje) }}</span>
         </div>
         @endif
     </div>
@@ -95,7 +95,7 @@
                         @endif
                     </td>
                     <td style="text-align:right;" class="fw-600" style="color:#dc2626;">
-                        R$ {{ number_format($l->valor, 2, ',', '.') }}
+                        {{ brl($l->valor) }}
                     </td>
                     <td>
                         <form method="POST" action="{{ route('despesas.destroy', $l) }}"
@@ -112,7 +112,7 @@
             <tfoot>
                 <tr>
                     <td colspan="2" class="fw-600" style="font-size:12px;color:var(--color-text-muted);padding-top:8px;">Total do dia</td>
-                    <td style="text-align:right;padding-top:8px;" class="fw-700" style="color:#dc2626;">R$ {{ number_format($totalHoje, 2, ',', '.') }}</td>
+                    <td style="text-align:right;padding-top:8px;" class="fw-700" style="color:#dc2626;">{{ brl($totalHoje) }}</td>
                     <td></td>
                 </tr>
             </tfoot>

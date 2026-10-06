@@ -188,7 +188,7 @@
             </span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:13px;font-weight:700;color:var(--color-danger);">− R$ {{ number_format($totalValor, 2, ',', '.') }}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--color-danger);">− {{ brl($totalValor) }}</span>
             <span style="font-size:11px;font-weight:700;color:var(--color-text-muted);background:var(--color-bg-inset);padding:3px 10px;border-radius:20px;">{{ $despesas->total() }}</span>
         </div>
     </div>
@@ -206,7 +206,7 @@
 
     <div class="ext-date-header">
         <span class="ext-date-label">{{ $labelD2 }}</span>
-        <span style="font-size:11.5px;font-weight:700;color:var(--color-danger);">− R$ {{ number_format($totalDia2, 2, ',', '.') }}</span>
+        <span style="font-size:11.5px;font-weight:700;color:var(--color-danger);">− {{ brl($totalDia2) }}</span>
     </div>
 
     @foreach($itens as $despesa)
@@ -254,7 +254,7 @@
         </div>
 
         <div class="ext-valor-col">
-            <div class="ext-valor ext-debito">− R$ {{ number_format($despesa->valor, 2, ',', '.') }}</div>
+            <div class="ext-valor ext-debito">− {{ brl($despesa->valor) }}</div>
             <div class="ext-status {{ $dStCls }}">
                 <i class="fa-solid {{ $dStIco }}" style="font-size:8px;"></i> {{ $dStLbl }}
             </div>
@@ -277,7 +277,7 @@
         <span style="font-size:10px;font-weight:700;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;margin-right:auto;">Total do período</span>
         <div class="ext-footer-item">
             <span class="ext-footer-dot" style="background:var(--color-danger);"></span>
-            <span style="font-size:12.5px;font-weight:700;color:var(--color-danger);">− R$ {{ number_format($totalValor, 2, ',', '.') }}</span>
+            <span style="font-size:12.5px;font-weight:700;color:var(--color-danger);">− {{ brl($totalValor) }}</span>
         </div>
     </div>
 

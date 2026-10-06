@@ -14,7 +14,7 @@
 <div class="card" style="padding:16px 20px;margin-bottom:14px;border-left:4px solid var(--color-amber);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <div>
         <div style="font-size:11px;font-weight:600;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Total Aportado</div>
-        <div style="font-size:24px;font-weight:700;color:var(--color-amber);">R$ {{ number_format($totalAportado, 2, ',', '.') }}</div>
+        <div style="font-size:24px;font-weight:700;color:var(--color-amber);">{{ brl($totalAportado) }}</div>
     </div>
     <div style="font-size:12px;color:var(--color-text-muted);background:var(--color-warning-soft);padding:6px 12px;border-radius:20px;font-weight:600;">
         <i class="fa-solid fa-seedling" style="color:var(--color-amber);"></i>
@@ -28,7 +28,7 @@
     <div class="card" style="padding:16px 18px;">
         <div style="font-size:11px;font-weight:600;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Valor Atual</div>
         <div style="font-size:22px;font-weight:700;color:{{ $totalAtual >= $totalAportado ? 'var(--color-success)' : 'var(--color-danger)' }};">
-            R$ {{ number_format($totalAtual, 2, ',', '.') }}
+            {{ brl($totalAtual) }}
         </div>
         <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">Posição consolidada</div>
     </div>
@@ -36,7 +36,7 @@
     <div class="card" style="padding:16px 18px;">
         <div style="font-size:11px;font-weight:600;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Rendimento Total</div>
         <div style="font-size:22px;font-weight:700;color:{{ $ganhoTotal >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }};">
-            {{ $ganhoTotal >= 0 ? '+' : '' }}R$ {{ number_format(abs($ganhoTotal), 2, ',', '.') }}
+            {{ $ganhoTotal >= 0 ? '+' : '' }}{{ brl(abs($ganhoTotal)) }}
         </div>
         <div style="font-size:11px;color:{{ $ganhoPercent >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }};margin-top:2px;font-weight:600;">
             <i class="fa-solid {{ $ganhoPercent >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
@@ -153,12 +153,12 @@
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;padding:14px 18px;gap:8px;border-bottom:1px solid var(--color-border);">
         <div>
             <div style="font-size:10px;color:var(--color-text-subtle);font-weight:600;text-transform:uppercase;margin-bottom:2px;">Aportado</div>
-            <div style="font-size:14px;font-weight:700;color:var(--color-text);">R$ {{ number_format($inv->valor_aportado, 2, ',', '.') }}</div>
+            <div style="font-size:14px;font-weight:700;color:var(--color-text);">{{ brl($inv->valor_aportado) }}</div>
             <div style="font-size:10px;color:var(--color-text-muted);">{{ $inv->data_aporte->format('d/m/Y') }}</div>
         </div>
         <div>
             <div style="font-size:10px;color:var(--color-text-subtle);font-weight:600;text-transform:uppercase;margin-bottom:2px;">Valor Atual</div>
-            <div style="font-size:14px;font-weight:700;color:{{ $corGanho }};">R$ {{ number_format($inv->valor_atual_calc, 2, ',', '.') }}</div>
+            <div style="font-size:14px;font-weight:700;color:{{ $corGanho }};">{{ brl($inv->valor_atual_calc) }}</div>
             <div style="font-size:10px;color:var(--color-text-muted);">{{ $temHistorico ? 'Atualizado' : 'Sem atualizações' }}</div>
         </div>
         <div style="background:{{ $bgGanho }};border-radius:8px;padding:6px 8px;text-align:center;">
@@ -169,7 +169,7 @@
                 {{ $inv->ganho_percentual >= 0 ? '+' : '' }}{{ number_format($inv->ganho_percentual, 2, ',', '.') }}%
             </div>
             <div style="font-size:10px;color:{{ $corGanho }};font-weight:500;">
-                {{ $inv->ganho_reais >= 0 ? '+' : '' }}R$ {{ number_format(abs($inv->ganho_reais), 2, ',', '.') }}
+                {{ $inv->ganho_reais >= 0 ? '+' : '' }}{{ brl(abs($inv->ganho_reais)) }}
             </div>
         </div>
     </div>
@@ -205,7 +205,7 @@
             @endphp
             <div style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--color-bg);border-radius:6px;font-size:11px;">
                 <span style="color:var(--color-text-muted);white-space:nowrap;">{{ $rend->data->format('d/m/Y') }}</span>
-                <span style="font-weight:600;color:var(--color-text);flex:1;">R$ {{ number_format($rend->valor_atual, 2, ',', '.') }}</span>
+                <span style="font-weight:600;color:var(--color-text);flex:1;">{{ brl($rend->valor_atual) }}</span>
                 <span style="font-weight:600;color:{{ $varRend >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }};">
                     {{ $varRend >= 0 ? '+' : '' }}{{ number_format($varRend, 2, ',', '.') }}%
                 </span>

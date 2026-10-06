@@ -84,20 +84,20 @@
 
     <div class="card" style="border-top:3px solid var(--color-success);">
         <div class="kpi-label"><i class="fa-solid fa-arrow-trend-up" style="color:var(--color-success);"></i> A Receber</div>
-        <div class="kpi-value text-green">R$ {{ number_format($totalAReceber,2,',','.') }}</div>
+        <div class="kpi-value text-green">{{ brl($totalAReceber) }}</div>
         @if($totalRecebido > 0)
         <div class="kpi-sub" style="color:var(--color-success);">
-            <i class="fa-solid fa-check"></i> R$ {{ number_format($totalRecebido,2,',','.') }} já recebido
+            <i class="fa-solid fa-check"></i> {{ brl($totalRecebido) }} já recebido
         </div>
         @endif
     </div>
 
     <div class="card" style="border-top:3px solid var(--color-danger);">
         <div class="kpi-label"><i class="fa-solid fa-arrow-trend-down" style="color:var(--color-danger);"></i> A Pagar</div>
-        <div class="kpi-value text-red">R$ {{ number_format($totalAPagar,2,',','.') }}</div>
+        <div class="kpi-value text-red">{{ brl($totalAPagar) }}</div>
         @if($totalPago > 0)
         <div class="kpi-sub" style="color:var(--color-success);">
-            <i class="fa-solid fa-check"></i> R$ {{ number_format($totalPago,2,',','.') }} já pago
+            <i class="fa-solid fa-check"></i> {{ brl($totalPago) }} já pago
         </div>
         @endif
     </div>
@@ -105,7 +105,7 @@
     <div class="card" style="border-top:3px solid {{ $saldoProjetado >= 0 ? 'var(--color-indigo)' : 'var(--color-warning)' }};">
         <div class="kpi-label"><i class="fa-solid fa-scale-balanced" style="color:var(--color-primary);"></i> Saldo Projetado</div>
         <div class="kpi-value {{ $saldoProjetado >= 0 ? '' : 'text-red' }}" style="{{ $saldoProjetado >= 0 ? 'color:var(--color-primary)' : '' }}">
-            R$ {{ number_format(abs($saldoProjetado),2,',','.') }}
+            {{ brl(abs($saldoProjetado)) }}
         </div>
         <div class="kpi-sub">{{ $saldoProjetado >= 0 ? 'Superávit no período' : 'Déficit no período' }}</div>
     </div>
@@ -211,7 +211,7 @@
                             @endif
                         </td>
                         <td style="text-align:right;font-weight:700;color:var(--color-success);white-space:nowrap;font-size:13px;">
-                            R$ {{ number_format($r->valor,2,',','.') }}
+                            {{ brl($r->valor) }}
                         </td>
                         <td>
                             @if($recebida)
@@ -304,7 +304,7 @@
                             @endif
                         </td>
                         <td style="text-align:right;font-weight:700;color:var(--color-danger);white-space:nowrap;font-size:13px;">
-                            R$ {{ number_format($d->valor,2,',','.') }}
+                            {{ brl($d->valor) }}
                         </td>
                         <td>
                             @if($paga)

@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $brl = fn ($v) => 'R$ ' . number_format($v, 2, ',', '.');
+    $brl = fn ($v) => brl($v);
     $pct = fn ($v) => number_format($v, 2, ',', '.') . '%';
     $nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     $total = $anual['total'];

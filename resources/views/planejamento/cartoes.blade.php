@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $brl = fn ($v) => $v === null ? '—' : 'R$ ' . number_format($v, 2, ',', '.');
+    $brl = fn ($v) => brl($v);
     $pct = fn ($v) => $v === null ? '—' : number_format($v, 2, ',', '.') . '%';
     $rc = $cartoes['resumo'];
 @endphp

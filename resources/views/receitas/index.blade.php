@@ -167,7 +167,7 @@
             </span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:13px;font-weight:700;color:var(--color-success);">+ R$ {{ number_format($totalValor, 2, ',', '.') }}</span>
+            <span style="font-size:13px;font-weight:700;color:var(--color-success);">+ {{ brl($totalValor) }}</span>
             <span style="font-size:11px;font-weight:700;color:var(--color-text-muted);background:var(--color-bg-inset);padding:3px 10px;border-radius:20px;">{{ $receitas->total() }}</span>
         </div>
     </div>
@@ -185,7 +185,7 @@
 
     <div class="ext-date-header">
         <span class="ext-date-label">{{ $labelR2 }}</span>
-        <span style="font-size:11.5px;font-weight:700;color:var(--color-success);">+ R$ {{ number_format($totalDiaR, 2, ',', '.') }}</span>
+        <span style="font-size:11.5px;font-weight:700;color:var(--color-success);">+ {{ brl($totalDiaR) }}</span>
     </div>
 
     @foreach($itens as $receita)
@@ -230,7 +230,7 @@
         </div>
 
         <div class="ext-valor-col">
-            <div class="ext-valor ext-credito">+ R$ {{ number_format($receita->valor, 2, ',', '.') }}</div>
+            <div class="ext-valor ext-credito">+ {{ brl($receita->valor) }}</div>
             <div class="ext-status {{ $rStCls }}">
                 <i class="fa-solid {{ $rStIco }}" style="font-size:8px;"></i> {{ $rStLbl }}
             </div>
@@ -253,7 +253,7 @@
         <span style="font-size:10px;font-weight:700;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;margin-right:auto;">Total do período</span>
         <div class="ext-footer-item">
             <span class="ext-footer-dot" style="background:var(--color-success);"></span>
-            <span style="font-size:12.5px;font-weight:700;color:var(--color-success);">+ R$ {{ number_format($totalValor, 2, ',', '.') }}</span>
+            <span style="font-size:12.5px;font-weight:700;color:var(--color-success);">+ {{ brl($totalValor) }}</span>
         </div>
     </div>
 

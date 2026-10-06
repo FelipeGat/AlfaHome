@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\Despesa;
 use App\Models\Familiar;
+use App\Services\Financeiro\FinanceiroService;
 use App\Services\Planejamento\PlanejamentoService;
 
 class DashboardController extends Controller
@@ -390,9 +391,10 @@ class DashboardController extends Controller
         // ─── Planejamento da planilha (mesmo serviço das telas e da API) ──────
         $planilha = app(PlanejamentoService::class)->resumoMes($tenantId, Carbon::parse($inicio));
         $hoje     = app(PlanejamentoService::class)->hoje($tenantId);
+        $visao    = app(FinanceiroService::class)->inicio($tenantId);
 
         return view('dashboard', compact(
-            'planilha', 'hoje',
+            'planilha', 'hoje', 'visao',
             'inicio', 'fim', 'ano',
             'nomeMes', 'anoMes', 'linkMesAnt', 'linkMesProx',
             'totalReceitas', 'totalDespesas', 'saldo',

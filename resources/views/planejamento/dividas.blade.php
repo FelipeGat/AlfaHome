@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $brl = fn ($v) => $v === null ? '—' : 'R$ ' . number_format($v, 2, ',', '.');
+    $brl = fn ($v) => brl($v);
     $prioridades = ['alta' => ['Alta', 'badge-danger'], 'media' => ['Média', 'badge-warning'], 'baixa' => ['Baixa', 'badge-gray']];
 @endphp
 

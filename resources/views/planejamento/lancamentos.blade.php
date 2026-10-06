@@ -1,10 +1,10 @@
 @extends('layouts.main')
-@section('title', 'Lançamentos')
-@section('page-title', 'Lançamentos')
+@section('title', 'Extrato')
+@section('page-title', 'Extrato')
 
 @section('content')
 @php
-    $brl = fn ($v) => $v === null ? '—' : 'R$ ' . number_format($v, 2, ',', '.');
+    $brl = fn ($v) => brl($v);
     $meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
     $semana = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
     $tituloMes = ucfirst($meses[$mes->month - 1]) . ' de ' . $mes->year;
@@ -68,7 +68,7 @@
         <input type="hidden" name="mes" value="{{ $mes->format('Y-m') }}">
         @if($filtros['tipo'])<input type="hidden" name="tipo" value="{{ $filtros['tipo'] }}">@endif
         @if($filtros['situacao'])<input type="hidden" name="situacao" value="{{ $filtros['situacao'] }}">@endif
-        <input type="search" name="q" value="{{ $filtros['q'] }}" placeholder="Buscar (ex.: mercado)" class="form-control" style="flex:2;min-width:180px;">
+        <input type="search" name="q" value="{{ $filtros['q'] }}" placeholder="Buscar por descrição, categoria, conta ou valor" class="form-control" style="flex:2;min-width:180px;">
         <select name="categoria" class="form-control" style="flex:1;min-width:150px;" onchange="this.form.submit()">
             <option value="">Todas as categorias</option>
             @foreach($categorias as $c)<option value="{{ $c }}" @selected($filtros['categoria'] === $c)>{{ $c }}</option>@endforeach

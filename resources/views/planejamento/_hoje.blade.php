@@ -1,6 +1,6 @@
 {{-- Painel do dia: quanto tem, o que venceu, o que vence na semana, como o mês fecha --}}
 @php
-    $hBrl = fn ($v) => $v === null ? '—' : 'R$ ' . number_format($v, 2, ',', '.');
+    $hBrl = fn ($v) => brl($v);
     $hCor = fn ($v) => $v < 0 ? 'var(--color-danger)' : 'var(--color-success)';
     $hData = fn ($d) => \Carbon\Carbon::parse($d)->locale('pt_BR')->isoFormat('ddd, DD/MM');
     $hDias = function ($d) { $n = (int) now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($d), false); return $n === 0 ? 'hoje' : ($n === 1 ? 'amanhã' : ($n < 0 ? abs($n) . ' dias atrás' : "em {$n} dias")); };

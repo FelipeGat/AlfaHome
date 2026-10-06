@@ -1,6 +1,6 @@
 @extends('layouts.main')
-@section('title', 'Contas Bancárias')
-@section('page-title', 'Contas Bancárias')
+@section('title', 'Contas')
+@section('page-title', 'Contas')
 
 @php
 $bancosTemplate = [
@@ -26,7 +26,14 @@ $bancosTemplate = [
 @section('content')
 
 <div class="section-header mb-4">
-    <span></span>
+    <div>
+        <div style="font-size:12px;font-weight:600;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;">Dinheiro nas contas</div>
+        <div style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ $saldos['total'] < 0 ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ brl($saldos['total']) }}</div>
+        <div style="font-size:12px;color:var(--color-text-muted);">Limite de cartão não entra nesta soma.</div>
+        @foreach($saldos['sem_conta'] as $sc)
+            <div style="font-size:12px;color:var(--color-warning);margin-top:4px;"><i class="fa-solid fa-circle-info"></i> A planilha usa a conta "{{ $sc['conta'] }}", que não está cadastrada aqui ({{ $sc['movimentos'] }} {{ $sc['movimentos'] === 1 ? 'movimento' : 'movimentos' }} fora dos saldos).</div>
+        @endforeach
+    </div>
     <button class="btn btn-primary" onclick="openModal('modal-novo-banco')">
         <i class="fa-solid fa-plus"></i> Nova Conta
     </button>
@@ -89,7 +96,7 @@ $bancosTemplate = [
                 <div style="background:var(--color-bg);border-radius:6px;padding:8px 12px;margin-bottom:8px;">
                     <div style="font-size:11px;color:var(--color-text-muted);">{{ $banco->eh_dinheiro ? 'Dinheiro' : 'Conta Corrente' }}</div>
                     <div class="fw-700 {{ $banco->saldo >= 0 ? 'text-green' : 'text-red' }}" style="font-size:1.2rem;">
-                        R$ {{ number_format($banco->saldo, 2, ',', '.') }}
+                        {{ brl($banco->saldo) }}
                     </div>
                 </div>
             @endif
@@ -99,7 +106,7 @@ $bancosTemplate = [
                 <div style="background:var(--color-success-soft);border-radius:6px;padding:8px 12px;margin-bottom:8px;">
                     <div style="font-size:11px;color:var(--color-success);">Poupança</div>
                     <div class="fw-700 text-green" style="font-size:1.2rem;">
-                        R$ {{ number_format($banco->saldo_poupanca, 2, ',', '.') }}
+                        {{ brl($banco->saldo_poupanca) }}
                     </div>
                 </div>
             @endif
@@ -107,7 +114,7 @@ $bancosTemplate = [
             {{-- Cheque Especial --}}
             @if($banco->tem_conta_corrente && $banco->cheque_especial > 0)
                 <div style="font-size:12px;margin-bottom:8px;" class="text-muted">
-                    Cheque especial: R$ {{ number_format($banco->cheque_especial, 2, ',', '.') }}
+                    Cheque especial: {{ brl($banco->cheque_especial) }}
                 </div>
             @endif
 
@@ -118,7 +125,7 @@ $bancosTemplate = [
                     <div style="font-size:11px;color:var(--color-warning);margin-bottom:4px;">Cartão de Crédito</div>
                     <div class="d-flex justify-between" style="font-size:12px;margin-bottom:4px;">
                         <span class="text-muted">Utilizado</span>
-                        <span class="fw-600">R$ {{ number_format($banco->saldo_cartao, 2, ',', '.') }} / {{ number_format($banco->limite_cartao, 2, ',', '.') }}</span>
+                        <span class="fw-600">{{ brl($banco->saldo_cartao) }} / {{ number_format($banco->limite_cartao, 2, ',', '.') }}</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-bar-fill" style="width:{{ min($perc,100) }}%;background:{{ $perc > 80 ? 'var(--color-danger)' : ($perc > 50 ? 'var(--color-warning)' : 'var(--color-success)') }};"></div>
@@ -421,9 +428,12 @@ $bancosTemplate = [
         <div class="modal-body">
             <form method="POST" action="" id="form-ajustar-saldo">
                 @csrf
+                <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:10px;">
+                    Informe o saldo que aparece hoje no aplicativo do banco. Daqui em diante o saldo anda sozinho com os lançamentos da planilha.
+                </p>
                 <div class="form-group">
-                    <label class="form-label">Novo Saldo</label>
-                    <input type="number" name="saldo" id="ajuste-saldo-val" step="0.01" class="form-control" required>
+                    <label class="form-label">Saldo de hoje no banco</label>
+                    <input type="number" name="saldo" id="ajuste-saldo-val" step="0.01" class="form-control" required inputmode="decimal">
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="closeModal('modal-ajustar-saldo')" class="btn btn-secondary">Cancelar</button>

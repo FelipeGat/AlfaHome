@@ -46,18 +46,22 @@ class PlanejamentoController extends Controller
         ];
         $normal = fn (?string $t) => Str::lower(Str::ascii((string) $t));
         $busca  = $normal($filtros['q']);
+        // "96,85", "96.85" ou "1.250,00" também acham pelo valor.
+        $valorBuscado = $this->valorDigitado($filtros['q']);
 
         $lista = $todos
             ->when($filtros['tipo'], fn ($c, $v) => $c->where('tipo', $v))
             ->when($filtros['situacao'], fn ($c, $v) => $c->where('status', $v))
             ->when($filtros['categoria'], fn ($c, $v) => $c->where('categoria', $v))
             ->when($filtros['conta'], fn ($c, $v) => $c->where('conta', $v))
-            ->when($busca !== '', fn ($c) => $c->filter(fn ($l) => str_contains($normal($l['descricao'] . ' ' . $l['categoria'] . ' ' . $l['conta']), $busca)))
+            ->when($busca !== '', fn ($c) => $c->filter(fn ($l) => str_contains($normal($l['descricao'] . ' ' . $l['categoria'] . ' ' . $l['conta']), $busca)
+                || ($valorBuscado !== null && in_array($valorBuscado, [$l['valor_realizado'], $l['valor_previsto']], false))))
             ->values();
 
         $soma = fn ($c, string $campo) => round($c->sum(fn ($l) => (float) ($l[$campo] ?? 0)), 2);
-        $feitos    = $todos->where('status', 'concluido');
-        $pendentes = $todos->where('status', '!=', 'concluido');
+        // Realizado = valor realizado preenchido: a mesma regra do FinanceiroService.
+        $feitos    = $todos->whereNotNull('valor_realizado');
+        $pendentes = $todos->whereNull('valor_realizado');
         $valor     = fn ($l) => $l['valor_realizado'] ?? $l['valor_previsto'];
 
         return view('planejamento.lancamentos', [
@@ -76,6 +80,17 @@ class PlanejamentoController extends Controller
             'contas'     => $todos->pluck('conta')->filter()->unique()->sort()->values(),
             'ultima'     => $this->planejamento->ultimaImportacao($tenantId),
         ]);
+    }
+
+    /** Valor em reais digitado na busca ("1.250,00", "96,85", "96.85"), ou null se não for valor. */
+    private function valorDigitado(string $texto): ?float
+    {
+        $t = trim(str_replace('R$', '', $texto));
+        if (preg_match('/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/', $t) || preg_match('/^\d+,\d{1,2}$/', $t)) {
+            return (float) str_replace(',', '.', str_replace('.', '', $t));
+        }
+
+        return preg_match('/^\d+(\.\d{1,2})?$/', $t) ? (float) $t : null;
     }
 
     public function anual(Request $request)

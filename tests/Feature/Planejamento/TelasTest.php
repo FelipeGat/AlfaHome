@@ -145,7 +145,7 @@ class TelasTest extends TestCase
         $this->actingAs($this->comPlanilha());
         $this->get(route('dashboard', ['inicio' => '2026-08-01', 'fim' => '2026-08-31']))->assertOk()
             // Com a planilha, o painel do dia é o Dashboard: sem o resumo repetido.
-            ->assertSee('Saldo em contas')->assertSee('Próximos 7 dias')
+            ->assertSee('Saldo total')->assertSee('Últimas movimentações')
             ->assertDontSee('Planejamento do mês');
     }
 

@@ -36,8 +36,8 @@
                 <tr>
                     <td class="fw-600">{{ $plano->nome }}</td>
                     <td class="text-muted hide-mobile">{{ $plano->slug }}</td>
-                    <td class="hide-mobile">R$ {{ number_format($plano->preco_mensal, 2, ',', '.') }}</td>
-                    <td class="hide-mobile">R$ {{ number_format($plano->preco_anual, 2, ',', '.') }}</td>
+                    <td class="hide-mobile">{{ brl($plano->preco_mensal) }}</td>
+                    <td class="hide-mobile">{{ brl($plano->preco_anual) }}</td>
                     <td>{{ $plano->max_usuarios == -1 ? 'Ilimitado' : $plano->max_usuarios }}</td>
                     <td>{{ $plano->max_bancos == -1 ? 'Ilimitado' : $plano->max_bancos }}</td>
                     <td>

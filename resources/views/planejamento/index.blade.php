@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $brl = fn ($v) => $v === null ? '—' : 'R$ ' . number_format($v, 2, ',', '.');
+    $brl = fn ($v) => brl($v);
     $pct = fn ($v) => number_format($v, 2, ',', '.') . '%';
     $meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
     $tituloMes = ucfirst($meses[$mes->month - 1]) . ' de ' . $mes->year;

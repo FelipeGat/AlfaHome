@@ -1,6 +1,6 @@
 {{-- Vencimentos da planilha: atrasado, a pagar e a receber --}}
 @php
-    $vBrl = fn ($v) => $v === null ? '—' : 'R$ ' . number_format($v, 2, ',', '.');
+    $vBrl = fn ($v) => brl($v);
     $vGrupos = [
         'atrasado'  => ['Atrasado', 'fa-triangle-exclamation', 'var(--color-danger)', 'Nada atrasado.'],
         'a_pagar'   => ['A pagar', 'fa-arrow-trend-down', 'var(--color-warning)', 'Nada a pagar.'],

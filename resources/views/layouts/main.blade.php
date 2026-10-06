@@ -1140,35 +1140,38 @@
 
         @else
         {{-- ─── Sidebar Tenant (Master/Membro) ──────────────────────────── --}}
-        <div class="sidebar-section-label">Visão Geral</div>
-        <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" data-label="Dashboard">
-            <i class="fa-solid fa-gauge-high"></i> <span>Dashboard</span>
+        {{-- Primeiro o dia a dia (quanto tenho, o que entrou e saiu, onde está);
+             planejamento e cadastros depois. --}}
+        <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" data-label="Início">
+            <i class="fa-solid fa-house"></i> <span>Início</span>
         </a>
-        <a href="{{ route('alertas.index') }}" class="sidebar-link {{ request()->routeIs('alertas.*') ? 'active' : '' }}" data-label="Alertas" style="position:relative;">
-            <i class="fa-solid fa-bell"></i>
-            <span>Alertas</span>
+        <a href="{{ route('planejamento.lancamentos') }}" class="sidebar-link {{ request()->routeIs('planejamento.lancamentos') ? 'active' : '' }}" data-label="Extrato">
+            <i class="fa-solid fa-list-ul"></i> <span>Extrato</span>
+        </a>
+        @if(Auth::user()->temPermissao('bancos', 'ver'))
+        <a href="{{ route('bancos.index') }}" class="sidebar-link {{ request()->routeIs('bancos.*') ? 'active' : '' }}" data-label="Contas">
+            <i class="fa-solid fa-building-columns"></i> <span>Contas</span>
+        </a>
+        @endif
+        <a href="{{ route('alertas.index') }}" class="sidebar-link {{ request()->routeIs('alertas.*') ? 'active' : '' }}" data-label="Alertas">
+            <i class="fa-solid fa-bell"></i> <span>Alertas</span>
         </a>
 
         <div class="sidebar-section-label">Planejamento</div>
-        <a href="{{ route('planejamento.index') }}" class="sidebar-link {{ request()->routeIs('planejamento.index', 'planejamento.anual') ? 'active' : '' }}" data-label="Planejamento">
-            <i class="fa-solid fa-scale-balanced"></i> <span>Previsto x Realizado</span>
+        <a href="{{ route('planejamento.index') }}" class="sidebar-link {{ request()->routeIs('planejamento.index', 'planejamento.anual') ? 'active' : '' }}" data-label="Mês e ano">
+            <i class="fa-solid fa-scale-balanced"></i> <span>Mês e ano</span>
         </a>
-        <a href="{{ route('planejamento.cartoes') }}" class="sidebar-link {{ request()->routeIs('planejamento.cartoes') ? 'active' : '' }}" data-label="Cartões e Parceladas">
-            <i class="fa-solid fa-credit-card"></i> <span>Cartões e Parceladas</span>
+        <a href="{{ route('planejamento.cartoes') }}" class="sidebar-link {{ request()->routeIs('planejamento.cartoes') ? 'active' : '' }}" data-label="Cartões">
+            <i class="fa-solid fa-credit-card"></i> <span>Cartões</span>
+        </a>
+        <a href="{{ route('planejamento.contas-fixas') }}" class="sidebar-link {{ request()->routeIs('planejamento.contas-fixas') ? 'active' : '' }}" data-label="Contas fixas">
+            <i class="fa-solid fa-calendar-check"></i> <span>Contas fixas</span>
         </a>
         <a href="{{ route('planejamento.dividas') }}" class="sidebar-link {{ request()->routeIs('planejamento.dividas') ? 'active' : '' }}" data-label="Dívidas">
             <i class="fa-solid fa-hand-holding-dollar"></i> <span>Dívidas</span>
         </a>
         <a href="{{ route('planejamento.metas') }}" class="sidebar-link {{ request()->routeIs('planejamento.metas') ? 'active' : '' }}" data-label="Metas">
             <i class="fa-solid fa-bullseye"></i> <span>Metas</span>
-        </a>
-        <a href="{{ route('planejamento.contas-fixas') }}" class="sidebar-link {{ request()->routeIs('planejamento.contas-fixas') ? 'active' : '' }}" data-label="Contas Fixas">
-            <i class="fa-solid fa-calendar-check"></i> <span>Contas Fixas</span>
-        </a>
-
-        <div class="sidebar-section-label">Lançamentos</div>
-        <a href="{{ route('planejamento.lancamentos') }}" class="sidebar-link {{ request()->routeIs('planejamento.lancamentos') ? 'active' : '' }}" data-label="Lançamentos">
-            <i class="fa-solid fa-list-ul"></i> <span>Lançamentos</span>
         </a>
         @if(Auth::user()->temPermissao('investimentos', 'ver'))
         <a href="{{ route('investimentos.index') }}" class="sidebar-link {{ request()->routeIs('investimentos.*') ? 'active' : '' }}" data-label="Investimentos">
@@ -1177,9 +1180,9 @@
         @endif
 
         <div class="sidebar-section-label">Cadastros</div>
-        @if(Auth::user()->temPermissao('bancos', 'ver'))
-        <a href="{{ route('bancos.index') }}" class="sidebar-link {{ request()->routeIs('bancos.*') ? 'active' : '' }}" data-label="Contas Bancárias">
-            <i class="fa-solid fa-building-columns"></i> <span>Contas Bancárias</span>
+        @if(Auth::user()->temPermissao('categorias', 'ver'))
+        <a href="{{ route('categorias.index') }}" class="sidebar-link {{ request()->routeIs('categorias.*') ? 'active' : '' }}" data-label="Categorias">
+            <i class="fa-solid fa-tags"></i> <span>Categorias</span>
         </a>
         @endif
         @if(Auth::user()->temPermissao('familiares', 'ver'))
@@ -1190,11 +1193,6 @@
         @if(Auth::user()->temPermissao('fornecedores', 'ver'))
         <a href="{{ route('fornecedores.index') }}" class="sidebar-link {{ request()->routeIs('fornecedores.*') ? 'active' : '' }}" data-label="Fornecedores">
             <i class="fa-solid fa-store"></i> <span>Fornecedores</span>
-        </a>
-        @endif
-        @if(Auth::user()->temPermissao('categorias', 'ver'))
-        <a href="{{ route('categorias.index') }}" class="sidebar-link {{ request()->routeIs('categorias.*') ? 'active' : '' }}" data-label="Categorias">
-            <i class="fa-solid fa-tags"></i> <span>Categorias</span>
         </a>
         @endif
 
@@ -1209,11 +1207,6 @@
         </a>
         @endif
         @endif
-
-        <div class="sidebar-section-label">Indicação</div>
-        <a href="{{ route('cupons.index') }}" class="sidebar-link {{ request()->routeIs('cupons.*') ? 'active' : '' }}" data-label="Indicar Amigos">
-            <i class="fa-solid fa-gift"></i> <span>Indicar Amigos</span>
-        </a>
         @endif
     </nav>
 
@@ -1408,31 +1401,24 @@
         @else
             <li>
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="fa-solid fa-gauge-high"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('planejamento.index') }}" class="{{ request()->routeIs('planejamento.*') && ! request()->routeIs('planejamento.lancamentos', 'planejamento.importar') ? 'active' : '' }}">
-                    <i class="fa-solid fa-scale-balanced"></i> Planejar
+                    <i class="fa-solid fa-house"></i> Início
                 </a>
             </li>
             <li>
                 <a href="{{ route('planejamento.lancamentos') }}" class="{{ request()->routeIs('planejamento.lancamentos') ? 'active' : '' }}">
-                    <i class="fa-solid fa-list-ul"></i> Lançamentos
+                    <i class="fa-solid fa-list-ul"></i> Extrato
                 </a>
             </li>
-            <li>
-                <a href="{{ route('alertas.index') }}" class="{{ request()->routeIs('alertas.*') ? 'active' : '' }}">
-                    <i class="fa-solid fa-bell"></i> Alertas
-                </a>
-            </li>
-            @if(Auth::user()->temPermissao('bancos', 'ver'))
             <li>
                 <a href="{{ route('bancos.index') }}" class="{{ request()->routeIs('bancos.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-building-columns"></i> Contas
                 </a>
             </li>
-            @endif
+            <li>
+                <a href="#" onclick="event.preventDefault(); document.getElementById('hamburger')?.click();">
+                    <i class="fa-solid fa-ellipsis"></i> Mais
+                </a>
+            </li>
         @endif
     </ul>
 </nav>

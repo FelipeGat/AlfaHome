@@ -1,11 +1,11 @@
 @extends('layouts.main')
-@section('title', 'Dashboard')
-@section('page-title', 'Dashboard')
+@section('title', 'Início')
+@section('page-title', 'Início')
 
 @section('content')
 
 @if($hoje['planilha_importada'])
-@include('planejamento._hoje')
+@include('planejamento._inicio')
 @endif
 
 {{-- Com a planilha, o painel do dia acima é o Dashboard inteiro: filtros de
@@ -134,7 +134,7 @@
                 <div>
                     <div class="kpi-label" style="margin-bottom:2px;"><i class="fa-solid fa-building-columns" style="color:var(--color-success);"></i> Saldo em Contas</div>
                     <div style="font-size:clamp(16px,3vw,22px);font-weight:700;color:{{ $saldoTotalContas >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }};">
-                        R$ {{ number_format($saldoTotalContas, 2, ',', '.') }}
+                        {{ brl($saldoTotalContas) }}
                     </div>
                 </div>
                 <div style="background:var(--color-success-soft);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -149,7 +149,7 @@
                         <div class="db-banco-tipo">{{ $banco->eh_dinheiro ? 'Dinheiro' : 'Banco' }}</div>
                     </div>
                     <div class="db-banco-val {{ $banco->saldo >= 0 ? 'text-green' : 'text-red' }}">
-                        R$ {{ number_format($banco->saldo, 2, ',', '.') }}
+                        {{ brl($banco->saldo) }}
                     </div>
                 </div>
                 @empty
@@ -167,7 +167,7 @@
                 <div>
                     <div class="kpi-label" style="margin-bottom:2px;"><i class="fa-solid fa-credit-card" style="color:var(--color-violet);"></i> Fatura dos Cartões</div>
                     <div style="font-size:clamp(16px,3vw,22px);font-weight:700;color:var(--color-danger);">
-                        R$ {{ number_format($totalFaturaCartoes, 2, ',', '.') }}
+                        {{ brl($totalFaturaCartoes) }}
                     </div>
                 </div>
                 <div style="background:var(--color-violet-soft);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -185,7 +185,7 @@
                         <div class="db-banco-tipo" style="margin-top:2px;">{{ $cartao->percentual_uso }}% usado</div>
                     </div>
                     <div class="db-banco-val text-red">
-                        R$ {{ number_format($cartao->gastos_periodo, 2, ',', '.') }}
+                        {{ brl($cartao->gastos_periodo) }}
                     </div>
                 </div>
                 @empty
@@ -203,7 +203,7 @@
                 <div>
                     <div class="kpi-label" style="margin-bottom:2px;"><i class="fa-solid fa-circle-check" style="color:var(--color-info);"></i> Crédito Disponível</div>
                     <div style="font-size:clamp(16px,3vw,22px);font-weight:700;color:var(--color-info);">
-                        R$ {{ number_format($creditoDisponivel, 2, ',', '.') }}
+                        {{ brl($creditoDisponivel) }}
                     </div>
                 </div>
                 <div style="background:var(--color-info-soft);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -224,11 +224,11 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:11px;">
                     <span style="color:var(--color-text-subtle);">Limite total</span>
-                    <span style="font-weight:600;color:var(--color-text);">R$ {{ number_format($totalLimiteCartoes, 2, ',', '.') }}</span>
+                    <span style="font-weight:600;color:var(--color-text);">{{ brl($totalLimiteCartoes) }}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;font-size:11px;margin-top:3px;">
                     <span style="color:var(--color-text-subtle);">Fatura aberta</span>
-                    <span style="font-weight:600;color:var(--color-danger);">R$ {{ number_format($totalFaturaCartoes, 2, ',', '.') }}</span>
+                    <span style="font-weight:600;color:var(--color-danger);">{{ brl($totalFaturaCartoes) }}</span>
                 </div>
                 @else
                 <div style="font-size:12px;color:var(--color-text-subtle);text-align:center;padding:8px 0;">Sem limite cadastrado</div>
@@ -248,7 +248,7 @@
         <div class="d-flex justify-between align-center">
             <div>
                 <div class="kpi-label">Receitas Realizadas</div>
-                <div class="kpi-value text-green">R$ {{ number_format($receitasRealizadas, 2, ',', '.') }}</div>
+                <div class="kpi-value text-green">{{ brl($receitasRealizadas) }}</div>
                 <div class="mt-1">
                     @if($variacaoReceitas >= 0)
                         <span class="badge badge-green"><i class="fa-solid fa-arrow-up"></i> {{ number_format($variacaoReceitas, 1) }}%</span>
@@ -263,7 +263,7 @@
             </div>
         </div>
         <div class="kpi-sub">
-            Previsto: <strong style="color:var(--color-text-muted)">R$ {{ number_format($totalReceitas, 2, ',', '.') }}</strong>
+            Previsto: <strong style="color:var(--color-text-muted)">{{ brl($totalReceitas) }}</strong>
         </div>
     </div>
 
@@ -272,7 +272,7 @@
         <div class="d-flex justify-between align-center">
             <div>
                 <div class="kpi-label">Despesas Realizadas</div>
-                <div class="kpi-value text-red">R$ {{ number_format($despesasRealizadas, 2, ',', '.') }}</div>
+                <div class="kpi-value text-red">{{ brl($despesasRealizadas) }}</div>
                 <div class="mt-1">
                     @if($variacaoDespesas <= 0)
                         <span class="badge badge-green"><i class="fa-solid fa-arrow-down"></i> {{ number_format(abs($variacaoDespesas), 1) }}%</span>
@@ -287,7 +287,7 @@
             </div>
         </div>
         <div class="kpi-sub">
-            Previsto: <strong style="color:var(--color-text-muted)">R$ {{ number_format($totalDespesas, 2, ',', '.') }}</strong>
+            Previsto: <strong style="color:var(--color-text-muted)">{{ brl($totalDespesas) }}</strong>
         </div>
     </div>
 
@@ -298,7 +298,7 @@
             <div>
                 <div class="kpi-label">Saldo do Período</div>
                 <div class="kpi-value" style="color: {{ $saldo >= 0 ? 'var(--color-indigo)' : 'var(--color-danger)' }}">
-                    R$ {{ number_format($saldo, 2, ',', '.') }}
+                    {{ brl($saldo) }}
                 </div>
                 <div class="mt-1">
                     @if($variacaoSaldo >= 0)
@@ -316,7 +316,7 @@
         <div class="kpi-sub">
             Saldo real:
             <strong style="color:{{ $saldoRealizado >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}">
-                {{ $saldoRealizado >= 0 ? '+' : '' }}R$ {{ number_format($saldoRealizado, 2, ',', '.') }}
+                {{ $saldoRealizado >= 0 ? '+' : '' }}{{ brl($saldoRealizado) }}
             </strong>
         </div>
     </div>
@@ -328,10 +328,10 @@
     {{-- Pago — Último Mês · Em aberto em menor destaque --}}
     <div class="card">
         <div class="kpi-label">Pago — Último Mês</div>
-        <div class="kpi-value text-red mt-1">R$ {{ number_format($pagamentoUltimoMes, 2, ',', '.') }}</div>
+        <div class="kpi-value text-red mt-1">{{ brl($pagamentoUltimoMes) }}</div>
         @if($apagarUltimoMes > 0)
         <div class="kpi-sub" style="margin-top:6px;">
-            Em aberto: <strong style="color:var(--color-amber)">R$ {{ number_format($apagarUltimoMes, 2, ',', '.') }}</strong>
+            Em aberto: <strong style="color:var(--color-amber)">{{ brl($apagarUltimoMes) }}</strong>
         </div>
         @else
         <div class="kpi-sub" style="margin-top:6px;color:var(--color-success);">
@@ -343,10 +343,10 @@
     {{-- Recebido — Último Mês · Em aberto em menor destaque --}}
     <div class="card">
         <div class="kpi-label">Recebido — Último Mês</div>
-        <div class="kpi-value text-green mt-1">R$ {{ number_format($recebidoUltimoMes, 2, ',', '.') }}</div>
+        <div class="kpi-value text-green mt-1">{{ brl($recebidoUltimoMes) }}</div>
         @if($aReceberUltimoMes > 0)
         <div class="kpi-sub" style="margin-top:6px;">
-            A receber: <strong style="color:var(--color-amber)">R$ {{ number_format($aReceberUltimoMes, 2, ',', '.') }}</strong>
+            A receber: <strong style="color:var(--color-amber)">{{ brl($aReceberUltimoMes) }}</strong>
         </div>
         @else
         <div class="kpi-sub" style="margin-top:6px;color:var(--color-success);">
@@ -358,10 +358,10 @@
     {{-- À Pagar — Próx. Mês · Já pago em menor destaque --}}
     <div class="card">
         <div class="kpi-label">À Pagar — Próx. Mês</div>
-        <div class="kpi-value text-amber mt-1">R$ {{ number_format($previsaoDespesasProxMes, 2, ',', '.') }}</div>
+        <div class="kpi-value text-amber mt-1">{{ brl($previsaoDespesasProxMes) }}</div>
         @if($pagoProximoMes > 0)
         <div class="kpi-sub" style="margin-top:6px;">
-            Já pago: <strong style="color:var(--color-success)">R$ {{ number_format($pagoProximoMes, 2, ',', '.') }}</strong>
+            Já pago: <strong style="color:var(--color-success)">{{ brl($pagoProximoMes) }}</strong>
         </div>
         @else
         <div class="kpi-sub" style="margin-top:6px;color:var(--color-text-subtle);">
@@ -373,10 +373,10 @@
     {{-- À Receber — Próx. Mês · Já recebido em menor destaque --}}
     <div class="card">
         <div class="kpi-label">À Receber — Próx. Mês</div>
-        <div class="kpi-value mt-1" style="color:var(--color-indigo)">R$ {{ number_format($previsaoReceitasProxMes, 2, ',', '.') }}</div>
+        <div class="kpi-value mt-1" style="color:var(--color-indigo)">{{ brl($previsaoReceitasProxMes) }}</div>
         @if($recebidoProximoMes > 0)
         <div class="kpi-sub" style="margin-top:6px;">
-            Já recebido: <strong style="color:var(--color-success)">R$ {{ number_format($recebidoProximoMes, 2, ',', '.') }}</strong>
+            Já recebido: <strong style="color:var(--color-success)">{{ brl($recebidoProximoMes) }}</strong>
         </div>
         @else
         <div class="kpi-sub" style="margin-top:6px;color:var(--color-text-subtle);">
@@ -412,17 +412,17 @@
         <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--color-bg);border-radius:8px;margin-bottom:12px;gap:8px;">
             <div style="text-align:center;flex:1;min-width:80px;">
                 <div style="font-size:11px;color:var(--color-text-muted);">Fatura Total</div>
-                <div class="fw-600 text-red" style="font-size:14px;">R$ {{ number_format($totalFaturaCartoes, 2, ',', '.') }}</div>
+                <div class="fw-600 text-red" style="font-size:14px;">{{ brl($totalFaturaCartoes) }}</div>
             </div>
             <div style="width:1px;height:30px;background:var(--color-border);"></div>
             <div style="text-align:center;flex:1;min-width:80px;">
                 <div style="font-size:11px;color:var(--color-text-muted);">Gastos no Período</div>
-                <div class="fw-600" style="font-size:14px;color:var(--color-warning);">R$ {{ number_format($totalGastosCartoes, 2, ',', '.') }}</div>
+                <div class="fw-600" style="font-size:14px;color:var(--color-warning);">{{ brl($totalGastosCartoes) }}</div>
             </div>
             <div style="width:1px;height:30px;background:var(--color-border);"></div>
             <div style="text-align:center;flex:1;min-width:80px;">
                 <div style="font-size:11px;color:var(--color-text-muted);">Limite Total</div>
-                <div class="fw-600" style="font-size:14px;color:var(--color-indigo);">R$ {{ number_format($totalLimiteCartoes, 2, ',', '.') }}</div>
+                <div class="fw-600" style="font-size:14px;color:var(--color-indigo);">{{ brl($totalLimiteCartoes) }}</div>
             </div>
         </div>
 
@@ -436,11 +436,11 @@
                         </div>
                         <div>
                             <div class="fw-600" style="font-size:13px;">{{ $cartao->nome }}</div>
-                            <div style="font-size:11px;color:var(--color-text-subtle);">Limite: R$ {{ number_format($cartao->limite_cartao, 2, ',', '.') }}</div>
+                            <div style="font-size:11px;color:var(--color-text-subtle);">Limite: {{ brl($cartao->limite_cartao) }}</div>
                         </div>
                     </div>
                     <div style="text-align:right;">
-                        <div class="fw-600 text-red" style="font-size:13px;">R$ {{ number_format($cartao->saldo_fatura, 2, ',', '.') }}</div>
+                        <div class="fw-600 text-red" style="font-size:13px;">{{ brl($cartao->saldo_fatura) }}</div>
                     </div>
                 </div>
                 {{-- Barra de uso do limite --}}
@@ -449,7 +449,7 @@
                 </div>
                 <div class="d-flex justify-between" style="margin-top:3px;">
                     <span style="font-size:10px;color:var(--color-text-subtle);">{{ $cartao->percentual_uso }}% usado</span>
-                    <span style="font-size:10px;color:var(--color-success);">Disponível: R$ {{ number_format($cartao->limite_disponivel, 2, ',', '.') }}</span>
+                    <span style="font-size:10px;color:var(--color-success);">Disponível: {{ brl($cartao->limite_disponivel) }}</span>
                 </div>
                 @if($cartao->dia_fechamento_cartao)
                     @php $melhorDia = $cartao->dia_fechamento_cartao >= 28 ? 1 : $cartao->dia_fechamento_cartao + 1; @endphp
@@ -514,11 +514,11 @@
                 </div>
                 <div class="text-right">
                     <div class="fw-600 {{ $banco->saldo >= 0 ? 'text-green' : 'text-red' }}" style="font-size:14px;">
-                        R$ {{ number_format($banco->saldo, 2, ',', '.') }}
+                        {{ brl($banco->saldo) }}
                     </div>
                     @if($banco->limite_cartao > 0)
                         <div style="font-size:11px;" class="text-subtle">
-                            Cartão: R$ {{ number_format($banco->saldo_cartao, 2, ',', '.') }}
+                            Cartão: {{ brl($banco->saldo_cartao) }}
                         </div>
                     @endif
                 </div>
@@ -549,7 +549,7 @@
                     </div>
                 </div>
                 <div class="fw-600 {{ $lancamento->tipo === 'receita' ? 'text-green' : 'text-red' }}" style="font-size:13px;">
-                    {{ $lancamento->tipo === 'receita' ? '+' : '−' }} R$ {{ number_format($lancamento->valor, 2, ',', '.') }}
+                    {{ $lancamento->tipo === 'receita' ? '+' : '−' }} {{ brl($lancamento->valor) }}
                 </div>
             </div>
         @empty

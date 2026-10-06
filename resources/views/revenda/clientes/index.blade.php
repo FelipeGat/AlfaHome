@@ -117,7 +117,7 @@
                         <option value="">Selecione um plano</option>
                         @foreach($planos as $plano)
                             <option value="{{ $plano->id }}">
-                                {{ $plano->nome }} — R$ {{ number_format($plano->preco_mensal, 2, ',', '.') }}/mês
+                                {{ $plano->nome }} — {{ brl($plano->preco_mensal) }}/mês
                                 ({{ $plano->max_usuarios == -1 ? 'Ilimitado' : $plano->max_usuarios }} usuários,
                                  {{ $plano->max_bancos == -1 ? 'Ilimitado' : $plano->max_bancos }} bancos)
                             </option>

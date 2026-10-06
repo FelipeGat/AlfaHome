@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    $brl = fn ($v) => $v === null ? '—' : 'R$ ' . number_format((float) $v, 2, ',', '.');
+    $brl = fn ($v) => brl($v);
     $formas = ['dinheiro' => 'Dinheiro', 'pix' => 'PIX', 'debito' => 'Débito', 'cartao' => 'Cartão', 'transferencia' => 'Transferência', 'boleto' => 'Boleto'];
 @endphp
 

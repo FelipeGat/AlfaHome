@@ -6,6 +6,7 @@ use App\Models\Banco;
 use App\Models\Despesa;
 use App\Models\Familiar;
 use App\Models\Tenant;
+use App\Services\Financeiro\FinanceiroService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,8 +47,9 @@ class BancoController extends Controller
             });
 
         $familiares = Familiar::orderBy('nome')->get();
+        $saldos     = app(FinanceiroService::class)->contas($tenantId);
 
-        return view('bancos.index', compact('bancos', 'familiares'));
+        return view('bancos.index', compact('bancos', 'familiares', 'saldos'));
     }
 
     public function store(Request $request)
@@ -164,10 +166,14 @@ class BancoController extends Controller
     {
         $this->authorize('update', $banco);
 
-        $request->validate(['saldo' => 'required|numeric']);
-        $banco->update(['saldo' => $request->saldo]);
+        $request->validate(['saldo' => 'required|numeric'], ['saldo.required' => 'Informe o saldo que aparece no banco.']);
 
-        return back()->with('success', 'Saldo ajustado com sucesso!');
+        // Registra o saldo real de hoje: a partir dele o saldo volta a andar
+        // sozinho com os lançamentos (FinanceiroService).
+        $ajuste = app(FinanceiroService::class)->ajustar($banco, (float) $request->saldo, userId: Auth::id(), observacao: 'Ajuste pelo site');
+        $dif = (float) $ajuste->diferenca;
+
+        return back()->with('success', 'Saldo ajustado' . ($dif != 0 ? ' (diferença de ' . brl($dif) . ' em relação ao calculado).' : '.'));
     }
 
     public function ajustarSaldoPoupanca(Request $request, Banco $banco)

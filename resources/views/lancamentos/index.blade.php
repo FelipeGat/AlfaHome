@@ -240,16 +240,16 @@
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;">
     <div class="card" style="padding:12px;text-align:center;">
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;white-space:nowrap;"><i class="fa-solid fa-arrow-trend-up" style="color:var(--color-success);"></i> Entradas</div>
-        <div class="fw-700" style="color:var(--color-success);font-size:clamp(13px,3vw,20px);font-weight:700;line-height:1.2;">R$ {{ number_format($totalEntradas, 2, ',', '.') }}</div>
+        <div class="fw-700" style="color:var(--color-success);font-size:clamp(13px,3vw,20px);font-weight:700;line-height:1.2;">{{ brl($totalEntradas) }}</div>
     </div>
     <div class="card" style="padding:12px;text-align:center;">
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;white-space:nowrap;"><i class="fa-solid fa-arrow-trend-down" style="color:var(--color-danger);"></i> Saídas</div>
-        <div class="fw-700" style="color:var(--color-danger);font-size:clamp(13px,3vw,20px);font-weight:700;line-height:1.2;">R$ {{ number_format($totalSaidas, 2, ',', '.') }}</div>
+        <div class="fw-700" style="color:var(--color-danger);font-size:clamp(13px,3vw,20px);font-weight:700;line-height:1.2;">{{ brl($totalSaidas) }}</div>
     </div>
     <div class="card" style="padding:12px;text-align:center;">
         <div style="font-size:11px;color:var(--color-text-muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="fa-solid fa-scale-balanced" style="color:var(--color-violet);"></i> Saldo</div>
         <div class="fw-700" style="color:{{ $saldoPeriodo >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }};font-size:clamp(13px,3vw,20px);font-weight:700;line-height:1.2;">
-            R$ {{ number_format($saldoPeriodo, 2, ',', '.') }}
+            {{ brl($saldoPeriodo) }}
         </div>
     </div>
 </div>
@@ -332,7 +332,7 @@
     <div class="ext-date-header">
         <span class="ext-date-label">{{ $dataLabel }}</span>
         <span style="font-size:11.5px;font-weight:700;color:{{ $totalDia >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }};">
-            {{ $totalDia >= 0 ? '+' : '−' }} R$ {{ number_format(abs($totalDia), 2, ',', '.') }}
+            {{ $totalDia >= 0 ? '+' : '−' }} {{ brl(abs($totalDia)) }}
         </span>
     </div>
 
@@ -384,7 +384,7 @@
         {{-- Valor + status --}}
         <div class="ext-valor-col">
             <div class="ext-valor ext-{{ $mov['tipo'] }}">
-                {{ $mov['tipo'] === 'credito' ? '+' : '−' }} R$ {{ number_format($mov['valor'], 2, ',', '.') }}
+                {{ $mov['tipo'] === 'credito' ? '+' : '−' }} {{ brl($mov['valor']) }}
             </div>
             <div class="ext-status {{ $stClass }}">
                 <i class="fa-solid {{ $stIcon }}" style="font-size:8px;"></i> {{ $stLabel }}
@@ -413,12 +413,12 @@
         <span style="font-size:10px;font-weight:700;color:var(--color-text-subtle);text-transform:uppercase;letter-spacing:.05em;margin-right:auto;">Total do período</span>
         <div class="ext-footer-item">
             <span class="ext-footer-dot" style="background:var(--color-danger);"></span>
-            <span style="font-size:12.5px;font-weight:700;color:var(--color-danger);">− R$ {{ number_format($totalSaidas, 2, ',', '.') }}</span>
+            <span style="font-size:12.5px;font-weight:700;color:var(--color-danger);">− {{ brl($totalSaidas) }}</span>
         </div>
         <div style="width:1px;height:16px;background:var(--color-border);"></div>
         <div class="ext-footer-item">
             <span class="ext-footer-dot" style="background:var(--color-success);"></span>
-            <span style="font-size:12.5px;font-weight:700;color:var(--color-success);">+ R$ {{ number_format($totalEntradas, 2, ',', '.') }}</span>
+            <span style="font-size:12.5px;font-weight:700;color:var(--color-success);">+ {{ brl($totalEntradas) }}</span>
         </div>
     </div>
 
