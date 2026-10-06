@@ -1,4 +1,7 @@
 <x-guest-layout>
+    <x-slot name="titulo">Bem-vindo de volta</x-slot>
+    <x-slot name="subtitulo">Acesse sua conta para continuar cuidando das suas finanças de forma simples e segura.</x-slot>
+
     <!-- Session Status -->
     @if(session('status') && str_starts_with(session('status'), '🔧'))
     @php
@@ -15,49 +18,50 @@
         <p style="padding: 10px 16px; font-size: 13px; color: #fdba74; margin: 0; line-height: 1.5;">{{ $mntMsg }}</p>
         @endif
     </div>
-    @else
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+    @elseif(session('status'))
+    <div class="g-status">{{ session('status') }}</div>
     @endif
 
     <form method="POST" action="{{ route('login') }}">
         @csrf
 
-        <!-- Email Address -->
-        <div>
-            <label for="email" class="block text-sm font-medium text-gray-300">Email</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username"
-                class="mt-1 block w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <div class="g-campo">
+            <label for="email">E-mail</label>
+            <div class="g-entrada">
+                <svg class="g-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus autocomplete="username" inputmode="email" placeholder="seu@email.com">
+            </div>
+            @error('email')<div class="g-erro">{{ $message }}</div>@enderror
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <label for="password" class="block text-sm font-medium text-gray-300">Senha</label>
-            <input id="password" type="password" name="password" required autocomplete="current-password"
-                class="mt-1 block w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        <div class="g-campo">
+            <label for="password">Senha</label>
+            <div class="g-entrada">
+                <svg class="g-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                <input id="password" type="password" name="password" required autocomplete="current-password" placeholder="Sua senha">
+                <button type="button" class="g-olho" aria-label="Mostrar senha" onclick="const c=document.getElementById('password');const v=c.type==='password';c.type=v?'text':'password';this.setAttribute('aria-label',v?'Esconder senha':'Mostrar senha');">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+            @error('password')<div class="g-erro">{{ $message }}</div>@enderror
         </div>
 
-        <!-- Remember Me -->
-        <div class="flex items-center justify-between mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" name="remember"
-                    class="rounded bg-slate-700 border-slate-600 text-emerald-500 shadow-sm focus:ring-emerald-500 focus:ring-offset-slate-800">
-                <span class="ms-2 text-sm text-gray-300">Lembrar-me</span>
-            </label>
-
+        <div class="g-opcoes">
+            <label for="remember_me"><input id="remember_me" type="checkbox" name="remember" checked> Lembrar de mim</label>
             @if (Route::has('password.request'))
-                <a class="text-sm text-emerald-400 hover:text-emerald-300" href="{{ route('password.request') }}">
-                    Esqueceu sua senha?
-                </a>
+                <a class="g-link" href="{{ route('password.request') }}">Esqueci minha senha</a>
             @endif
         </div>
 
-        <div class="mt-6">
-            <button type="submit"
-                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:ring-offset-slate-800 transition-colors">
-                Entrar
-            </button>
-        </div>
+        <button type="submit" class="g-botao">
+            Entrar
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
     </form>
+
+    <div class="g-ou">ou</div>
+    <div class="g-seguro">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <span>Seus dados ficam protegidos e<br>visíveis só para a sua família.</span>
+    </div>
 </x-guest-layout>
