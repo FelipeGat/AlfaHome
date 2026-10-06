@@ -47,8 +47,8 @@
     <div class="ini-titulo"><h3>{{ $nomeMes }}</h3><a href="{{ route('planejamento.index') }}">Onde gastei &rarr;</a></div>
     @if($mes['tem_movimentacao'])
         <div class="ini-mes">
-            <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Entrou</div><div class="ini-num" style="font-size:20px;font-weight:700;color:var(--color-success);">+ {{ brl($mes['entrou']) }}</div></div>
-            <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Saiu</div><div class="ini-num" style="font-size:20px;font-weight:700;color:var(--color-danger);">- {{ brl($mes['saiu']) }}</div></div>
+            <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Entrou</div><div class="ini-num" style="font-size:20px;font-weight:700;color:var(--color-success);">+{{ brl($mes['entrou']) }}</div></div>
+            <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Saiu</div><div class="ini-num" style="font-size:20px;font-weight:700;color:var(--color-danger);">-{{ brl($mes['saiu']) }}</div></div>
             <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Resultado</div><div class="ini-num" style="font-size:20px;font-weight:700;color:{{ $saldoCor($mes['resultado']) }};">{{ brl($mes['resultado']) }}</div></div>
         </div>
         @if($mes['categorias'])
@@ -74,7 +74,7 @@
                     <div>{{ $m['descricao'] }}</div>
                     <div>{{ $quando($m['data']) }}{{ $m['conta'] ? ' · ' . $m['conta'] : '' }}</div>
                 </div>
-                <div class="ini-num" style="font-weight:700;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">{{ $entrada ? '+' : '-' }} {{ brl($m['valor']) }}</div>
+                <div class="ini-num" style="font-weight:700;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">{{ $entrada ? '+' : '-' }}{{ brl($m['valor']) }}</div>
             </div>
         @empty
             <p style="padding:12px 0;font-size:14px;color:var(--color-text-muted);">Nenhuma movimentação nos últimos 60 dias.</p>

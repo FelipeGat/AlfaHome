@@ -21,18 +21,18 @@ Escopo: regras financeiras centralizadas e telas Início, Extrato, Contas e Mais
 
 Ref: FR-002, FR-003, FR-004, FR-006, FR-012
 
-- [ ] 1.1.1 Migration `saldo_ajustes` reversível com ajuste inicial = saldo atual de hoje
-- [ ] 1.1.2 `FinanceiroService::saldos()` em centavos, casando conta por nome/banco_id, transferências próprias
-- [ ] 1.1.3 Ajustar saldo (serviço, web e API) e recálculo após importação
-- [ ] 1.1.4 Testes: entrada/saída realizada, pendente, antes do ajuste, transferência, exclusão, negativo, sem conta, isolamento
+- [x] 1.1.1 Migration `saldo_ajustes` reversível com ajuste inicial = saldo atual de hoje
+- [x] 1.1.2 `FinanceiroService::saldos()` em centavos, casando conta por nome/banco_id, transferências próprias
+- [x] 1.1.3 Ajustar saldo (serviço, web e API) e recálculo após importação
+- [x] 1.1.4 Testes: entrada/saída realizada, pendente, antes do ajuste, transferência, exclusão, negativo, sem conta, isolamento
 
 ### 1.2 Mes e inicio `[C]`
 
 Ref: FR-001, FR-005, FR-007, FR-008
 
-- [ ] 1.2.1 `mes()`, `ultimas()`, `proximos()` e endpoints `/financeiro/inicio`, `/financeiro/resumo`, `/financeiro/contas/{banco}`
-- [ ] 1.2.2 `hoje()`, snapshot do app e avisos usam os mesmos saldos
-- [ ] 1.2.3 Testes: mesmos números em Início/Resumo/Previsto x Realizado, compra no cartão, mês vazio, virada de mês
+- [x] 1.2.1 `mes()`, `ultimas()`, `proximos()` e endpoints `/financeiro/inicio`, `/financeiro/resumo`, `/financeiro/contas/{banco}`
+- [x] 1.2.2 `hoje()`, snapshot do app e avisos usam os mesmos saldos
+- [x] 1.2.3 Testes: mesmos números em Início/Resumo/Previsto x Realizado, compra no cartão, mês vazio, virada de mês
 
 ---
 
@@ -42,9 +42,9 @@ Ref: FR-001, FR-005, FR-007, FR-008
 
 Ref: FR-009
 
-- [ ] 2.1.1 Helper único de moeda; Início no formato da spec; menu Início/Extrato/Contas
-- [ ] 2.1.2 Contas com saldo calculado, cores corretas e Ajustar saldo
-- [ ] 2.1.3 Testes de tela
+- [x] 2.1.1 Helper único de moeda; Início no formato da spec; menu Início/Extrato/Contas
+- [x] 2.1.2 Contas com saldo calculado, cores corretas e Ajustar saldo
+- [x] 2.1.3 Testes de tela
 
 ---
 
@@ -54,11 +54,11 @@ Ref: FR-009
 
 Ref: FR-009, FR-010, FR-011
 
-- [ ] 3.1.1 Abas Início | Extrato | Contas | Mais
-- [ ] 3.1.2 Início novo com `/financeiro/inicio`
-- [ ] 3.1.3 Extrato com busca por valor; Contas compacta com cores e detalhe com Ajustar saldo
-- [ ] 3.1.4 Resumo do mês simples (sem "economizou"); moeda única
-- [ ] 3.1.5 Testes de widget
+- [x] 3.1.1 Abas Início | Extrato | Contas | Mais
+- [x] 3.1.2 Início novo com `/financeiro/inicio`
+- [x] 3.1.3 Extrato com busca por valor; Contas compacta com cores e detalhe com Ajustar saldo
+- [x] 3.1.4 Resumo do mês simples (sem "economizou"); moeda única
+- [x] 3.1.5 Testes de widget
 
 ---
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## AlfaHome — 06/10/2026 — Mesmos números em toda tela
+
+### Novidades
+- **Um cálculo só para o dinheiro**: Início, Extrato, Contas, Resumo do mês, Previsto x Realizado e os avisos do Telegram agora mostram os mesmos valores de entrou, saiu e saldo.
+- **Saldo das contas anda sozinho**: parte do saldo informado e acompanha as entradas e saídas pagas na planilha. Quando não bater com o banco, use **Ajustar saldo** (site e app) e informe o valor real.
+- **Início novo**: saldo total, o mês (entrou, saiu, resultado e onde gastou), as últimas movimentações e até 3 próximos pagamentos.
+- **App com 4 abas**: Início, Extrato, Contas e Mais (Resumo do mês, Cartões, Planejamento, Investimentos e cadastros).
+- **Dinheiro sempre no mesmo formato**: "R$ 1.250,00" e "-R$ 98,15"; valor negativo nunca aparece em verde.
+- **Busca do Extrato por valor** (ex.: "96,85").
+
+### Correções
+- Relatórios mostrava despesas R$ 0,00 enquanto Lançamentos mostrava R$ 389,13.
+- "Você economizou neste mês" aparecia mesmo sem nenhuma movimentação.
+- Contas mostrava saldo negativo em verde.
+- Valores de investimento acima de mil saíam com a formatação errada no app.
+
 ## AlfaHome — 05/10/2026 — Lançamentos numa tela só
 
 ### Novidades

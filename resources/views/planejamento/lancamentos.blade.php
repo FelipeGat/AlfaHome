@@ -115,7 +115,7 @@
                         <div class="lc-meta">{{ implode(' · ', $meta) ?: '—' }}</div>
                     </div>
                     <div class="lc-valor">
-                        <div style="font-weight:600;color:{{ $entrada ? 'var(--color-success)' : 'inherit' }};">{{ $entrada ? '+ ' : '− ' }}{{ $brl($valor) }}</div>
+                        <div style="font-weight:600;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">{{ $entrada ? '+' : '-' }}{{ $brl($valor) }}</div>
                         @if($pago)
                             <span class="badge badge-success lc-sit">{{ $entrada ? 'Recebido' : 'Pago' }}</span>
                         @else

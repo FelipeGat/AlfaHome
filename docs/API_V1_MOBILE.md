@@ -736,3 +736,32 @@ dia de qualquer pessoa da família, inclusive pelo app) e sob demanda.
 
 `php artisan migrate` no servidor — cria `planilha_importacoes`, as seis tabelas
 `plan_*` e a coluna `valor_previsto` em `despesas` e `receitas`.
+
+## 15. Financeiro — fonte única dos números
+
+Todas as telas (site, app e avisos) leem as mesmas regras do
+`FinanceiroService`. Valores em reais com 2 casas; datas `Y-m-d`.
+
+| Método | Rota | O que devolve |
+|--------|------|---------------|
+| GET | `/financeiro/inicio` | `contas{total, itens[], sem_conta[]}`, `mes{mes, entrou, saiu, resultado, tem_movimentacao, categorias[]}`, `ultimas[]` (5), `proximos[]` (até 3), `planilha_importada` |
+| GET | `/financeiro/resumo?mes=AAAA-MM` | o bloco `mes` do mês pedido (padrão: mês atual); 422 se o formato for outro |
+| GET | `/financeiro/contas` | o bloco `contas` |
+| GET | `/financeiro/contas/{banco}` | `id, nome, cor, saldo, movimentos[]` (60 dias), `ajustes[]` (5 últimos); 404 se for de outra família |
+| POST | `/financeiro/contas/{banco}/ajustar` | corpo `{saldo}`; registra o saldo real de hoje e devolve `{saldo, diferenca}` |
+
+Regras:
+
+- **Saldo da conta** = último ajuste + entradas realizadas − saídas realizadas
+  com data posterior ao ajuste (ou na mesma data, registradas depois dele),
+  até hoje, da planilha (casadas pelo nome da conta) e do sistema (pela conta
+  escolhida), ± transferências entre contas próprias.
+- **Realizado** = valor realizado preenchido; o resto é pendente.
+- **Entrou/Saiu** = realizado do mês, igual ao Previsto x Realizado.
+- Transferência entre contas próprias não é entrada nem saída; limite de cartão
+  nunca entra em saldo; compra no cartão conta uma vez.
+- `sem_conta`: contas que a planilha usa e não estão cadastradas (não entram
+  em saldo).
+
+Itens de `ultimas[]` e `movimentos[]`: `ref, tipo (receita|despesa), descricao,
+categoria, conta, data, valor` (sempre positivo; o sinal vem do `tipo`).
