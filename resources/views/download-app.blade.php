@@ -103,7 +103,7 @@
 </head>
 <body>
     <div class="wrap">
-        <img class="logo" src="/alfa-home-logo/alfa-home-logo.png" alt="AlfaHome">
+        <img class="logo" src="/marca/icone-app.svg" alt="alfahome">
         <h1>Baixar o app AlfaHome</h1>
         <p class="subtitle">Sua vida financeira em um só lugar, direto no celular.</p>
 

@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'AlfaHome') }} — @yield('title', 'Dashboard')</title>
     <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="icon" type="image/svg+xml" href="/marca/simbolo.svg">
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700|plus-jakarta-sans:600,700,800&display=swap" rel="stylesheet">
     {{-- ─── PWA ────────────────────────────────────────────────────── --}}
     <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
@@ -14,11 +17,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="AlfaHome">
-    <meta name="theme-color" content="#0b1120" id="meta-theme-color">
+    <meta name="theme-color" content="#F7F9FC" id="meta-theme-color">
     <meta name="vapid-public-key" content="{{ config('services.vapid.public_key') }}">
     {{-- ─── End PWA ─────────────────────────────────────────────────── --}}
     <script>if(localStorage.getItem('alfahome-theme')==='dark')document.documentElement.classList.add('ah-dark-preload');</script>
-    <style>.ah-dark-preload body,.ah-dark-preload{background:#0b1120 !important;color:#e2e8f0 !important;}</style>
+    <style>.ah-dark-preload body,.ah-dark-preload{background:#08111F !important;color:#E8EEF6 !important;}</style>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -30,8 +33,13 @@
             --sidebar-w-collapsed: 70px;
             --topbar-h: 64px;
             --bottom-nav-h: 60px;
-            --color-primary: #57BA87;
-            --color-primary-hover: #47a877;
+            /* Marca separada da semântica: azul é ação; verde é só entrada/sucesso. */
+            --color-brand:   #0B1D38;
+            --color-accent:  #14B8A6;
+            --color-primary: #2563EB;
+            --color-primary-hover: #1D4ED8;
+            --color-primary-soft: #EEF4FF;
+            --marca-1: #0B1D38; --marca-2: #2563EB; --marca-3: #14B8A6; --marca-texto: #0B1D38;
             --color-success: #16a34a;
             --color-danger:  #dc2626;
             --color-warning: #d97706;
@@ -44,8 +52,8 @@
             --color-bg:          #F7F9FC;   /* page background   */
             --color-bg-card:     #FFFFFF;   /* card surface      */
             --color-border:      #E5E7EB;   /* all borders       */
-            --color-text:        #1F2937;   /* primary text      */
-            --color-text-muted:  #6B7280;   /* secondary text    */
+            --color-text:        #0F172A;   /* primary text      */
+            --color-text-muted:  #64748B;   /* secondary text    */
             --color-text-subtle: #9CA3AF;   /* placeholder/hints */
             /* Soft tinted backgrounds (icon chips, mini-cards) */
             --color-success-soft: #dcfce7;
@@ -53,15 +61,16 @@
             --color-warning-soft: #fef3c7;
             --color-info-soft:    #e0f2fe;
             --color-violet-soft:  #ede9fe;
-            --radius-card: 8px;
+            --radius-card: 14px;
             --radius-btn: 9999px;
             --radius-badge: 4px;
-            --shadow-card: 0 2px 8px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
+            --shadow-card: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.03);
         }
 
         html { font-size: 15px; }
         body {
-            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-feature-settings: 'cv11', 'ss01';
             background: var(--color-bg);
             color: var(--color-text);
             line-height: 1.5;
@@ -91,7 +100,6 @@
             padding: 0 16px;
             height: var(--topbar-h);
             border-bottom: 1px solid var(--color-border);
-            border-top: 3px solid var(--color-primary);
             flex-shrink: 0;
             position: relative;
         }
@@ -138,8 +146,8 @@
         .sidebar-nav { padding: 6px 8px; flex: 1; overflow-y: auto; overflow-x: hidden; }
         .sidebar-link {
             display: flex; align-items: center; gap: 10px;
-            padding: 9px 10px; border-radius: 20px;
-            color: #64748b; text-decoration: none;
+            min-height: 42px; padding: 9px 12px; border-radius: 10px; margin-bottom: 2px;
+            color: #475569; text-decoration: none;
             font-size: 14px; font-weight: 500;
             transition: background .15s, color .15s;
             white-space: nowrap; overflow: hidden;
@@ -150,9 +158,21 @@
         .sidebar.collapsed .sidebar-link { justify-content: center; gap: 0; padding: 11px 0; }
         .sidebar.collapsed .sidebar-link i { font-size: 18px; width: auto; }
         .sidebar.collapsed .sidebar-link span { display: none; }
-        .sidebar-link:hover { background: #f1f5f9; color: #1e293b; }
-        .sidebar-link.active { background: var(--color-primary); color: #fff; }
-        .sidebar-link.active i { color: #fff; }
+        .sidebar-link:hover { background: #F1F5F9; color: #0F172A; }
+        .sidebar-link:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
+        /* Ativo: fundo suave + marcador lateral, sem bloco verde. */
+        .sidebar-link.active { background: var(--color-primary-soft); color: var(--color-brand); font-weight: 600; }
+        .sidebar-link.active i { color: var(--color-primary); }
+        .sidebar-link.active::before { content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 3px; background: var(--color-primary); }
+        .sidebar-grupo { margin-top: 2px; }
+        .sidebar-grupo > button.sidebar-link { width: 100%; background: none; border: 0; cursor: pointer; font-family: inherit; text-align: left; }
+        .sidebar-grupo > button .seta { margin-left: auto; font-size: 11px; transition: transform .2s; }
+        .sidebar-grupo.aberto > button .seta { transform: rotate(180deg); }
+        .sidebar-grupo .sidebar-sub { display: none; padding-left: 14px; }
+        .sidebar-grupo.aberto .sidebar-sub { display: block; }
+        .sidebar-sub .sidebar-link { min-height: 38px; font-size: 13.5px; }
+        .sidebar.collapsed .sidebar-grupo .sidebar-sub { display: block; padding-left: 0; }
+        .sidebar.collapsed .sidebar-grupo > button { display: none; }
 
         /* Tooltip on collapsed */
         .sidebar.collapsed .sidebar-link:hover::after {
@@ -285,19 +305,25 @@
            ═══════════════════════════════════════════════════════════ */
         body.dark-mode {
             /* ── Paleta 1:1 do AlfaGym (dark) ── */
-            --color-bg:            #0b1120;   /* bg-body    */
-            --color-bg-container:  #0f172a;   /* bg-section */
-            --color-bg-card:       #1e293b;   /* bg-card    */
-            --color-bg-elevated:   #263548;   /* faq-hover  */
-            --color-bg-hover:      #263548;
-            --color-bg-inset:      #0b1120;
+            /* Navy em camadas: fundo < superfície < cartão < elevado. */
+            --color-bg:            #08111F;
+            --color-bg-container:  #0C1729;
+            --color-bg-card:       #111F35;
+            --color-bg-elevated:   #172A45;
+            --color-bg-hover:      #172A45;
+            --color-bg-inset:      #08111F;
 
-            --color-border:         #334155;
-            --color-border-strong:  #334155;
+            --color-border:         rgba(255,255,255,.08);
+            --color-border-strong:  rgba(255,255,255,.14);
+            --color-primary: #60A5FA;
+            --color-primary-hover: #93C5FD;
+            --color-primary-soft: rgba(96,165,250,.14);
+            --color-brand: #E2E8F0;
+            --marca-1: #E2E8F0; --marca-2: #60A5FA; --marca-3: #2DD4BF; --marca-texto: #F1F5F9;
             --color-border-focus:   rgba(22, 150, 163, 0.6);
 
-            --color-text:         #e2e8f0;
-            --color-text-muted:   #cbd5e1;
+            --color-text:         #E8EEF6;
+            --color-text-muted:   #A7B4C6;
             --color-text-subtle:  #94a3b8;
             --color-text-faint:   #64748b;
 
@@ -340,15 +366,12 @@
         body.dark-mode .sidebar-section-label { color: #475569; }
         body.dark-mode .sidebar-link { color: #9CA3AF; }
         body.dark-mode .sidebar-link:hover { background: var(--color-bg-hover, #273449); color: #E5E7EB; }
-        body.dark-mode .sidebar-link.active {
-            background: var(--color-primary); color: #fff;
-            box-shadow: 0 2px 12px rgba(79,70,229,.3);
-        }
+        body.dark-mode .sidebar-link.active { background: var(--color-primary-soft); color: #F1F5F9; box-shadow: none; }
         body.dark-mode .sidebar.collapsed .sidebar-link:hover::after {
             background: #172135; color: #e2e8f0; border: 1px solid #1e2e44;
         }
         body.dark-mode .sidebar-user { border-top-color: rgba(255,255,255,.06); }
-        body.dark-mode .sidebar-user-avatar { background: rgba(79,70,229,.3); color: #a5b4fc; }
+        body.dark-mode .sidebar-user-avatar { background: rgba(96,165,250,.16); color: #93C5FD; }
         body.dark-mode .sidebar-user-name { color: #cbd5e1; }
         body.dark-mode .sidebar-user-email { color: #94a3b8; }
         body.dark-mode .sidebar-user-action { color: #94a3b8; }
@@ -1107,8 +1130,8 @@
 {{-- ─── Sidebar ──────────────────────────────────────────────────────── --}}
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-        <img src="/alfa-home-logo/alfa-home-logo.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-full" style="max-width: 140px;">
-        <img src="/alfa-home-logo/alfa-home-logo-2.png" alt="AlfaHome" class="sidebar-logo-img sidebar-logo-img-icon" style="height: 34px; width: auto;">
+        <a href="{{ route('dashboard') }}" class="sidebar-logo-img sidebar-logo-img-full" aria-label="alfahome — início" style="text-decoration:none;"><x-marca :tamanho="30" /></a>
+        <a href="{{ route('dashboard') }}" class="sidebar-logo-img sidebar-logo-img-icon" aria-label="alfahome — início"><x-marca :tamanho="30" :nome="false" /></a>
     </div>
 
     <nav class="sidebar-nav">
@@ -1140,73 +1163,59 @@
 
         @else
         {{-- ─── Sidebar Tenant (Master/Membro) ──────────────────────────── --}}
-        {{-- Primeiro o dia a dia (quanto tenho, o que entrou e saiu, onde está);
-             planejamento e cadastros depois. --}}
-        <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" data-label="Início">
-            <i class="fa-solid fa-house"></i> <span>Início</span>
-        </a>
-        <a href="{{ route('planejamento.lancamentos') }}" class="sidebar-link {{ request()->routeIs('planejamento.lancamentos') ? 'active' : '' }}" data-label="Extrato">
-            <i class="fa-solid fa-list-ul"></i> <span>Extrato</span>
-        </a>
+        {{-- O dia a dia primeiro; Planejamento e Mais recolhidos para não competir. --}}
+        @php
+            $emPlanejamento = request()->routeIs('planejamento.index', 'planejamento.anual', 'planejamento.cartoes', 'planejamento.contas-fixas', 'planejamento.dividas', 'planejamento.metas', 'investimentos.*');
+            $emMais = request()->routeIs('alertas.*', 'categorias.*', 'familiares.*', 'fornecedores.*', 'planejamento.importar', 'notificacoes.*');
+            $link = fn (string $rota, string $padrao, string $icone, string $rotulo) =>
+                '<a href="' . route($rota) . '" class="sidebar-link ' . (request()->routeIs($padrao) ? 'active' : '') . '" data-label="' . e($rotulo) . '"'
+                . (request()->routeIs($padrao) ? ' aria-current="page"' : '') . '><i class="fa-solid ' . $icone . '"></i> <span>' . e($rotulo) . '</span></a>';
+        @endphp
+        {!! $link('dashboard', 'dashboard', 'fa-house', 'Início') !!}
+        {!! $link('planejamento.lancamentos', 'planejamento.lancamentos', 'fa-list-ul', 'Extrato') !!}
         @if(Auth::user()->temPermissao('bancos', 'ver'))
-        <a href="{{ route('bancos.index') }}" class="sidebar-link {{ request()->routeIs('bancos.*') ? 'active' : '' }}" data-label="Contas">
-            <i class="fa-solid fa-building-columns"></i> <span>Contas</span>
-        </a>
-        @endif
-        <a href="{{ route('alertas.index') }}" class="sidebar-link {{ request()->routeIs('alertas.*') ? 'active' : '' }}" data-label="Alertas">
-            <i class="fa-solid fa-bell"></i> <span>Alertas</span>
-        </a>
-
-        <div class="sidebar-section-label">Planejamento</div>
-        <a href="{{ route('planejamento.index') }}" class="sidebar-link {{ request()->routeIs('planejamento.index', 'planejamento.anual') ? 'active' : '' }}" data-label="Mês e ano">
-            <i class="fa-solid fa-scale-balanced"></i> <span>Mês e ano</span>
-        </a>
-        <a href="{{ route('planejamento.cartoes') }}" class="sidebar-link {{ request()->routeIs('planejamento.cartoes') ? 'active' : '' }}" data-label="Cartões">
-            <i class="fa-solid fa-credit-card"></i> <span>Cartões</span>
-        </a>
-        <a href="{{ route('planejamento.contas-fixas') }}" class="sidebar-link {{ request()->routeIs('planejamento.contas-fixas') ? 'active' : '' }}" data-label="Contas fixas">
-            <i class="fa-solid fa-calendar-check"></i> <span>Contas fixas</span>
-        </a>
-        <a href="{{ route('planejamento.dividas') }}" class="sidebar-link {{ request()->routeIs('planejamento.dividas') ? 'active' : '' }}" data-label="Dívidas">
-            <i class="fa-solid fa-hand-holding-dollar"></i> <span>Dívidas</span>
-        </a>
-        <a href="{{ route('planejamento.metas') }}" class="sidebar-link {{ request()->routeIs('planejamento.metas') ? 'active' : '' }}" data-label="Metas">
-            <i class="fa-solid fa-bullseye"></i> <span>Metas</span>
-        </a>
-        @if(Auth::user()->temPermissao('investimentos', 'ver'))
-        <a href="{{ route('investimentos.index') }}" class="sidebar-link {{ request()->routeIs('investimentos.*') ? 'active' : '' }}" data-label="Investimentos">
-            <i class="fa-solid fa-seedling"></i> <span>Investimentos</span>
-        </a>
+        {!! $link('bancos.index', 'bancos.*', 'fa-building-columns', 'Contas') !!}
         @endif
 
-        <div class="sidebar-section-label">Cadastros</div>
-        @if(Auth::user()->temPermissao('categorias', 'ver'))
-        <a href="{{ route('categorias.index') }}" class="sidebar-link {{ request()->routeIs('categorias.*') ? 'active' : '' }}" data-label="Categorias">
-            <i class="fa-solid fa-tags"></i> <span>Categorias</span>
-        </a>
-        @endif
-        @if(Auth::user()->temPermissao('familiares', 'ver'))
-        <a href="{{ route('familiares.index') }}" class="sidebar-link {{ request()->routeIs('familiares.*') ? 'active' : '' }}" data-label="Membros">
-            <i class="fa-solid fa-users"></i> <span>Membros</span>
-        </a>
-        @endif
-        @if(Auth::user()->temPermissao('fornecedores', 'ver'))
-        <a href="{{ route('fornecedores.index') }}" class="sidebar-link {{ request()->routeIs('fornecedores.*') ? 'active' : '' }}" data-label="Fornecedores">
-            <i class="fa-solid fa-store"></i> <span>Fornecedores</span>
-        </a>
-        @endif
+        <div class="sidebar-grupo {{ $emPlanejamento ? 'aberto' : '' }}">
+            <button type="button" class="sidebar-link" aria-expanded="{{ $emPlanejamento ? 'true' : 'false' }}" onclick="const g=this.parentElement;g.classList.toggle('aberto');this.setAttribute('aria-expanded',g.classList.contains('aberto'));">
+                <i class="fa-solid fa-calendar-days"></i> <span>Planejamento</span> <i class="fa-solid fa-chevron-down seta"></i>
+            </button>
+            <div class="sidebar-sub">
+                {!! $link('planejamento.index', 'planejamento.index', 'fa-scale-balanced', 'Mês e ano') !!}
+                {!! $link('planejamento.contas-fixas', 'planejamento.contas-fixas', 'fa-calendar-check', 'Contas fixas') !!}
+                {!! $link('planejamento.cartoes', 'planejamento.cartoes', 'fa-credit-card', 'Cartões') !!}
+                {!! $link('planejamento.dividas', 'planejamento.dividas', 'fa-hand-holding-dollar', 'Dívidas') !!}
+                {!! $link('planejamento.metas', 'planejamento.metas', 'fa-bullseye', 'Metas') !!}
+                @if(Auth::user()->temPermissao('investimentos', 'ver'))
+                {!! $link('investimentos.index', 'investimentos.*', 'fa-seedling', 'Investimentos') !!}
+                @endif
+            </div>
+        </div>
 
-        @if(Auth::user()->role === 'master')
-        <div class="sidebar-section-label">Configurações</div>
-        <a href="{{ route('planejamento.importar') }}" class="sidebar-link {{ request()->routeIs('planejamento.importar') ? 'active' : '' }}" data-label="Planilha">
-            <i class="fa-solid fa-file-arrow-up"></i> <span>Planilha</span>
-        </a>
-        @if(\App\Models\NotificacaoConfig::liberado(auth()->user()->tenant_id))
-        <a href="{{ route('notificacoes.index') }}" class="sidebar-link {{ request()->routeIs('notificacoes.*') ? 'active' : '' }}" data-label="Avisos no Telegram">
-            <i class="fa-brands fa-telegram"></i> <span>Avisos no Telegram</span>
-        </a>
-        @endif
-        @endif
+        <div class="sidebar-grupo {{ $emMais ? 'aberto' : '' }}">
+            <button type="button" class="sidebar-link" aria-expanded="{{ $emMais ? 'true' : 'false' }}" onclick="const g=this.parentElement;g.classList.toggle('aberto');this.setAttribute('aria-expanded',g.classList.contains('aberto'));">
+                <i class="fa-solid fa-grip"></i> <span>Mais</span> <i class="fa-solid fa-chevron-down seta"></i>
+            </button>
+            <div class="sidebar-sub">
+                {!! $link('alertas.index', 'alertas.*', 'fa-bell', 'Alertas') !!}
+                @if(Auth::user()->temPermissao('categorias', 'ver'))
+                {!! $link('categorias.index', 'categorias.*', 'fa-tags', 'Categorias') !!}
+                @endif
+                @if(Auth::user()->temPermissao('familiares', 'ver'))
+                {!! $link('familiares.index', 'familiares.*', 'fa-users', 'Membros') !!}
+                @endif
+                @if(Auth::user()->temPermissao('fornecedores', 'ver'))
+                {!! $link('fornecedores.index', 'fornecedores.*', 'fa-store', 'Fornecedores') !!}
+                @endif
+                @if(Auth::user()->role === 'master')
+                {!! $link('planejamento.importar', 'planejamento.importar', 'fa-file-excel', 'Planilha') !!}
+                @if(\App\Models\NotificacaoConfig::liberado(auth()->user()->tenant_id))
+                <a href="{{ route('notificacoes.index') }}" class="sidebar-link {{ request()->routeIs('notificacoes.*') ? 'active' : '' }}" data-label="Avisos no Telegram"><i class="fa-brands fa-telegram"></i> <span>Avisos no Telegram</span></a>
+                @endif
+                @endif
+            </div>
+        </div>
         @endif
     </nav>
 
@@ -1270,7 +1279,7 @@
                 <i class="fa-solid fa-sun  icon-sun"  style="font-size:15px;"></i>
                 <i class="fa-solid fa-moon icon-moon" style="font-size:15px;"></i>
             </button>
-            <img src="/alfa-home-logo/alfa-home-logo-2.png" alt="AlfaHome" class="topbar-logo-mobile">
+            <x-marca :tamanho="28" :nome="false" class="topbar-logo-mobile" />
         </div>
     </header>
     <script>
@@ -1805,7 +1814,7 @@
     function syncThemeColor() {
         if (!themeColorMeta) return;
         themeColorMeta.setAttribute('content',
-            document.body.classList.contains('dark-mode') ? '#0b1120' : '#ffffff');
+            document.body.classList.contains('dark-mode') ? '#08111F' : '#F7F9FC');
     }
     document.addEventListener('DOMContentLoaded', syncThemeColor);
     if (typeof MutationObserver !== 'undefined') {

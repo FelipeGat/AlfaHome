@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 64" role="img" aria-label="alfahome">
+  <path d="M11 54 L29.6 12.4 Q32 7.2 34.4 12.4" fill="none" stroke="#0B1D38" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34.4 12.4 L53 54" fill="none" stroke="#2563EB" stroke-width="9" stroke-linecap="round"/>
+  <path d="M21 39 H43" fill="none" stroke="#14B8A6" stroke-width="7" stroke-linecap="round"/>
+  <text x="70" y="45" font-family="'Plus Jakarta Sans','Inter',system-ui,sans-serif" font-size="35" font-weight="700" letter-spacing="-0.8" fill="#0B1D38">alfahome</text>
+</svg>

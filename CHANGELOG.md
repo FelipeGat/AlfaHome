@@ -1,5 +1,15 @@
 # Changelog
 
+## AlfaHome — 06/10/2026 — Início novo e marca nova
+
+### Novidades
+- **Início em duas colunas**: saldo total com as contas, entradas, saídas e resultado do mês, últimas movimentações, "Onde você gastou" (gráfico com as categorias reais do mês), próximos pagamentos (atrasado em vermelho, vence hoje em âmbar) e um resumo rápido (contas vencidas e cartões).
+- **Escolha do mês** no topo do Início e botão **Lançar na planilha**, que abre a planilha da família no OneDrive.
+- **Ocultar valores** com um toque no olho do saldo.
+- **Menu mais leve**: Início, Extrato e Contas no topo; Planejamento e Mais recolhidos.
+- **Marca nova** (símbolo de duas linhas que convergem formando o A) no site, no login, no ícone do navegador e no atalho do celular; azul passa a ser a cor das ações e o verde fica só para entradas.
+- **Modo escuro** refeito em tons de navy.
+
 ## AlfaHome — 06/10/2026 — Mesmos números em toda tela
 
 ### Novidades

@@ -1,103 +1,318 @@
-{{-- Início: quanto tenho, quanto entrou, quanto saiu e para onde foi. Números do FinanceiroService. --}}
+{{-- Início: quanto tenho, como foi o mês, onde gastei, o que aconteceu e o que pagar.
+     Todos os números vêm do FinanceiroService (os mesmos do app e dos avisos). --}}
 @php
     $semana = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
-    $quando = function (string $d) use ($semana) {
-        $data = \Carbon\Carbon::parse($d);
-        $dias = (int) now()->startOfDay()->diffInDays($data, false);
-        return match (true) { $dias === 0 => 'Hoje', $dias === -1 => 'Ontem', $dias === 1 => 'Amanhã', default => $semana[$data->dayOfWeek] . ', ' . $data->format('d/m') };
+    $hojeDia = now()->startOfDay();
+    $dias = fn (?string $d) => $d ? (int) $hojeDia->diffInDays(\Carbon\Carbon::parse($d), false) : null;
+    $quando = function (?string $d) use ($semana, $dias) {
+        if (! $d) return 'sem data';
+        $n = $dias($d); $data = \Carbon\Carbon::parse($d);
+        return match (true) { $n === 0 => 'Hoje', $n === -1 => 'Ontem', $n === 1 => 'Amanhã', default => $semana[$data->dayOfWeek] . ', ' . $data->format('d/m') };
     };
-    $saldoCor = fn ($v) => $v < 0 ? 'var(--color-danger)' : 'var(--color-text)';
+    $hora = (int) now()->format('G');
+    $saudacao = $hora < 5 ? 'Boa noite' : ($hora < 12 ? 'Bom dia' : ($hora < 18 ? 'Boa tarde' : 'Boa noite'));
+    $primeiroNome = \Illuminate\Support\Str::of(auth()->user()->name)->before(' ');
     $mes = $visao['mes'];
-    $nomeMes = ucfirst(now()->locale('pt_BR')->isoFormat('MMMM'));
+    $nomeMes = fn ($c) => \Carbon\Carbon::parse($c)->locale('pt_BR')->isoFormat('MMMM');
+    $mesAtual = $mesVisao->isSameMonth(now());
+    $negativo = fn ($v) => $v < 0;
+
+    // Donut: as 4 maiores categorias + "Outras", em pontos percentuais do que saiu.
+    $cores = ['#2563EB', '#14B8A6', '#F59E0B', '#8B5CF6', '#94A3B8'];
+    $cats = array_slice($mes['categorias'], 0, 4);
+    $resto = array_slice($mes['categorias'], 4);
+    if ($resto) {
+        $cats[] = ['categoria' => 'Outras', 'valor' => round(array_sum(array_column($resto, 'valor')), 2), 'pct' => round(array_sum(array_column($resto, 'pct')), 2)];
+    }
+    $acumulado = 0;
 @endphp
 
 <style>
-.ini { max-width:880px; }
-.ini-rotulo { font-size:12px; font-weight:600; color:var(--color-text-subtle); text-transform:uppercase; letter-spacing:.05em; }
+.ini { max-width:1440px; margin:0 auto; }
+.ini-cab { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
+.ini-cab h1 { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:28px; font-weight:800; letter-spacing:-.02em; color:var(--color-text); margin:0; line-height:1.15; }
+.ini-cab p { color:var(--color-text-muted); font-size:15px; margin-top:4px; }
+.ini-acoes { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.ini-mes-sel { height:42px; border-radius:10px; border:1px solid var(--color-border); background:var(--color-bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath d='M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z'/%3E%3C/svg%3E") no-repeat right 12px center / 16px; -webkit-appearance:none; appearance:none; color:var(--color-text); padding:0 38px 0 14px; font-weight:600; font-size:14px; font-family:inherit; cursor:pointer; }
+.ini-lancar { height:42px; display:inline-flex; align-items:center; gap:8px; padding:0 18px; border-radius:10px; background:var(--color-brand); color:#fff; font-weight:600; font-size:14px; text-decoration:none; transition:transform .15s, box-shadow .15s, background .15s; }
+body.dark-mode .ini-lancar { background:#2563EB; }
+.ini-lancar:hover { box-shadow:0 6px 16px rgba(11,29,56,.22); transform:translateY(-1px); }
+.ini-lancar:focus-visible, .ini-mes-sel:focus-visible, .ini-olho:focus-visible, .ini-link:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
+
+.ini-grade { display:grid; gap:16px; grid-template-columns:minmax(0,1fr) 340px; align-items:start; }
+.ini-principal, .ini-lado { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.ini-duo { display:grid; gap:16px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; }
+
+.ini-card { background:var(--color-bg-card); border:1px solid var(--color-border); border-radius:14px; box-shadow:var(--shadow-card); padding:18px 20px; }
+.ini-card h2 { font-size:16px; font-weight:700; color:var(--color-text); margin:0; }
+.ini-card-cab { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; }
+.ini-link { font-size:13px; font-weight:600; color:var(--color-primary); text-decoration:none; white-space:nowrap; border-radius:6px; }
+.ini-link:hover { text-decoration:underline; }
+.ini-rotulo { font-size:13px; font-weight:500; color:var(--color-text-muted); }
 .ini-num { font-variant-numeric:tabular-nums; white-space:nowrap; }
-.ini-mes { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.ini-linha { display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--color-border); }
-.ini-linha:first-of-type { border-top:none; }
-.ini-icone { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; }
-.ini-texto { flex:1; min-width:0; }
-.ini-texto div:first-child { font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ini-texto div:last-child { font-size:13px; color:var(--color-text-muted); }
-.ini-titulo { display:flex; justify-content:space-between; align-items:baseline; margin:22px 0 8px; }
-.ini-titulo h3 { font-size:18px; font-weight:600; margin:0; }
-.ini-titulo a { font-size:13px; font-weight:600; color:var(--color-primary); text-decoration:none; }
-@media (max-width:520px) { .ini-mes { grid-template-columns:1fr 1fr; } .ini-mes > div:last-child { grid-column:1 / -1; } }
+.ini-vazio { font-size:14px; color:var(--color-text-muted); padding:10px 0; }
+
+.ini-topo { display:grid; gap:16px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.ini-topo .a-saldo { grid-column:1 / -1; }
+.ini-saldo-valor { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:6px 0 14px; }
+.ini-olho { width:32px; height:32px; border-radius:8px; border:0; background:transparent; color:var(--color-text-muted); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background .15s; }
+.ini-olho:hover { background:var(--color-bg); }
+.ini-contas { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); border-top:1px solid var(--color-border); margin:0 -20px -18px; }
+.ini-conta { padding:12px 20px; display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; transition:background .15s; min-width:0; }
+.ini-conta { box-shadow:-1px 0 0 var(--color-border), 0 -1px 0 var(--color-border); }
+.ini-conta:hover { background:var(--color-bg); }
+.ini-conta-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+.ini-conta small { display:block; font-size:12px; color:var(--color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-conta strong { font-size:14px; }
+
+.ini-kpi .ini-ic { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+.ini-kpi { min-width:0; }
+.ini-kpi .ini-valor-kpi { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:clamp(17px,1.5vw,22px); font-weight:800; letter-spacing:-.01em; margin-top:2px; }
+
+.ini-linha { display:flex; align-items:center; gap:12px; padding:11px 0; border-top:1px solid var(--color-border); }
+.ini-linha:first-child { border-top:0; }
+.ini-linha-ic { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+.ini-linha-txt { flex:1; min-width:0; }
+.ini-linha-txt div:first-child { font-weight:600; font-size:15px; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.a-pagar .ini-linha-txt div:first-child { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; font-size:14px; line-height:1.3; }
+.ini-linha-txt div:last-child { font-size:13px; color:var(--color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-badge { display:inline-block; font-size:11.5px; font-weight:600; padding:1px 7px; border-radius:6px; margin-right:4px; }
+
+.ini-donut { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+.ini-donut svg { width:140px; height:140px; flex-shrink:0; margin:0 auto; }
+.ini-donut ul { list-style:none; flex:1 1 220px; min-width:0; margin:0; padding:0; }
+.ini-donut li { display:grid; grid-template-columns:12px minmax(0,1fr) auto auto; gap:8px; align-items:center; font-size:13.5px; padding:5px 0; }
+.ini-donut li > span:first-of-type { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-donut li i { width:10px; height:10px; border-radius:3px; }
+.ini-donut li .pct { color:var(--color-text-muted); font-size:12.5px; }
+
+.ini-atalho { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; text-decoration:none; color:inherit; transition:background .15s; }
+.ini-atalho:hover { background:var(--color-bg); }
+.ini-atalho .ini-ic { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ini-atalho div { flex:1; min-width:0; }
+.ini-atalho strong { display:block; font-size:14px; font-weight:600; color:var(--color-text); }
+.ini-atalho small { font-size:12.5px; color:var(--color-text-muted); }
+
+/* Ocultar valores (só nesta tela, guardado neste navegador) */
+.ini.oculto .valor { filter:blur(9px); user-select:none; }
+
+@media (max-width:1279px) {
+    .ini-principal, .ini-duo, .ini-lado { display:contents; }
+    .a-topo { grid-area:topo; } .a-mov { grid-area:mov; } .a-gasto { grid-area:gasto; } .a-pagar { grid-area:pagar; } .a-resumo { grid-area:resumo; }
+    .ini-grade { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas: "topo topo" "mov gasto" "pagar resumo"; }
+}
+@media (max-width:767px) {
+    .ini-grade { grid-template-columns:minmax(0,1fr); grid-template-areas: "topo" "mov" "pagar" "gasto" "resumo"; }
+    .ini-cab h1 { font-size:23px; }
+    .ini-cab { align-items:flex-start; }
+    .ini-acoes { width:100%; }
+    .ini-mes-sel { flex:1; }
+    .ini-saldo-valor { font-size:30px; }
+    .ini-topo { gap:10px; }
+    .ini-kpi { padding:12px 12px; }
+    .ini-kpi .ini-ic { width:28px; height:28px; margin-bottom:8px; font-size:12px; }
+    .ini-kpi .ini-valor-kpi { font-size:15px; }
+    .ini-kpi .ini-rotulo { font-size:12px; }
+    .ini-contas { grid-template-columns:1fr 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .ini * { transition:none !important; } }
 </style>
 
-<div class="ini">
-    <div style="font-size:15px;color:var(--color-text-muted);margin-bottom:6px;">Olá, {{ \Illuminate\Support\Str::of(auth()->user()->name)->before(' ') }}</div>
-
-    {{-- Saldo total --}}
-    <div class="card" style="padding:16px 18px;">
-        <div class="ini-rotulo">Saldo total</div>
-        <div class="ini-num" style="font-size:32px;font-weight:700;line-height:1.2;color:{{ $saldoCor($visao['contas']['total']) }};">{{ brl($visao['contas']['total']) }}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font-size:13px;color:var(--color-text-muted);">
-            @foreach($visao['contas']['itens'] as $c)
-                <span>{{ $c['nome'] }} <strong class="ini-num" style="color:{{ $saldoCor($c['saldo']) }};">{{ brl($c['saldo']) }}</strong></span>
-            @endforeach
-            <a href="{{ route('bancos.index') }}" style="color:var(--color-primary);text-decoration:none;font-weight:600;">Contas &rarr;</a>
+<div class="ini" id="inicio">
+    <header class="ini-cab">
+        <div>
+            <h1>{{ $saudacao }}, {{ $primeiroNome }}</h1>
+            <p>Aqui está o resumo das suas finanças em {{ $nomeMes($mesVisao) }}.</p>
         </div>
-    </div>
-
-    {{-- Este mês --}}
-    <div class="ini-titulo"><h3>{{ $nomeMes }}</h3><a href="{{ route('planejamento.index') }}">Onde gastei &rarr;</a></div>
-    @if($mes['tem_movimentacao'])
-        <div class="ini-mes">
-            <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Entrou</div><div class="ini-num" style="font-size:20px;font-weight:700;color:var(--color-success);">+{{ brl($mes['entrou']) }}</div></div>
-            <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Saiu</div><div class="ini-num" style="font-size:20px;font-weight:700;color:var(--color-danger);">-{{ brl($mes['saiu']) }}</div></div>
-            <div class="card" style="padding:12px 14px;"><div class="ini-rotulo">Resultado</div><div class="ini-num" style="font-size:20px;font-weight:700;color:{{ $saldoCor($mes['resultado']) }};">{{ brl($mes['resultado']) }}</div></div>
+        <div class="ini-acoes">
+            <form method="GET" action="{{ route('dashboard') }}">
+                <label for="ini-mes" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Mês do resumo</label>
+                <select id="ini-mes" name="mes" class="ini-mes-sel" onchange="this.form.submit()">
+                    @foreach($mesesVisao as $m)
+                        <option value="{{ $m->format('Y-m') }}" @selected($m->isSameMonth($mesVisao))>{{ ucfirst($m->locale('pt_BR')->isoFormat('MMMM YYYY')) }}</option>
+                    @endforeach
+                </select>
+            </form>
+            @if($planilhaUrl)
+                <a href="{{ $planilhaUrl }}" target="_blank" rel="noopener" class="ini-lancar" title="Os lançamentos são feitos na planilha da família">
+                    <i class="fa-solid fa-plus"></i> Lançar na planilha
+                </a>
+            @endif
         </div>
-        @if($mes['categorias'])
-            <div style="font-size:13px;color:var(--color-text-muted);margin-top:8px;">
-                Mais gasto em:
-                @foreach(array_slice($mes['categorias'], 0, 3) as $cat)
-                    <strong style="color:var(--color-text);">{{ $cat['categoria'] }}</strong> {{ brl($cat['valor']) }}@if(! $loop->last) · @endif
-                @endforeach
-            </div>
-        @endif
-    @else
-        <div class="card" style="padding:14px 16px;font-size:14px;color:var(--color-text-muted);">Nenhuma movimentação neste mês até agora.</div>
-    @endif
+    </header>
 
-    {{-- Últimas movimentações --}}
-    <div class="ini-titulo"><h3>Últimas movimentações</h3><a href="{{ route('planejamento.lancamentos') }}">Ver extrato &rarr;</a></div>
-    <div class="card" style="padding:4px 16px;">
-        @forelse($visao['ultimas'] as $m)
-            @php $entrada = $m['tipo'] === 'receita'; @endphp
-            <div class="ini-linha">
-                <div class="ini-icone" style="background:{{ $entrada ? 'var(--color-success-soft)' : 'var(--color-danger-soft)' }};color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};"><i class="fa-solid {{ $entrada ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i></div>
-                <div class="ini-texto">
-                    <div>{{ $m['descricao'] }}</div>
-                    <div>{{ $quando($m['data']) }}{{ $m['conta'] ? ' · ' . $m['conta'] : '' }}</div>
+    <div class="ini-grade">
+        <div class="ini-principal">
+        {{-- Saldo + mês --}}
+        <section class="a-topo ini-topo" aria-label="Saldo e resumo do mês">
+            <div class="ini-card a-saldo">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="ini-rotulo">Saldo total</span>
+                    <button type="button" class="ini-olho" id="ini-olho" aria-pressed="false" aria-label="Ocultar valores" title="Ocultar valores">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
                 </div>
-                <div class="ini-num" style="font-weight:700;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">{{ $entrada ? '+' : '-' }}{{ brl($m['valor']) }}</div>
+                <div class="ini-saldo-valor ini-num valor" style="color:{{ $negativo($visao['contas']['total']) ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ brl($visao['contas']['total']) }}</div>
+                @if($visao['contas']['itens'])
+                    <div class="ini-contas">
+                        @foreach($visao['contas']['itens'] as $c)
+                            <a href="{{ route('bancos.index') }}" class="ini-conta" title="{{ $c['nome'] }}">
+                                <span class="ini-conta-ic" style="background:{{ $c['cor'] ?: '#64748B' }};">{{ mb_strtoupper(mb_substr($c['nome'], 0, 1)) }}</span>
+                                <span style="min-width:0;">
+                                    <small>{{ $c['nome'] }}</small>
+                                    <strong class="ini-num valor" style="color:{{ $negativo($c['saldo']) ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ brl($c['saldo']) }}</strong>
+                                </span>
+                            </a>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="ini-vazio">Nenhuma conta cadastrada. <a class="ini-link" href="{{ route('bancos.index') }}">Adicionar conta</a></p>
+                @endif
             </div>
-        @empty
-            <p style="padding:12px 0;font-size:14px;color:var(--color-text-muted);">Nenhuma movimentação nos últimos 60 dias.</p>
-        @endforelse
-    </div>
 
-    {{-- Próximos pagamentos --}}
-    @if($visao['proximos'])
-        <div class="ini-titulo"><h3>Próximos pagamentos</h3><a href="{{ route('alertas.index') }}">Tudo o que vence &rarr;</a></div>
-        <div class="card" style="padding:4px 16px;">
-            @foreach($visao['proximos'] as $p)
+            <div class="ini-card ini-kpi">
+                <div class="ini-ic" style="background:var(--color-success-soft);color:var(--color-success);"><i class="fa-solid fa-arrow-down"></i></div>
+                <div class="ini-rotulo">Entradas</div>
+                <div class="ini-valor-kpi ini-num valor" style="color:var(--color-success);">{{ $mes['entrou'] > 0 ? '+' : '' }}{{ brl($mes['entrou']) }}</div>
+            </div>
+            <div class="ini-card ini-kpi">
+                <div class="ini-ic" style="background:var(--color-danger-soft);color:var(--color-danger);"><i class="fa-solid fa-arrow-up"></i></div>
+                <div class="ini-rotulo">Saídas</div>
+                <div class="ini-valor-kpi ini-num valor" style="color:var(--color-danger);">{{ $mes['saiu'] > 0 ? '-' : '' }}{{ brl($mes['saiu']) }}</div>
+            </div>
+            <div class="ini-card ini-kpi">
+                <div class="ini-ic" style="background:var(--color-primary-soft);color:var(--color-primary);"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="ini-rotulo">Resultado do mês</div>
+                <div class="ini-valor-kpi ini-num valor" style="color:{{ $negativo($mes['resultado']) ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ brl($mes['resultado']) }}</div>
+            </div>
+        </section>
+
+        <div class="ini-duo">
+        {{-- Últimas movimentações --}}
+        <section class="ini-card a-mov" aria-labelledby="t-mov">
+            <div class="ini-card-cab"><h2 id="t-mov">Últimas movimentações</h2><a class="ini-link" href="{{ route('planejamento.lancamentos') }}">Ver extrato →</a></div>
+            @forelse($visao['ultimas'] as $m)
+                @php $entrada = $m['tipo'] === 'receita'; @endphp
                 <div class="ini-linha">
-                    <div class="ini-icone" style="background:var(--color-warning-soft);color:var(--color-warning);"><i class="fa-regular fa-calendar"></i></div>
-                    <div class="ini-texto">
-                        <div>{{ $p['descricao'] }}</div>
+                    <div class="ini-linha-ic" style="background:{{ $entrada ? 'var(--color-success-soft)' : 'var(--color-danger-soft)' }};color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};" aria-hidden="true">
+                        <i class="fa-solid {{ $entrada ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i>
+                    </div>
+                    <div class="ini-linha-txt">
+                        <div>{{ $m['descricao'] }}</div>
+                        <div>{{ $quando($m['data']) }}{{ $m['conta'] ? ' · ' . $m['conta'] : '' }}</div>
+                    </div>
+                    <div class="ini-num valor" style="font-weight:700;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">
+                        <span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">{{ $entrada ? 'Entrada de' : 'Saída de' }}</span>{{ $entrada ? '+' : '-' }}{{ brl($m['valor']) }}
+                    </div>
+                </div>
+            @empty
+                <p class="ini-vazio">Nenhuma movimentação nos últimos 60 dias.</p>
+            @endforelse
+        </section>
+
+        {{-- Onde você gastou --}}
+        <section class="ini-card a-gasto" aria-labelledby="t-gasto">
+            <div class="ini-card-cab"><h2 id="t-gasto">Onde você gastou</h2><a class="ini-link" href="{{ route('planejamento.index', ['mes' => $mesVisao->format('Y-m')]) }}">Ver detalhes →</a></div>
+            @if($cats)
+                <div class="ini-donut">
+                    <svg viewBox="0 0 42 42" role="img" aria-label="Saídas de {{ $nomeMes($mesVisao) }} por categoria">
+                        <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-border)" stroke-width="5.2"/>
+                        @foreach($cats as $i => $c)
+                            <circle cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i] }}" stroke-width="5.2"
+                                stroke-dasharray="{{ max(0, $c['pct'] - 0.6) }} {{ 100 - max(0, $c['pct'] - 0.6) }}" stroke-dashoffset="{{ 25 - $acumulado }}"/>
+                            @php $acumulado += $c['pct']; @endphp
+                        @endforeach
+                        <text x="21" y="20.5" text-anchor="middle" style="font:800 5px 'Plus Jakarta Sans',sans-serif;fill:var(--color-text);" class="valor">{{ brl($mes['saiu']) }}</text>
+                        <text x="21" y="26" text-anchor="middle" style="font:500 3.2px Inter,sans-serif;fill:var(--color-text-muted);">em {{ $nomeMes($mesVisao) }}</text>
+                    </svg>
+                    <ul>
+                        @foreach($cats as $i => $c)
+                            <li><i style="background:{{ $cores[$i] }};"></i><span>{{ $c['categoria'] }}</span><span class="pct">{{ number_format($c['pct'], 1, ',', '.') }}%</span><strong class="ini-num valor">{{ brl($c['valor']) }}</strong></li>
+                        @endforeach
+                    </ul>
+                </div>
+            @else
+                <p class="ini-vazio">Nenhuma saída paga em {{ $nomeMes($mesVisao) }}.</p>
+            @endif
+        </section>
+
+        </div>
+        </div>
+
+        <aside class="ini-lado">
+        {{-- Próximos pagamentos --}}
+        <section class="ini-card a-pagar" aria-labelledby="t-pagar">
+            <div class="ini-card-cab"><h2 id="t-pagar">Próximos pagamentos</h2><a class="ini-link" href="{{ route('alertas.index') }}">Ver todos →</a></div>
+            @forelse($visao['proximos'] as $p)
+                @php $n = $dias($p['data']); @endphp
+                <div class="ini-linha">
+                    <div class="ini-linha-ic" style="background:var(--color-warning-soft);color:var(--color-warning);border-radius:9px;" aria-hidden="true"><i class="fa-regular fa-calendar"></i></div>
+                    <div class="ini-linha-txt">
+                        <div title="{{ $p['descricao'] }}">{{ $p['descricao'] }}</div>
                         <div>
-                            @if($p['atrasado'])<span style="color:var(--color-danger);font-weight:600;">Atrasado</span> · @endif
-                            {{ $p['data'] ? $quando($p['data']) : 'sem data' }}
+                            @if($p['atrasado'])
+                                <span class="ini-badge" style="background:var(--color-danger-soft);color:var(--color-danger);">Atrasado</span>
+                            @elseif($n === 0)
+                                <span class="ini-badge" style="background:var(--color-warning-soft);color:var(--color-warning);">Vence hoje</span>
+                            @endif
+                            {{ $quando($p['data']) }}
                         </div>
                     </div>
-                    <div class="ini-num" style="font-weight:700;">{{ brl($p['valor']) }}</div>
+                    <div class="ini-num valor" style="font-weight:700;color:var(--color-text);">{{ brl($p['valor']) }}</div>
                 </div>
-            @endforeach
-        </div>
-    @endif
+            @empty
+                <p class="ini-vazio">Nada para pagar nos próximos dias.</p>
+            @endforelse
+        </section>
+
+        {{-- Resumo rápido: só o que tem número real --}}
+        <section class="ini-card a-resumo" aria-labelledby="t-resumo" style="padding:14px 10px;">
+            <h2 id="t-resumo" style="padding:0 10px 6px;">Resumo rápido</h2>
+            <a class="ini-atalho" href="{{ route('alertas.index') }}">
+                <span class="ini-ic" style="background:{{ $vencidas['quantidade'] ? 'var(--color-danger-soft)' : 'var(--color-success-soft)' }};color:{{ $vencidas['quantidade'] ? 'var(--color-danger)' : 'var(--color-success)' }};"><i class="fa-regular fa-calendar-xmark"></i></span>
+                <div>
+                    @if($vencidas['quantidade'])
+                        <strong>{{ $vencidas['quantidade'] }} {{ $vencidas['quantidade'] === 1 ? 'conta vencida' : 'contas vencidas' }}</strong>
+                        <small>Total de <span class="valor">{{ brl($vencidas['total']) }}</span></small>
+                    @else
+                        <strong>Nenhuma conta vencida</strong><small>Tudo em dia</small>
+                    @endif
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:var(--color-text-muted);font-size:12px;"></i>
+            </a>
+            @if($cartoesInfo['quantidade'])
+            <a class="ini-atalho" href="{{ route('planejamento.cartoes') }}">
+                <span class="ini-ic" style="background:var(--color-primary-soft);color:var(--color-primary);"><i class="fa-regular fa-credit-card"></i></span>
+                <div>
+                    <strong>{{ $cartoesInfo['quantidade'] }} {{ $cartoesInfo['quantidade'] === 1 ? 'cartão' : 'cartões' }}</strong>
+                    <small>Limite livre <span class="valor">{{ brl($cartoesInfo['limite_disponivel']) }}</span></small>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:var(--color-text-muted);font-size:12px;"></i>
+            </a>
+            @endif
+        </section>
+        </aside>
+    </div>
 </div>
+
+<script>
+(function () {
+    var raiz = document.getElementById('inicio'), btn = document.getElementById('ini-olho');
+    if (!raiz || !btn) return;
+    function aplicar(oculto) {
+        raiz.classList.toggle('oculto', oculto);
+        btn.setAttribute('aria-pressed', oculto ? 'true' : 'false');
+        btn.setAttribute('aria-label', oculto ? 'Mostrar valores' : 'Ocultar valores');
+        btn.title = btn.getAttribute('aria-label');
+        btn.innerHTML = oculto ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>';
+    }
+    var salvo = false;
+    try { salvo = localStorage.getItem('alfahome-ocultar-valores') === '1'; } catch (e) {}
+    aplicar(salvo);
+    btn.addEventListener('click', function () {
+        var novo = !raiz.classList.contains('oculto');
+        aplicar(novo);
+        try { localStorage.setItem('alfahome-ocultar-valores', novo ? '1' : '0'); } catch (e) {}
+    });
+})();
+</script>

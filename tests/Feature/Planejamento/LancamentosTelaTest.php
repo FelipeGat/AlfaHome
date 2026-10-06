@@ -80,7 +80,8 @@ class LancamentosTelaTest extends TestCase
             ->assertSee(route('planejamento.lancamentos'), false)
             ->assertDontSee('data-label="Despesas"', false)
             ->assertDontSee('data-label="Receitas"', false)
-            ->assertSee('Configurações');
+            // Menu: Início, Extrato e Contas no topo; o resto em Planejamento e Mais.
+            ->assertSeeInOrder(['data-label="Início"', 'data-label="Extrato"', 'data-label="Contas"', 'Planejamento', 'Mais', 'data-label="Planilha"'], false);
 
         // Endereços antigos levam ao Extrato.
         $this->get('/despesas')->assertRedirect('/planejamento/lancamentos');

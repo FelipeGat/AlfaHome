@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\Despesa;
 use App\Models\Familiar;
+use App\Models\PlanilhaFonte;
 use App\Services\Financeiro\FinanceiroService;
 use App\Services\Planejamento\PlanejamentoService;
 
@@ -393,7 +394,25 @@ class DashboardController extends Controller
         $hoje     = app(PlanejamentoService::class)->hoje($tenantId);
         $visao    = app(FinanceiroService::class)->inicio($tenantId);
 
-        return view('dashboard', compact(
+        // Mês do resumo (?mes=AAAA-MM). Saldo e movimentações são sempre de hoje.
+        $mesVisao = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('mes'))
+            ? Carbon::createFromFormat('!Y-m', $request->query('mes'))
+            : now()->startOfMonth();
+        if (! $mesVisao->isSameMonth(now())) {
+            $visao['mes'] = app(FinanceiroService::class)->mes($tenantId, $mesVisao);
+        }
+        $vencimentos = app(PlanejamentoService::class)->vencimentos($tenantId);
+        $vencidas    = array_values(array_filter($vencimentos['atrasado'], fn ($i) => $i['tipo'] !== 'receita'));
+        $cartoesPlan = app(PlanejamentoService::class)->cartoes($tenantId);
+        $extra = [
+            'mesVisao'    => $mesVisao,
+            'mesesVisao'  => collect(range(0, 11))->map(fn ($n) => now()->startOfMonth()->subMonths($n)),
+            'planilhaUrl' => PlanilhaFonte::withoutGlobalScopes()->where('tenant_id', $tenantId)->first()?->url,
+            'vencidas'    => ['quantidade' => count($vencidas), 'total' => round(array_sum(array_column($vencidas, 'valor')), 2)],
+            'cartoesInfo' => ['quantidade' => $cartoesPlan['itens']->count(), 'limite_disponivel' => $cartoesPlan['resumo']['limite_disponivel']],
+        ];
+
+        return view('dashboard', $extra + compact(
             'planilha', 'hoje', 'visao',
             'inicio', 'fim', 'ano',
             'nomeMes', 'anoMes', 'linkMesAnt', 'linkMesProx',

@@ -1,13 +1,13 @@
 {
   "name": "AlfaHome",
   "short_name": "AlfaHome",
-  "description": "Gestão financeira familiar — despesas, receitas, investimentos e fluxo de caixa.",
+  "description": "Suas finanças, mais simples.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#ffffff",
-  "theme_color": "#0b1120",
+  "background_color": "#F7F9FC",
+  "theme_color": "#0B1D38",
   "lang": "pt-BR",
   "icons": [
     {

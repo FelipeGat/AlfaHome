@@ -117,7 +117,25 @@ class PainelDoDiaTest extends TestCase
         $this->actingAs($this->user);
 
         $this->get(route('dashboard'))->assertOk()
-            ->assertSeeInOrder(['Olá', 'Saldo total', '-R$ 98,15', 'Últimas movimentações', 'Próximos pagamentos', 'Boleto esquecido', 'Atrasado'])
+            ->assertSeeInOrder(['Bom dia', 'Saldo total', '-R$ 98,15', 'Últimas movimentações', 'Próximos pagamentos', 'Boleto esquecido', 'Atrasado'])
             ->assertSee('Mercado Pago')->assertDontSee('Nenhuma conta corrente cadastrada');
+    }
+
+    public function test_inicio_escolhe_o_mes_do_resumo_e_mostra_so_dados_reais(): void
+    {
+        $this->pendente('despesa', '2026-09-28', 'Boleto esquecido', 150.00);
+        $this->actingAs($this->user);
+
+        // Agosto da planilha: R$ 17.632,86 entrou (o mesmo do Previsto x Realizado).
+        $this->get(route('dashboard', ['mes' => '2026-08']))->assertOk()
+            ->assertSee('resumo das suas finanças em agosto')
+            ->assertSee('+R$ 17.632,86')
+            ->assertSee('Onde você gastou')
+            ->assertSee('1 conta vencida')
+            ->assertSee('Ocultar valores')
+            // Sem comparação histórica calculada, nada de percentual de crescimento.
+            ->assertDontSee('em relação ao mês anterior');
+
+        $this->get(route('dashboard', ['mes' => 'qualquer']))->assertOk()->assertSee('resumo das suas finanças em outubro');
     }
 }
