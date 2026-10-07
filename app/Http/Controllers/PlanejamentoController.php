@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banco;
 use App\Services\Planejamento\PlanejamentoService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -106,14 +107,34 @@ class PlanejamentoController extends Controller
         ]);
     }
 
-    public function cartoes()
+    /** Cartões e parceladas; `?cartao=<chave>` filtra um cartão e mostra as faturas dele. */
+    public function cartoes(Request $request)
     {
-        $tenantId = Auth::user()->tenant_id;
+        $tenantId   = Auth::user()->tenant_id;
+        $cartoes    = $this->planejamento->cartoes($tenantId);
+        $parceladas = $this->planejamento->parceladas($tenantId);
+
+        // Logo e cor do banco de cada cartão (cadastro de Contas), pelo nome.
+        $bancos = Banco::where('tenant_id', $tenantId)->get()->keyBy(fn ($b) => $this->planejamento->chaveConta($b->nome));
+        $marcas = $cartoes['itens']->mapWithKeys(function ($c) use ($bancos) {
+            $b = $bancos->get($this->planejamento->chaveConta($c->banco ?: $c->nome));
+            $logo = $b?->logo && is_file(public_path('img/bancos/' . basename($b->logo))) ? 'img/bancos/' . basename($b->logo) : null;
+
+            return [$c->chave => ['logo' => $logo, 'cor' => $b?->cor]];
+        });
+
+        $selecionado = $cartoes['itens']->firstWhere('chave', (string) $request->query('cartao'));
+        if ($selecionado) {
+            $parceladas['itens'] = $parceladas['itens']->where('plan_cartao_id', $selecionado->id)->values();
+        }
 
         return view('planejamento.cartoes', [
-            'cartoes'    => $this->planejamento->cartoes($tenantId),
-            'parceladas' => $this->planejamento->parceladas($tenantId),
-            'ultima'     => $this->planejamento->ultimaImportacao($tenantId),
+            'cartoes'     => $cartoes,
+            'parceladas'  => $parceladas,
+            'marcas'      => $marcas,
+            'selecionado' => $selecionado,
+            'faturas'     => $selecionado ? $this->planejamento->faturasDoCartao($tenantId, $selecionado) : [],
+            'ultima'      => $this->planejamento->ultimaImportacao($tenantId),
         ]);
     }
 

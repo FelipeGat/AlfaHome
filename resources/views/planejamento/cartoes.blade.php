@@ -14,6 +14,21 @@
 @media (max-width:900px) { .plan-grid { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:480px) { .plan-grid { grid-template-columns:1fr; } }
 .plan-num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.cart-linha { cursor:pointer; transition:background .15s; }
+.cart-linha:hover { background:var(--color-bg); }
+.cart-linha.sel { background:var(--color-primary-soft); }
+.cart-linha a { color:inherit; text-decoration:none; }
+.cart-marca { display:inline-flex; align-items:center; gap:10px; }
+.cart-logo { width:46px; height:25px; border-radius:6px; object-fit:contain; flex-shrink:0; }
+.cart-letra { width:30px; height:30px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+.fat { border:1px solid var(--color-border); border-radius:12px; margin-top:12px; overflow:hidden; }
+.fat > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 16px; }
+.fat > summary::-webkit-details-marker { display:none; }
+.fat > summary .seta { margin-left:auto; transition:transform .2s; color:var(--color-text-muted); }
+.fat[open] > summary .seta { transform:rotate(180deg); }
+.fat-mes { font-weight:600; min-width:120px; }
+.fat-info { font-size:13px; color:var(--color-text-muted); }
+.fat table { margin:0; }
 </style>
 
 @include('planejamento._abas', ['ultima' => $ultima])
@@ -26,7 +41,16 @@
 </div>
 
 <div class="card" style="padding:18px 20px;margin-bottom:20px;">
-    <div class="card-title" style="margin-bottom:12px;">Cartões</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="card-title">Cartões</div>
+        <span style="font-size:12.5px;color:var(--color-text-muted);">
+            @if($selecionado)
+                Mostrando {{ $selecionado->nome }} · <a href="{{ route('planejamento.cartoes') }}" style="color:var(--color-primary);font-weight:600;">ver todos</a>
+            @else
+                Clique num cartão para ver as faturas
+            @endif
+        </span>
+    </div>
     @if($cartoes['itens']->isEmpty())
         <div class="empty-state"><i class="fa-solid fa-credit-card"></i><p>Nenhum cartão na planilha.</p></div>
     @else
@@ -42,8 +66,22 @@
                 </thead>
                 <tbody>
                     @foreach($cartoes['itens'] as $c)
-                        <tr>
-                            <td><strong>{{ $c->nome }}</strong>@if($c->observacao)<div style="font-size:11px;color:var(--color-text-muted);">{{ $c->observacao }}</div>@endif</td>
+                        @php
+                            $marca = $marcas[$c->chave] ?? ['logo' => null, 'cor' => null];
+                            $sel = $selecionado && $selecionado->id === $c->id;
+                            $url = $sel ? route('planejamento.cartoes') : route('planejamento.cartoes', ['cartao' => $c->chave]) . '#faturas';
+                        @endphp
+                        <tr class="cart-linha {{ $sel ? 'sel' : '' }}" onclick="location.href='{{ $url }}'">
+                            <td>
+                                <a href="{{ $url }}" class="cart-marca" aria-current="{{ $sel ? 'true' : 'false' }}" title="{{ $sel ? 'Ver todos os cartões' : 'Ver faturas deste cartão' }}">
+                                    @if($marca['logo'])
+                                        <img class="cart-logo" src="{{ asset($marca['logo']) }}" alt="">
+                                    @else
+                                        <span class="cart-letra" style="background:{{ $marca['cor'] ?: '#64748B' }};">{{ mb_strtoupper(mb_substr(\Illuminate\Support\Str::of($c->nome)->replaceFirst('Cartão ', ''), 0, 1)) }}</span>
+                                    @endif
+                                    <span><strong>{{ $c->nome }}</strong>@if($c->observacao)<div style="font-size:11px;color:var(--color-text-muted);font-weight:400;">{{ $c->observacao }}</div>@endif</span>
+                                </a>
+                            </td>
                             <td>{{ $c->banco ?? '—' }}</td>
                             <td class="plan-num">{{ $brl($c->limite_total) }}</td>
                             <td class="plan-num">{{ $brl($c->limite_utilizado) }}</td>
@@ -68,8 +106,54 @@
     @endif
 </div>
 
+@if($selecionado)
+<div class="card" id="faturas" style="padding:18px 20px;margin-bottom:20px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div class="card-title">Faturas — {{ $selecionado->nome }}</div>
+        <span style="font-size:12.5px;color:var(--color-text-muted);">Compras da planilha neste cartão, por mês da fatura</span>
+    </div>
+    @forelse($faturas as $i => $f)
+        @php $mesNome = ucfirst(\Carbon\Carbon::createFromFormat('!Y-m', $f['mes'])->locale('pt_BR')->isoFormat('MMMM [de] YYYY')); @endphp
+        @php $abrir = $f['mes'] === now()->format('Y-m') || (! collect($faturas)->contains('mes', now()->format('Y-m')) && $i === 0); @endphp
+        <details class="fat" {{ $abrir ? 'open' : '' }}>
+            <summary>
+                <span class="fat-mes">{{ $mesNome }}</span>
+                <span class="fat-info">{{ count($f['itens']) }} {{ count($f['itens']) === 1 ? 'compra' : 'compras' }}@if($f['vencimento']) · vence {{ \Carbon\Carbon::parse($f['vencimento'])->format('d/m') }}@endif</span>
+                <strong class="plan-num">{{ $brl($f['total']) }}</strong>
+                @if($f['paga'])
+                    <span class="badge badge-success">Paga</span>
+                @elseif($f['pago'] > 0)
+                    <span class="badge badge-warning">Falta {{ $brl($f['pendente']) }}</span>
+                @else
+                    <span class="badge badge-warning">Aberta</span>
+                @endif
+                <i class="fa-solid fa-chevron-down seta"></i>
+            </summary>
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead><tr><th>Data</th><th>Compra</th><th>Categoria</th><th class="plan-num">Valor</th><th>Situação</th></tr></thead>
+                    <tbody>
+                        @foreach($f['itens'] as $it)
+                            <tr>
+                                <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($it['data'])->format('d/m') }}</td>
+                                <td>{{ $it['descricao'] }}</td>
+                                <td>{{ $it['categoria'] ?? '—' }}</td>
+                                <td class="plan-num">{{ $brl($it['valor']) }}</td>
+                                <td>@if($it['pago'])<span class="badge badge-success">Pago</span>@else<span class="badge badge-warning">Pendente</span>@endif</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    @empty
+        <p style="font-size:13px;color:var(--color-text-muted);margin-top:10px;">Nenhuma compra deste cartão na planilha entre {{ now()->subMonths(4)->locale('pt_BR')->isoFormat('MMMM') }} e {{ now()->addMonths(2)->locale('pt_BR')->isoFormat('MMMM') }}.</p>
+    @endforelse
+</div>
+@endif
+
 <div class="card" style="padding:18px 20px;">
-    <div class="card-title" style="margin-bottom:12px;">Compras parceladas</div>
+    <div class="card-title" style="margin-bottom:12px;">Compras parceladas{{ $selecionado ? ' — ' . $selecionado->nome : '' }}</div>
     @if($parceladas['itens']->isEmpty())
         <div class="empty-state"><i class="fa-solid fa-layer-group"></i><p>Nenhuma compra parcelada na planilha.</p></div>
     @else

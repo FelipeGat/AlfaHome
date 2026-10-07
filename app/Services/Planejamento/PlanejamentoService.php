@@ -301,8 +301,51 @@ class PlanejamentoService
             || ((float) $cartao->fatura_atual > 0 && $pagas >= (int) round((float) $cartao->fatura_atual * 100));
     }
 
+    /**
+     * Faturas de um cartão: as compras da planilha (forma cartão, mesma conta)
+     * agrupadas pelo mês em que caem, com total, pago e pendente. Mais recentes
+     * primeiro; `meses_atras`/`meses_frente` limitam a janela.
+     *
+     * @return list<array{mes: string, vencimento: ?string, total: float, pago: float, pendente: float, paga: bool, itens: list<array>}>
+     */
+    public function faturasDoCartao(int $tenantId, PlanCartao $cartao, int $mesesAtras = 4, int $mesesFrente = 2, ?CarbonInterface $hoje = null): array
+    {
+        $hoje  = ($hoje ?? now())->copy()->startOfMonth();
+        $conta = $this->chaveConta($cartao->banco ?: $cartao->nome);
+
+        return PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
+            ->where('forma', 'cartao')->where('tipo', 'despesa')
+            ->whereBetween('data', [$hoje->copy()->subMonths($mesesAtras)->toDateString(), $hoje->copy()->addMonths($mesesFrente)->endOfMonth()->toDateString()])
+            ->orderBy('data')->orderBy('linha')->get()
+            ->filter(fn ($l) => $this->chaveConta($l->conta) === $conta)
+            ->groupBy(fn ($l) => $l->data->format('Y-m'))
+            ->sortKeysDesc()
+            ->map(function ($compras, $mes) use ($cartao) {
+                $valor = fn ($l) => (int) round((float) ($l->status === 'concluido' ? ($l->valor_realizado ?? $l->valor_previsto) : $l->valor_previsto) * 100);
+                $pago = $compras->where('status', 'concluido')->sum($valor);
+                $pendente = $compras->where('status', '!=', 'concluido')->sum($valor);
+                $vence = $cartao->dia_vencimento ? $this->diaNoMes(Carbon::createFromFormat('!Y-m', $mes), $cartao->dia_vencimento)->format('Y-m-d') : null;
+
+                return [
+                    'mes'        => $mes,
+                    'vencimento' => $vence,
+                    'total'      => round(($pago + $pendente) / 100, 2),
+                    'pago'       => round($pago / 100, 2),
+                    'pendente'   => round($pendente / 100, 2),
+                    'paga'       => $pendente === 0,
+                    'itens'      => $compras->map(fn ($l) => [
+                        'data'      => $l->data->format('Y-m-d'),
+                        'descricao' => $l->descricao,
+                        'categoria' => $l->categoria,
+                        'valor'     => round($valor($l) / 100, 2),
+                        'pago'      => $l->status === 'concluido',
+                    ])->values()->all(),
+                ];
+            })->values()->all();
+    }
+
     /** "Cartão Mercado Pago" e "Mercado Pago" são a mesma conta. */
-    private function chaveConta(?string $nome): string
+    public function chaveConta(?string $nome): string
     {
         $n = Str::lower(Str::ascii(trim((string) $nome)));
 

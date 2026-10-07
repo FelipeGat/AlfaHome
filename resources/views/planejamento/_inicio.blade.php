@@ -59,6 +59,7 @@
 .ini-conta { padding:12px 20px; display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit; transition:background .15s; min-width:0; }
 .ini-conta { box-shadow:-1px 0 0 var(--color-border), 0 -1px 0 var(--color-border); }
 .ini-conta:hover { background:var(--color-bg); }
+.ini-conta-logo { width:46px; height:25px; border-radius:6px; flex-shrink:0; object-fit:contain; }
 .ini-conta-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
 .ini-conta small { display:block; font-size:12px; color:var(--color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ini-conta strong { font-size:14px; font-weight:500; }
@@ -79,7 +80,14 @@
 .ini-duo { align-items:stretch; }
 .ini-donut-graf { position:relative; width:220px; height:220px; margin:6px auto 18px; }
 .ini-donut-graf svg { width:100%; height:100%; transform:rotate(-90deg); }
-.ini-donut-graf circle.fatia { transition:stroke-width .15s; }
+.ini-donut-graf circle.fatia { transition:stroke-width .18s, opacity .18s; cursor:pointer; }
+.ini-donut-graf.foco circle.fatia { opacity:.28; }
+.ini-donut-graf.foco circle.fatia.ativa { opacity:1; stroke-width:6.2; }
+.ini-donut-centro small[data-centro="rotulo"] { max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-cats li { transition:background .15s, opacity .15s; border-radius:8px; cursor:default; }
+.ini-cats.foco li { opacity:.45; }
+.ini-cats.foco li.ativa { opacity:1; background:var(--color-bg); }
+.ini-cats li:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 .ini-donut-centro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none; }
 .ini-donut-centro small { font-size:12px; color:var(--color-text-muted); }
 .ini-donut-centro strong { font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.02em; color:var(--color-text); line-height:1.15; }
@@ -173,7 +181,11 @@
                     <div class="ini-contas">
                         @foreach($visao['contas']['itens'] as $c)
                             <a href="{{ route('bancos.index') }}" class="ini-conta" title="{{ $c['nome'] }}">
-                                <span class="ini-conta-ic" style="background:{{ $c['cor'] ?: '#64748B' }};">{{ mb_strtoupper(mb_substr($c['nome'], 0, 1)) }}</span>
+                                @if($c['logo'] && is_file(public_path('img/bancos/' . basename($c['logo']))))
+                                    <img class="ini-conta-logo" src="{{ asset('img/bancos/' . basename($c['logo'])) }}" alt="" width="46" height="25">
+                                @else
+                                    <span class="ini-conta-ic" style="background:{{ $c['cor'] ?: '#64748B' }};">{{ mb_strtoupper(mb_substr($c['nome'], 0, 1)) }}</span>
+                                @endif
                                 <span style="min-width:0;">
                                     <small>{{ $c['nome'] }}</small>
                                     <strong class="ini-num valor" style="color:{{ $negativo($c['saldo']) ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ brl($c['saldo']) }}</strong>
@@ -250,20 +262,20 @@
                         <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-bg)" stroke-width="4.6"/>
                         @foreach($cats as $i => $c)
                             @php $fatia = max(0, $c['pct'] - ($c['pct'] > 1.5 ? 0.8 : 0)); @endphp
-                            <circle class="fatia" cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i] }}" stroke-width="4.6" stroke-linecap="butt"
+                            <circle class="fatia" data-cat="{{ $i }}" data-nome="{{ $c['categoria'] }}" data-valor="{{ brl($c['valor']) }}" data-pct="{{ number_format($c['pct'], 1, ',', '.') }}%" cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i] }}" stroke-width="4.6" stroke-linecap="butt"
                                 stroke-dasharray="{{ $fatia }} {{ 100 - $fatia }}" stroke-dashoffset="{{ -$acumulado }}"><title>{{ $c['categoria'] }}: {{ brl($c['valor']) }}</title></circle>
                             @php $acumulado += $c['pct']; @endphp
                         @endforeach
                     </svg>
-                    <div class="ini-donut-centro">
-                        <small>Saiu em {{ $nomeMes($mesVisao) }}</small>
-                        <strong class="valor" style="font-size:{{ mb_strlen($textoCentro) > 12 ? 18 : 21 }}px;">{{ $textoCentro }}</strong>
-                        <small>{{ count($mes['categorias']) }} {{ count($mes['categorias']) === 1 ? 'categoria' : 'categorias' }}</small>
+                    <div class="ini-donut-centro" aria-live="polite">
+                        <small data-centro="rotulo" data-padrao="Saiu em {{ $nomeMes($mesVisao) }}">Saiu em {{ $nomeMes($mesVisao) }}</small>
+                        <strong class="valor" data-centro="valor" data-padrao="{{ $textoCentro }}" style="font-size:{{ mb_strlen($textoCentro) > 12 ? 18 : 21 }}px;">{{ $textoCentro }}</strong>
+                        <small data-centro="extra" data-padrao="{{ count($mes['categorias']) }} {{ count($mes['categorias']) === 1 ? 'categoria' : 'categorias' }}">{{ count($mes['categorias']) }} {{ count($mes['categorias']) === 1 ? 'categoria' : 'categorias' }}</small>
                     </div>
                 </div>
                 <ul class="ini-cats">
                     @foreach($cats as $i => $c)
-                        <li>
+                        <li data-cat="{{ $i }}" tabindex="0">
                             <div class="ini-cat-linha">
                                 <i style="background:{{ $cores[$i] }};"></i>
                                 <span title="{{ $c['categoria'] }}">{{ $c['categoria'] }}@isset($c['qtd']) <small style="color:var(--color-text-muted);">({{ $c['qtd'] }})</small>@endisset</span>
@@ -375,5 +387,44 @@
         aplicar(novo);
         try { localStorage.setItem('alfahome-ocultar-valores', novo ? '1' : '0'); } catch (e) {}
     });
+})();
+
+// Onde você gastou: passar o mouse (ou tocar) numa fatia ou numa linha mostra a
+// categoria no centro e destaca as duas; ao sair, volta ao total do mês.
+(function () {
+    var graf = document.querySelector('.ini-donut-graf'), lista = document.querySelector('.ini-cats');
+    if (!graf || !lista) return;
+    var centro = {};
+    graf.querySelectorAll('[data-centro]').forEach(function (el) { centro[el.dataset.centro] = el; });
+    var fatias = graf.querySelectorAll('circle.fatia'), linhas = lista.querySelectorAll('li[data-cat]');
+    function mostrar(i) {
+        var f = graf.querySelector('circle.fatia[data-cat="' + i + '"]');
+        if (!f) return;
+        graf.classList.add('foco'); lista.classList.add('foco');
+        fatias.forEach(function (x) { x.classList.toggle('ativa', x === f); });
+        linhas.forEach(function (x) { x.classList.toggle('ativa', x.dataset.cat === String(i)); });
+        centro.rotulo.textContent = f.dataset.nome;
+        centro.valor.textContent = f.dataset.valor;
+        centro.extra.textContent = f.dataset.pct + ' do que saiu';
+    }
+    function limpar() {
+        graf.classList.remove('foco'); lista.classList.remove('foco');
+        fatias.forEach(function (x) { x.classList.remove('ativa'); });
+        linhas.forEach(function (x) { x.classList.remove('ativa'); });
+        Object.keys(centro).forEach(function (k) { centro[k].textContent = centro[k].dataset.padrao; });
+    }
+    fatias.forEach(function (f) {
+        f.addEventListener('mouseenter', function () { mostrar(f.dataset.cat); });
+        f.addEventListener('click', function (e) { e.stopPropagation(); f.classList.contains('ativa') ? limpar() : mostrar(f.dataset.cat); });
+    });
+    linhas.forEach(function (l) {
+        l.addEventListener('mouseenter', function () { mostrar(l.dataset.cat); });
+        l.addEventListener('focus', function () { mostrar(l.dataset.cat); });
+        l.addEventListener('blur', limpar);
+        l.addEventListener('click', function (e) { e.stopPropagation(); l.classList.contains('ativa') ? limpar() : mostrar(l.dataset.cat); });
+    });
+    graf.querySelector('svg').addEventListener('mouseleave', limpar);
+    lista.addEventListener('mouseleave', limpar);
+    document.addEventListener('click', function (e) { if (!graf.contains(e.target) && !lista.contains(e.target)) limpar(); });
 })();
 </script>
