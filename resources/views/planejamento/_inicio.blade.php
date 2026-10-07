@@ -31,7 +31,7 @@
 <style>
 .ini { max-width:1440px; margin:0 auto; }
 .ini-cab { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
-.ini-cab h1 { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:28px; font-weight:800; letter-spacing:-.02em; color:var(--color-text); margin:0; line-height:1.15; }
+.ini-cab h1 { font-size:26px; font-weight:600; letter-spacing:-.02em; color:var(--color-text); margin:0; line-height:1.15; }
 .ini-cab p { color:var(--color-text-muted); font-size:15px; margin-top:4px; }
 .ini-acoes { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .ini-mes-sel { height:42px; border-radius:10px; border:1px solid var(--color-border); background:var(--color-bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath d='M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z'/%3E%3C/svg%3E") no-repeat right 12px center / 16px; -webkit-appearance:none; appearance:none; color:var(--color-text); padding:0 38px 0 14px; font-weight:600; font-size:14px; font-family:inherit; cursor:pointer; }
@@ -42,7 +42,7 @@
 .ini-duo { display:grid; gap:16px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:start; }
 
 .ini-card { background:var(--color-bg-card); border:1px solid var(--color-border); border-radius:14px; box-shadow:var(--shadow-card); padding:18px 20px; }
-.ini-card h2 { font-size:16px; font-weight:700; color:var(--color-text); margin:0; }
+.ini-card h2 { font-size:15px; font-weight:600; color:var(--color-text); margin:0; }
 .ini-card-cab { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; gap:10px; }
 .ini-link { font-size:13px; font-weight:600; color:var(--color-primary); text-decoration:none; white-space:nowrap; border-radius:6px; }
 .ini-link:hover { text-decoration:underline; }
@@ -52,7 +52,7 @@
 
 .ini-topo { display:grid; gap:16px; grid-template-columns:repeat(3,minmax(0,1fr)); }
 .ini-topo .a-saldo { grid-column:1 / -1; }
-.ini-saldo-valor { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:34px; font-weight:800; letter-spacing:-.02em; line-height:1.15; margin:6px 0 14px; }
+.ini-saldo-valor { font-size:32px; font-weight:600; letter-spacing:-.025em; line-height:1.15; margin:6px 0 14px; }
 .ini-olho { width:32px; height:32px; border-radius:8px; border:0; background:transparent; color:var(--color-text-muted); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background .15s; }
 .ini-olho:hover { background:var(--color-bg); }
 .ini-contas { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); border-top:1px solid var(--color-border); margin:0 -20px -18px; }
@@ -61,18 +61,18 @@
 .ini-conta:hover { background:var(--color-bg); }
 .ini-conta-ic { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
 .ini-conta small { display:block; font-size:12px; color:var(--color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ini-conta strong { font-size:14px; }
+.ini-conta strong { font-size:14px; font-weight:500; }
 
 .ini-kpi .ini-ic { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
 .ini-kpi { min-width:0; }
-.ini-kpi .ini-valor-kpi { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:clamp(17px,1.5vw,22px); font-weight:800; letter-spacing:-.01em; margin-top:2px; }
+.ini-kpi .ini-valor-kpi { font-size:clamp(17px,1.5vw,21px); font-weight:600; letter-spacing:-.02em; margin-top:2px; font-variant-numeric:tabular-nums; }
 
 .ini-linha { display:flex; align-items:center; gap:12px; padding:11px 0; border-top:1px solid var(--color-border); }
 .ini-linha:first-child { border-top:0; }
 .ini-linha-ic { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
 .ini-linha-txt { flex:1; min-width:0; }
-.ini-linha-txt div:first-child { font-weight:600; font-size:15px; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.a-pagar .ini-linha-txt div:first-child { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; font-size:14px; line-height:1.3; }
+.ini-linha-txt div:first-child { font-weight:500; font-size:14.5px; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.a-pagar .ini-linha-txt div:first-child { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; font-size:14px; line-height:1.35; }
 .ini-linha-txt div:last-child { font-size:13px; color:var(--color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ini-badge { display:inline-block; font-size:11.5px; font-weight:600; padding:1px 7px; border-radius:6px; margin-right:4px; }
 
@@ -82,7 +82,7 @@
 .ini-donut-graf circle.fatia { transition:stroke-width .15s; }
 .ini-donut-centro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none; }
 .ini-donut-centro small { font-size:12px; color:var(--color-text-muted); }
-.ini-donut-centro strong { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-weight:800; letter-spacing:-.02em; color:var(--color-text); line-height:1.15; }
+.ini-donut-centro strong { font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.02em; color:var(--color-text); line-height:1.15; }
 .ini-cats { list-style:none; margin:0; padding:0; }
 .ini-cats li { padding:8px 0; border-top:1px solid var(--color-border); }
 .ini-cats li:first-child { border-top:0; }
@@ -90,27 +90,27 @@
 .ini-cat-linha i { width:10px; height:10px; border-radius:3px; }
 .ini-cat-linha span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--color-text); }
 .ini-cat-linha .pct { color:var(--color-text-muted); font-size:12.5px; font-variant-numeric:tabular-nums; min-width:44px; text-align:right; }
-.ini-cat-linha strong { font-size:14px; font-weight:700; color:var(--color-text); min-width:92px; text-align:right; }
+.ini-cat-linha strong { font-size:14px; font-weight:600; color:var(--color-text); min-width:92px; text-align:right; }
 .ini-cat-barra { height:5px; border-radius:5px; background:var(--color-bg); margin:6px 0 0 20px; overflow:hidden; }
 .ini-cat-barra b { display:block; height:100%; border-radius:5px; }
 
 .ini-cart-total { display:flex; justify-content:space-between; gap:10px; margin-top:4px; }
 .ini-cart-total small { display:block; font-size:12px; color:var(--color-text-muted); }
-.ini-cart-total strong { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:19px; font-weight:800; color:var(--color-text); }
+.ini-cart-total strong { font-size:18px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--color-text); }
 .ini-uso { height:8px; border-radius:8px; background:var(--color-bg); overflow:hidden; margin-top:8px; }
 .ini-uso.fino { height:5px; margin-top:6px; }
 .ini-uso b { display:block; height:100%; border-radius:8px; transition:width .3s; }
 .ini-cart { padding:12px 0 2px; border-top:1px solid var(--color-border); margin-top:12px; }
 .ini-cart + .ini-cart { margin-top:10px; }
 .ini-cart-linha { display:flex; justify-content:space-between; gap:8px; font-size:14px; }
-.ini-cart-linha strong { font-weight:600; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-cart-linha strong { font-weight:500; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ini-cart-det { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--color-text-muted); margin-top:5px; }
-.ini-cart-det b { color:var(--color-text); font-weight:600; }
+.ini-cart-det b { color:var(--color-text); font-weight:500; }
 .ini-atalho { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; text-decoration:none; color:inherit; transition:background .15s; }
 .ini-atalho:hover { background:var(--color-bg); }
 .ini-atalho .ini-ic { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .ini-atalho div { flex:1; min-width:0; }
-.ini-atalho strong { display:block; font-size:14px; font-weight:600; color:var(--color-text); }
+.ini-atalho strong { display:block; font-size:14px; font-weight:500; color:var(--color-text); }
 .ini-atalho small { font-size:12.5px; color:var(--color-text-muted); }
 
 /* Ocultar valores (só nesta tela, guardado neste navegador) */
@@ -220,7 +220,7 @@
                 <div class="ini-cart">
                     <div class="ini-cart-linha">
                         <strong title="{{ $c['nome'] }}">{{ \Illuminate\Support\Str::of($c['nome'])->replaceFirst('Cartão ', '') }}</strong>
-                        <span class="ini-num valor" style="color:{{ $corUso($c['pct']) }};font-weight:700;">{{ $c['pct'] !== null ? number_format($c['pct'], 0, ',', '.') . '%' : '—' }}</span>
+                        <span class="ini-num valor" style="color:{{ $corUso($c['pct']) }};font-weight:600;">{{ $c['pct'] !== null ? number_format($c['pct'], 0, ',', '.') . '%' : '—' }}</span>
                     </div>
                     @if($c['pct'] !== null)
                         <div class="ini-uso fino"><b style="width:{{ min(100, $c['pct']) }}%;background:{{ $corUso($c['pct']) }};"></b></div>
@@ -307,7 +307,7 @@
                             {{ $quando($p['data']) }}
                         </div>
                     </div>
-                    <div class="ini-num valor" style="font-weight:700;color:{{ $pago ? 'var(--color-success)' : 'var(--color-text)' }};">{{ brl($p['valor']) }}</div>
+                    <div class="ini-num valor" style="font-weight:600;color:{{ $pago ? 'var(--color-success)' : 'var(--color-text)' }};">{{ brl($p['valor']) }}</div>
                 </div>
             @empty
                 <p class="ini-vazio">Nada para pagar nos próximos dias.</p>
@@ -327,7 +327,7 @@
                         <div>{{ $m['descricao'] }}</div>
                         <div>{{ $quando($m['data']) }}{{ $m['conta'] ? ' · ' . $m['conta'] : '' }}</div>
                     </div>
-                    <div class="ini-num valor" style="font-weight:700;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">
+                    <div class="ini-num valor" style="font-weight:600;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">
                         <span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">{{ $entrada ? 'Entrada de' : 'Saída de' }}</span>{{ $entrada ? '+' : '-' }}{{ brl($m['valor']) }}
                     </div>
                 </div>
