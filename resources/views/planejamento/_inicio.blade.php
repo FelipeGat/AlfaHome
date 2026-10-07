@@ -35,10 +35,7 @@
 .ini-cab p { color:var(--color-text-muted); font-size:15px; margin-top:4px; }
 .ini-acoes { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 .ini-mes-sel { height:42px; border-radius:10px; border:1px solid var(--color-border); background:var(--color-bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath d='M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z'/%3E%3C/svg%3E") no-repeat right 12px center / 16px; -webkit-appearance:none; appearance:none; color:var(--color-text); padding:0 38px 0 14px; font-weight:600; font-size:14px; font-family:inherit; cursor:pointer; }
-.ini-lancar { height:42px; display:inline-flex; align-items:center; gap:8px; padding:0 18px; border-radius:10px; background:var(--color-brand); color:#fff; font-weight:600; font-size:14px; text-decoration:none; transition:transform .15s, box-shadow .15s, background .15s; }
-body.dark-mode .ini-lancar { background:#2563EB; }
-.ini-lancar:hover { box-shadow:0 6px 16px rgba(11,29,56,.22); transform:translateY(-1px); }
-.ini-lancar:focus-visible, .ini-mes-sel:focus-visible, .ini-olho:focus-visible, .ini-link:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
+.ini-mes-sel:focus-visible, .ini-olho:focus-visible, .ini-link:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 
 .ini-grade { display:grid; gap:16px; grid-template-columns:minmax(0,1fr) 340px; align-items:start; }
 .ini-principal, .ini-lado { display:flex; flex-direction:column; gap:16px; min-width:0; }
@@ -122,7 +119,7 @@ body.dark-mode .ini-lancar { background:#2563EB; }
 @media (max-width:1279px) {
     .ini-principal, .ini-duo, .ini-lado { display:contents; }
     .a-topo { grid-area:topo; } .a-mov { grid-area:mov; } .a-gasto { grid-area:gasto; } .a-pagar { grid-area:pagar; } .a-cart { grid-area:cart; } .a-resumo { grid-area:resumo; }
-    .ini-grade { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas: "topo topo" "mov gasto" "pagar cart" "resumo cart"; }
+    .ini-grade { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas: "topo topo" "cart gasto" "pagar mov" "resumo mov"; }
 }
 @media (max-width:767px) {
     .ini-grade { grid-template-columns:minmax(0,1fr); grid-template-areas: "topo" "mov" "pagar" "cart" "gasto" "resumo"; }
@@ -157,11 +154,6 @@ body.dark-mode .ini-lancar { background:#2563EB; }
                     @endforeach
                 </select>
             </form>
-            @if($planilhaUrl)
-                <a href="{{ $planilhaUrl }}" target="_blank" rel="noopener" class="ini-lancar" title="Os lançamentos são feitos na planilha da família">
-                    <i class="fa-solid fa-plus"></i> Lançar na planilha
-                </a>
-            @endif
         </div>
     </header>
 
@@ -212,27 +204,41 @@ body.dark-mode .ini-lancar { background:#2563EB; }
         </section>
 
         <div class="ini-duo">
-        {{-- Últimas movimentações --}}
-        <section class="ini-card a-mov" aria-labelledby="t-mov">
-            <div class="ini-card-cab"><h2 id="t-mov">Últimas movimentações</h2><a class="ini-link" href="{{ route('planejamento.lancamentos') }}">Ver extrato →</a></div>
-            @forelse($visao['ultimas'] as $m)
-                @php $entrada = $m['tipo'] === 'receita'; @endphp
-                <div class="ini-linha">
-                    <div class="ini-linha-ic" style="background:{{ $entrada ? 'var(--color-success-soft)' : 'var(--color-danger-soft)' }};color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};" aria-hidden="true">
-                        <i class="fa-solid {{ $entrada ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i>
+        {{-- Cartões: limite usado e livre de cada um (limite nunca entra no saldo) --}}
+        @if($cartoesInfo['quantidade'])
+        @php $corUso = fn ($p) => $p === null ? 'var(--color-text-muted)' : ($p > 80 ? 'var(--color-danger)' : ($p > 60 ? 'var(--color-warning)' : 'var(--color-primary)')); @endphp
+        <section class="ini-card a-cart" aria-labelledby="t-cart">
+            <div class="ini-card-cab"><h2 id="t-cart">Cartões <span style="font-weight:500;color:var(--color-text-muted);font-size:14px;">({{ $cartoesInfo['quantidade'] }})</span></h2><a class="ini-link" href="{{ route('planejamento.cartoes') }}">Ver cartões →</a></div>
+            <div class="ini-cart-total">
+                <div><small>Livre</small><strong class="ini-num valor">{{ brl($cartoesInfo['limite_disponivel']) }}</strong></div>
+                <div style="text-align:right;"><small>Usado</small><strong class="ini-num valor" style="color:{{ $corUso($cartoesInfo['utilizado_pct']) }};">{{ brl($cartoesInfo['limite_utilizado']) }}</strong></div>
+            </div>
+            <div class="ini-uso" role="img" aria-label="{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% do limite total usado"><b style="width:{{ min(100, $cartoesInfo['utilizado_pct']) }}%;background:{{ $corUso($cartoesInfo['utilizado_pct']) }};"></b></div>
+            <small style="display:block;color:var(--color-text-muted);font-size:12px;margin-top:4px;">{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% de <span class="valor">{{ brl($cartoesInfo['limite_total']) }}</span> de limite · não entra no saldo</small>
+
+            @foreach($cartoesInfo['itens'] as $c)
+                <div class="ini-cart">
+                    <div class="ini-cart-linha">
+                        <strong title="{{ $c['nome'] }}">{{ \Illuminate\Support\Str::of($c['nome'])->replaceFirst('Cartão ', '') }}</strong>
+                        <span class="ini-num valor" style="color:{{ $corUso($c['pct']) }};font-weight:700;">{{ $c['pct'] !== null ? number_format($c['pct'], 0, ',', '.') . '%' : '—' }}</span>
                     </div>
-                    <div class="ini-linha-txt">
-                        <div>{{ $m['descricao'] }}</div>
-                        <div>{{ $quando($m['data']) }}{{ $m['conta'] ? ' · ' . $m['conta'] : '' }}</div>
+                    @if($c['pct'] !== null)
+                        <div class="ini-uso fino"><b style="width:{{ min(100, $c['pct']) }}%;background:{{ $corUso($c['pct']) }};"></b></div>
+                    @endif
+                    <div class="ini-cart-det">
+                        <span>Usado <b class="valor">{{ brl($c['utilizado']) }}</b></span>
+                        <span>Livre <b class="valor">{{ brl($c['disponivel']) }}</b></span>
                     </div>
-                    <div class="ini-num valor" style="font-weight:700;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">
-                        <span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">{{ $entrada ? 'Entrada de' : 'Saída de' }}</span>{{ $entrada ? '+' : '-' }}{{ brl($m['valor']) }}
-                    </div>
+                    @if($c['fatura'])
+                        <div class="ini-cart-det">
+                            <span>Fatura <b class="valor">{{ brl($c['fatura']) }}</b>{{ $c['vencimento'] ? ' · vence ' . $quando($c['vencimento']) : '' }}</span>
+                            @if($c['fatura_paga'])<span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);margin:0;">Paga</span>@endif
+                        </div>
+                    @endif
                 </div>
-            @empty
-                <p class="ini-vazio">Nenhuma movimentação nos últimos 60 dias.</p>
-            @endforelse
+            @endforeach
         </section>
+        @endif
 
         {{-- Onde você gastou --}}
         <section class="ini-card a-gasto" aria-labelledby="t-gasto">
@@ -308,41 +314,27 @@ body.dark-mode .ini-lancar { background:#2563EB; }
             @endforelse
         </section>
 
-        {{-- Cartões: limite usado e livre de cada um (limite nunca entra no saldo) --}}
-        @if($cartoesInfo['quantidade'])
-        @php $corUso = fn ($p) => $p === null ? 'var(--color-text-muted)' : ($p > 80 ? 'var(--color-danger)' : ($p > 60 ? 'var(--color-warning)' : 'var(--color-primary)')); @endphp
-        <section class="ini-card a-cart" aria-labelledby="t-cart">
-            <div class="ini-card-cab"><h2 id="t-cart">Cartões <span style="font-weight:500;color:var(--color-text-muted);font-size:14px;">({{ $cartoesInfo['quantidade'] }})</span></h2><a class="ini-link" href="{{ route('planejamento.cartoes') }}">Ver cartões →</a></div>
-            <div class="ini-cart-total">
-                <div><small>Livre</small><strong class="ini-num valor">{{ brl($cartoesInfo['limite_disponivel']) }}</strong></div>
-                <div style="text-align:right;"><small>Usado</small><strong class="ini-num valor" style="color:{{ $corUso($cartoesInfo['utilizado_pct']) }};">{{ brl($cartoesInfo['limite_utilizado']) }}</strong></div>
-            </div>
-            <div class="ini-uso" role="img" aria-label="{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% do limite total usado"><b style="width:{{ min(100, $cartoesInfo['utilizado_pct']) }}%;background:{{ $corUso($cartoesInfo['utilizado_pct']) }};"></b></div>
-            <small style="display:block;color:var(--color-text-muted);font-size:12px;margin-top:4px;">{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% de <span class="valor">{{ brl($cartoesInfo['limite_total']) }}</span> de limite · não entra no saldo</small>
-
-            @foreach($cartoesInfo['itens'] as $c)
-                <div class="ini-cart">
-                    <div class="ini-cart-linha">
-                        <strong title="{{ $c['nome'] }}">{{ \Illuminate\Support\Str::of($c['nome'])->replaceFirst('Cartão ', '') }}</strong>
-                        <span class="ini-num valor" style="color:{{ $corUso($c['pct']) }};font-weight:700;">{{ $c['pct'] !== null ? number_format($c['pct'], 0, ',', '.') . '%' : '—' }}</span>
+        {{-- Últimas movimentações --}}
+        <section class="ini-card a-mov" aria-labelledby="t-mov">
+            <div class="ini-card-cab"><h2 id="t-mov">Últimas movimentações</h2><a class="ini-link" href="{{ route('planejamento.lancamentos') }}">Ver extrato →</a></div>
+            @forelse($visao['ultimas'] as $m)
+                @php $entrada = $m['tipo'] === 'receita'; @endphp
+                <div class="ini-linha">
+                    <div class="ini-linha-ic" style="background:{{ $entrada ? 'var(--color-success-soft)' : 'var(--color-danger-soft)' }};color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};" aria-hidden="true">
+                        <i class="fa-solid {{ $entrada ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i>
                     </div>
-                    @if($c['pct'] !== null)
-                        <div class="ini-uso fino"><b style="width:{{ min(100, $c['pct']) }}%;background:{{ $corUso($c['pct']) }};"></b></div>
-                    @endif
-                    <div class="ini-cart-det">
-                        <span>Usado <b class="valor">{{ brl($c['utilizado']) }}</b></span>
-                        <span>Livre <b class="valor">{{ brl($c['disponivel']) }}</b></span>
+                    <div class="ini-linha-txt">
+                        <div>{{ $m['descricao'] }}</div>
+                        <div>{{ $quando($m['data']) }}{{ $m['conta'] ? ' · ' . $m['conta'] : '' }}</div>
                     </div>
-                    @if($c['fatura'])
-                        <div class="ini-cart-det">
-                            <span>Fatura <b class="valor">{{ brl($c['fatura']) }}</b>{{ $c['vencimento'] ? ' · vence ' . $quando($c['vencimento']) : '' }}</span>
-                            @if($c['fatura_paga'])<span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);margin:0;">Paga</span>@endif
-                        </div>
-                    @endif
+                    <div class="ini-num valor" style="font-weight:700;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">
+                        <span class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">{{ $entrada ? 'Entrada de' : 'Saída de' }}</span>{{ $entrada ? '+' : '-' }}{{ brl($m['valor']) }}
+                    </div>
                 </div>
-            @endforeach
+            @empty
+                <p class="ini-vazio">Nenhuma movimentação nos últimos 60 dias.</p>
+            @endforelse
         </section>
-        @endif
 
         {{-- Resumo rápido: só o que tem número real --}}
         <section class="ini-card a-resumo" aria-labelledby="t-resumo" style="padding:14px 10px;">

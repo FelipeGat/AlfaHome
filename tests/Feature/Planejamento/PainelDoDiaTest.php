@@ -117,7 +117,7 @@ class PainelDoDiaTest extends TestCase
         $this->actingAs($this->user);
 
         $this->get(route('dashboard'))->assertOk()
-            ->assertSeeInOrder(['Bom dia', 'Saldo total', '-R$ 98,15', 'Últimas movimentações', 'Próximos pagamentos', 'Boleto esquecido', 'Atrasado'])
+            ->assertSeeInOrder(['Bom dia', 'Saldo total', '-R$ 98,15', 'Próximos pagamentos', 'Boleto esquecido', 'Atrasado', 'Últimas movimentações'])
             ->assertSee('Mercado Pago')->assertDontSee('Nenhuma conta corrente cadastrada');
     }
 

@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\Despesa;
 use App\Models\Familiar;
-use App\Models\PlanilhaFonte;
 use App\Services\Financeiro\FinanceiroService;
 use App\Services\Planejamento\PlanejamentoService;
 
@@ -443,7 +442,6 @@ class DashboardController extends Controller
             'visao'       => $visao,
             'mesVisao'    => $mesVisao,
             'mesesVisao'  => collect(range(0, 11))->map(fn ($n) => now()->startOfMonth()->subMonths($n)),
-            'planilhaUrl' => PlanilhaFonte::withoutGlobalScopes()->where('tenant_id', $tenantId)->first()?->url,
             'vencidas'    => $visao['vencidas'],
             'cartoesInfo' => $visao['cartoes'],
         ];
