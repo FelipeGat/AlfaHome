@@ -24,7 +24,7 @@
 
     @if($fonte)
         <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:12px;">
-            O link da planilha está configurado. O sistema confere a planilha uma vez por dia e sempre que você apertar Analisar.
+            O link da planilha está configurado. O sistema confere a planilha sozinho a cada hora e traz só o que mudou; se nada mudou, nada é alterado. Use Analisar para trazer na hora.
             @if($fonte->verificada_em) Última verificação: <strong>{{ $fonte->verificada_em->format('d/m/Y H:i') }}</strong>.@endif
         </p>
         @if($fonte->teveProblema())
