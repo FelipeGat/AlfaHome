@@ -18,6 +18,13 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $tenantId   = Auth::user()->tenant_id;
+
+        // Com a planilha importada, o Início é só o resumo novo: não calcula o
+        // painel antigo de lançamentos manuais (dezenas de consultas sem uso).
+        if (app(PlanejamentoService::class)->ultimaImportacao($tenantId) !== null) {
+            return view('dashboard', $this->inicioNovo($request, $tenantId) + ['hoje' => ['planilha_importada' => true]]);
+        }
+
         $inicio     = $request->get('inicio', now()->startOfMonth()->format('Y-m-d'));
         $fim        = $request->get('fim', now()->endOfMonth()->format('Y-m-d'));
         $ano        = Carbon::parse($inicio)->year;
@@ -392,28 +399,11 @@ class DashboardController extends Controller
         // ─── Planejamento da planilha (mesmo serviço das telas e da API) ──────
         $planilha = app(PlanejamentoService::class)->resumoMes($tenantId, Carbon::parse($inicio));
         $hoje     = app(PlanejamentoService::class)->hoje($tenantId);
-        $visao    = app(FinanceiroService::class)->inicio($tenantId);
-
-        // Mês do resumo (?mes=AAAA-MM). Saldo e movimentações são sempre de hoje.
-        $mesVisao = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('mes'))
-            ? Carbon::createFromFormat('!Y-m', $request->query('mes'))
-            : now()->startOfMonth();
-        if (! $mesVisao->isSameMonth(now())) {
-            $visao['mes'] = app(FinanceiroService::class)->mes($tenantId, $mesVisao);
-        }
-        $vencimentos = app(PlanejamentoService::class)->vencimentos($tenantId);
-        $vencidas    = array_values(array_filter($vencimentos['atrasado'], fn ($i) => $i['tipo'] !== 'receita'));
-        $cartoesPlan = app(PlanejamentoService::class)->cartoes($tenantId);
-        $extra = [
-            'mesVisao'    => $mesVisao,
-            'mesesVisao'  => collect(range(0, 11))->map(fn ($n) => now()->startOfMonth()->subMonths($n)),
-            'planilhaUrl' => PlanilhaFonte::withoutGlobalScopes()->where('tenant_id', $tenantId)->first()?->url,
-            'vencidas'    => ['quantidade' => count($vencidas), 'total' => round(array_sum(array_column($vencidas, 'valor')), 2)],
-            'cartoesInfo' => ['quantidade' => $cartoesPlan['itens']->count(), 'limite_disponivel' => $cartoesPlan['resumo']['limite_disponivel']],
-        ];
+        $extra = $this->inicioNovo($request, $tenantId);
+        $visao = $extra['visao'];
 
         return view('dashboard', $extra + compact(
-            'planilha', 'hoje', 'visao',
+            'planilha', 'hoje',
             'inicio', 'fim', 'ano',
             'nomeMes', 'anoMes', 'linkMesAnt', 'linkMesProx',
             'totalReceitas', 'totalDespesas', 'saldo',
@@ -432,5 +422,30 @@ class DashboardController extends Controller
             'previsaoReceitasProxMes', 'recebidoProximoMes',
             'familiares', 'familiarId', 'familiarSelecionado'
         ));
+    }
+
+    /**
+     * Dados do Início novo (planilha importada): saldo, mês escolhido, últimas
+     * movimentações, próximos pagamentos e resumo rápido.
+     */
+    private function inicioNovo(Request $request, int $tenantId): array
+    {
+        $visao    = app(FinanceiroService::class)->inicio($tenantId);
+
+        // Mês do resumo (?mes=AAAA-MM). Saldo e movimentações são sempre de hoje.
+        $mesVisao = preg_match('/^\d{4}-\d{2}$/', (string) $request->query('mes'))
+            ? Carbon::createFromFormat('!Y-m', $request->query('mes'))
+            : now()->startOfMonth();
+        if (! $mesVisao->isSameMonth(now())) {
+            $visao['mes'] = app(FinanceiroService::class)->mes($tenantId, $mesVisao);
+        }
+        return [
+            'visao'       => $visao,
+            'mesVisao'    => $mesVisao,
+            'mesesVisao'  => collect(range(0, 11))->map(fn ($n) => now()->startOfMonth()->subMonths($n)),
+            'planilhaUrl' => PlanilhaFonte::withoutGlobalScopes()->where('tenant_id', $tenantId)->first()?->url,
+            'vencidas'    => $visao['vencidas'],
+            'cartoesInfo' => $visao['cartoes'],
+        ];
     }
 }

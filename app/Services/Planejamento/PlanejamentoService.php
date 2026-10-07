@@ -29,7 +29,8 @@ class PlanejamentoService
 {
     // ─── Mês e ano ────────────────────────────────────────────────────────────
 
-    public function resumoMes(int $tenantId, CarbonInterface $mes): array
+    /** `completo: false` dispensa cartões, dívidas e metas (o Início não usa). */
+    public function resumoMes(int $tenantId, CarbonInterface $mes, bool $completo = true): array
     {
         $inicio = $mes->copy()->startOfMonth();
         $fim    = $mes->copy()->endOfMonth();
@@ -50,8 +51,12 @@ class PlanejamentoService
             ->map(fn ($c) => $c + ['pct' => $this->pct($c['realizado'], $totais['despesas']['realizado'])])
             ->all();
 
-        return ['mes' => $inicio->format('Y-m')] + $totais + [
-            'por_categoria'     => $porCategoria,
+        $base = ['mes' => $inicio->format('Y-m')] + $totais + ['por_categoria' => $porCategoria];
+        if (! $completo) {
+            return $base;
+        }
+
+        return $base + [
             'cartoes'           => $this->cartoes($tenantId)['resumo'],
             'dividas'           => $this->dividas($tenantId)['resumo'],
             'metas'             => $this->metas($tenantId)['resumo'],

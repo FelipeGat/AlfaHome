@@ -18,11 +18,12 @@
     $negativo = fn ($v) => $v < 0;
 
     // Donut: as 4 maiores categorias + "Outras", em pontos percentuais do que saiu.
-    $cores = ['#2563EB', '#14B8A6', '#F59E0B', '#8B5CF6', '#94A3B8'];
-    $cats = array_slice($mes['categorias'], 0, 4);
-    $resto = array_slice($mes['categorias'], 4);
+    $cores = ['#2563EB', '#14B8A6', '#F59E0B', '#8B5CF6', '#EC4899', '#0EA5E9', '#94A3B8'];
+    $cats = array_slice($mes['categorias'], 0, 6);
+    $resto = array_slice($mes['categorias'], 6);
+    $maiorPct = max(array_column($mes['categorias'], 'pct') ?: [1]);
     if ($resto) {
-        $cats[] = ['categoria' => 'Outras', 'valor' => round(array_sum(array_column($resto, 'valor')), 2), 'pct' => round(array_sum(array_column($resto, 'pct')), 2)];
+        $cats[] = ['categoria' => 'Outras', 'qtd' => count($resto), 'valor' => round(array_sum(array_column($resto, 'valor')), 2), 'pct' => round(array_sum(array_column($resto, 'pct')), 2)];
     }
     $acumulado = 0;
 @endphp
@@ -78,13 +79,23 @@ body.dark-mode .ini-lancar { background:#2563EB; }
 .ini-linha-txt div:last-child { font-size:13px; color:var(--color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ini-badge { display:inline-block; font-size:11.5px; font-weight:600; padding:1px 7px; border-radius:6px; margin-right:4px; }
 
-.ini-donut { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
-.ini-donut svg { width:140px; height:140px; flex-shrink:0; margin:0 auto; }
-.ini-donut ul { list-style:none; flex:1 1 220px; min-width:0; margin:0; padding:0; }
-.ini-donut li { display:grid; grid-template-columns:12px minmax(0,1fr) auto auto; gap:8px; align-items:center; font-size:13.5px; padding:5px 0; }
-.ini-donut li > span:first-of-type { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ini-donut li i { width:10px; height:10px; border-radius:3px; }
-.ini-donut li .pct { color:var(--color-text-muted); font-size:12.5px; }
+.ini-duo { align-items:stretch; }
+.ini-donut-graf { position:relative; width:220px; height:220px; margin:6px auto 18px; }
+.ini-donut-graf svg { width:100%; height:100%; transform:rotate(-90deg); }
+.ini-donut-graf circle.fatia { transition:stroke-width .15s; }
+.ini-donut-centro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; pointer-events:none; }
+.ini-donut-centro small { font-size:12px; color:var(--color-text-muted); }
+.ini-donut-centro strong { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-weight:800; letter-spacing:-.02em; color:var(--color-text); line-height:1.15; }
+.ini-cats { list-style:none; margin:0; padding:0; }
+.ini-cats li { padding:8px 0; border-top:1px solid var(--color-border); }
+.ini-cats li:first-child { border-top:0; }
+.ini-cat-linha { display:grid; grid-template-columns:10px minmax(0,1fr) auto auto; gap:10px; align-items:center; font-size:14px; }
+.ini-cat-linha i { width:10px; height:10px; border-radius:3px; }
+.ini-cat-linha span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--color-text); }
+.ini-cat-linha .pct { color:var(--color-text-muted); font-size:12.5px; font-variant-numeric:tabular-nums; min-width:44px; text-align:right; }
+.ini-cat-linha strong { font-size:14px; font-weight:700; color:var(--color-text); min-width:92px; text-align:right; }
+.ini-cat-barra { height:5px; border-radius:5px; background:var(--color-bg); margin:6px 0 0 20px; overflow:hidden; }
+.ini-cat-barra b { display:block; height:100%; border-radius:5px; }
 
 .ini-atalho { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; text-decoration:none; color:inherit; transition:background .15s; }
 .ini-atalho:hover { background:var(--color-bg); }
@@ -115,6 +126,7 @@ body.dark-mode .ini-lancar { background:#2563EB; }
     .ini-kpi .ini-rotulo { font-size:12px; }
     .ini-contas { grid-template-columns:1fr 1fr; }
 }
+@media (max-width:400px) { .ini-kpi .ini-valor-kpi { font-size:13.5px; letter-spacing:-.02em; } .ini-kpi { padding:10px; } }
 @media (prefers-reduced-motion: reduce) { .ini * { transition:none !important; } }
 </style>
 
@@ -214,23 +226,36 @@ body.dark-mode .ini-lancar { background:#2563EB; }
         <section class="ini-card a-gasto" aria-labelledby="t-gasto">
             <div class="ini-card-cab"><h2 id="t-gasto">Onde você gastou</h2><a class="ini-link" href="{{ route('planejamento.index', ['mes' => $mesVisao->format('Y-m')]) }}">Ver detalhes →</a></div>
             @if($cats)
-                <div class="ini-donut">
-                    <svg viewBox="0 0 42 42" role="img" aria-label="Saídas de {{ $nomeMes($mesVisao) }} por categoria">
-                        <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-border)" stroke-width="5.2"/>
+                @php $textoCentro = brl($mes['saiu']); @endphp
+                <div class="ini-donut-graf">
+                    <svg viewBox="0 0 42 42" role="img" aria-label="Saídas de {{ $nomeMes($mesVisao) }} por categoria: {{ collect($cats)->map(fn ($c) => $c['categoria'] . ' ' . number_format($c['pct'], 1, ',', '.') . '%')->join(', ') }}">
+                        <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-bg)" stroke-width="4.6"/>
                         @foreach($cats as $i => $c)
-                            <circle cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i] }}" stroke-width="5.2"
-                                stroke-dasharray="{{ max(0, $c['pct'] - 0.6) }} {{ 100 - max(0, $c['pct'] - 0.6) }}" stroke-dashoffset="{{ 25 - $acumulado }}"/>
+                            @php $fatia = max(0, $c['pct'] - ($c['pct'] > 1.5 ? 0.8 : 0)); @endphp
+                            <circle class="fatia" cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i] }}" stroke-width="4.6" stroke-linecap="butt"
+                                stroke-dasharray="{{ $fatia }} {{ 100 - $fatia }}" stroke-dashoffset="{{ -$acumulado }}"><title>{{ $c['categoria'] }}: {{ brl($c['valor']) }}</title></circle>
                             @php $acumulado += $c['pct']; @endphp
                         @endforeach
-                        <text x="21" y="20.5" text-anchor="middle" style="font:800 5px 'Plus Jakarta Sans',sans-serif;fill:var(--color-text);" class="valor">{{ brl($mes['saiu']) }}</text>
-                        <text x="21" y="26" text-anchor="middle" style="font:500 3.2px Inter,sans-serif;fill:var(--color-text-muted);">em {{ $nomeMes($mesVisao) }}</text>
                     </svg>
-                    <ul>
-                        @foreach($cats as $i => $c)
-                            <li><i style="background:{{ $cores[$i] }};"></i><span>{{ $c['categoria'] }}</span><span class="pct">{{ number_format($c['pct'], 1, ',', '.') }}%</span><strong class="ini-num valor">{{ brl($c['valor']) }}</strong></li>
-                        @endforeach
-                    </ul>
+                    <div class="ini-donut-centro">
+                        <small>Saiu em {{ $nomeMes($mesVisao) }}</small>
+                        <strong class="valor" style="font-size:{{ mb_strlen($textoCentro) > 12 ? 18 : 21 }}px;">{{ $textoCentro }}</strong>
+                        <small>{{ count($mes['categorias']) }} {{ count($mes['categorias']) === 1 ? 'categoria' : 'categorias' }}</small>
+                    </div>
                 </div>
+                <ul class="ini-cats">
+                    @foreach($cats as $i => $c)
+                        <li>
+                            <div class="ini-cat-linha">
+                                <i style="background:{{ $cores[$i] }};"></i>
+                                <span title="{{ $c['categoria'] }}">{{ $c['categoria'] }}@isset($c['qtd']) <small style="color:var(--color-text-muted);">({{ $c['qtd'] }})</small>@endisset</span>
+                                <span class="pct">{{ number_format($c['pct'], 1, ',', '.') }}%</span>
+                                <strong class="ini-num valor">{{ brl($c['valor']) }}</strong>
+                            </div>
+                            <div class="ini-cat-barra"><b style="width:{{ min(100, round($c['pct'] / $maiorPct * 100, 1)) }}%;background:{{ $cores[$i] }};"></b></div>
+                        </li>
+                    @endforeach
+                </ul>
             @else
                 <p class="ini-vazio">Nenhuma saída paga em {{ $nomeMes($mesVisao) }}.</p>
             @endif

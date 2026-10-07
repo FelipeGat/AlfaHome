@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd
+    && docker-php-ext-install pdo_mysql mbstring zip exif pcntl bcmath gd opcache
 
 # Instala extensão Redis (phpredis nativa)
 RUN pecl install redis && docker-php-ext-enable redis
@@ -44,8 +44,16 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 # Instala dependências do Node e compila assets
 RUN npm install && npm run build
 
+# OPcache (código compilado em memória)
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache-alfahome.ini
+
 # Permissões
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+# Ao subir: caches do Laravel (config, rotas, eventos, telas)
+COPY docker/entrypoint.sh /usr/local/bin/alfahome-entrypoint
+RUN chmod +x /usr/local/bin/alfahome-entrypoint
+ENTRYPOINT ["alfahome-entrypoint"]
 
 EXPOSE 9000
 CMD ["php-fpm"]

@@ -139,7 +139,7 @@ class FinanceiroService
     /** Entrou, saiu, resultado e onde gastou — o realizado do mês. */
     public function mes(int $tenantId, CarbonInterface $mes): array
     {
-        $r = $this->planejamento->resumoMes($tenantId, $mes);
+        $r = $this->planejamento->resumoMes($tenantId, $mes, completo: false);
         $entrou = $this->centavos($r['receitas']['realizado']);
         $saiu   = $this->centavos($r['despesas']['realizado']);
 
@@ -167,9 +167,9 @@ class FinanceiroService
     }
 
     /** Próximos pagamentos (atrasados primeiro), no máximo `quantidade`. */
-    public function proximosPagamentos(int $tenantId, int $quantidade = 3, ?CarbonInterface $hoje = null): array
+    public function proximosPagamentos(int $tenantId, int $quantidade = 3, ?CarbonInterface $hoje = null, ?array $v = null): array
     {
-        $v = $this->planejamento->vencimentos($tenantId, $hoje);
+        $v ??= $this->planejamento->vencimentos($tenantId, $hoje);
         $atrasados = array_values(array_filter($v['atrasado'], fn ($i) => $i['tipo'] !== 'receita'));
 
         return array_map(
@@ -182,13 +182,19 @@ class FinanceiroService
     public function inicio(int $tenantId, ?CarbonInterface $hoje = null): array
     {
         $hoje = ($hoje ?? now())->copy();
+        // Vencimentos e cartões calculados uma vez só para a tela inteira.
+        $v        = $this->planejamento->vencimentos($tenantId, $hoje);
+        $vencidas = array_values(array_filter($v['atrasado'], fn ($i) => $i['tipo'] !== 'receita'));
+        $cartoes  = $this->planejamento->cartoes($tenantId);
 
         return [
             'data'               => $hoje->format('Y-m-d'),
             'contas'             => $this->contas($tenantId, $hoje),
             'mes'                => $this->mes($tenantId, $hoje),
             'ultimas'            => $this->ultimas($tenantId, 5, $hoje),
-            'proximos'           => $this->proximosPagamentos($tenantId, 3, $hoje),
+            'proximos'           => $this->proximosPagamentos($tenantId, 3, $hoje, $v),
+            'vencidas'           => ['quantidade' => count($vencidas), 'total' => $this->reais(array_sum(array_map(fn ($i) => $this->centavos($i['valor']), $vencidas)))],
+            'cartoes'            => ['quantidade' => $cartoes['itens']->count(), 'limite_disponivel' => $cartoes['resumo']['limite_disponivel']],
             'planilha_importada' => $this->planejamento->ultimaImportacao($tenantId) !== null,
         ];
     }
