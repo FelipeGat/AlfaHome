@@ -194,8 +194,40 @@ class FinanceiroService
             'ultimas'            => $this->ultimas($tenantId, 5, $hoje),
             'proximos'           => $this->proximosPagamentos($tenantId, 3, $hoje, $v),
             'vencidas'           => ['quantidade' => count($vencidas), 'total' => $this->reais(array_sum(array_map(fn ($i) => $this->centavos($i['valor']), $vencidas)))],
-            'cartoes'            => ['quantidade' => $cartoes['itens']->count(), 'limite_disponivel' => $cartoes['resumo']['limite_disponivel']],
+            'cartoes'            => $this->cartoesDoInicio($cartoes, $v),
             'planilha_importada' => $this->planejamento->ultimaImportacao($tenantId) !== null,
+        ];
+    }
+
+    /**
+     * Cartões da planilha para o Início: limite, usado, livre e a fatura com o
+     * próximo vencimento (e se as compras dela já estão pagas). Limite nunca é saldo.
+     */
+    private function cartoesDoInicio(array $cartoes, array $vencimentos): array
+    {
+        $faturas = collect($vencimentos['a_pagar'])->where('origem', 'fatura')->keyBy('descricao');
+        $itens = $cartoes['itens']->map(function ($c) use ($faturas) {
+            $fatura = $faturas->get('Fatura ' . $c->nome);
+
+            return [
+                'nome'        => $c->nome,
+                'limite'      => $c->limite_total !== null ? (float) $c->limite_total : null,
+                'utilizado'   => $c->limite_utilizado !== null ? (float) $c->limite_utilizado : null,
+                'disponivel'  => $c->limite_disponivel,
+                'pct'         => $c->utilizado_pct,
+                'fatura'      => $c->fatura_atual !== null ? (float) $c->fatura_atual : null,
+                'vencimento'  => $fatura['data'] ?? null,
+                'fatura_paga' => $fatura['pago'] ?? false,
+            ];
+        })->values()->all();
+
+        return [
+            'quantidade'        => count($itens),
+            'limite_total'      => $cartoes['resumo']['limite_total'],
+            'limite_utilizado'  => $cartoes['resumo']['limite_utilizado'],
+            'limite_disponivel' => $cartoes['resumo']['limite_disponivel'],
+            'utilizado_pct'     => $cartoes['resumo']['utilizado_pct'],
+            'itens'             => $itens,
         ];
     }
 

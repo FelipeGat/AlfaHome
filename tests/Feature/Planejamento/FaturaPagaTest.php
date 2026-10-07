@@ -62,6 +62,13 @@ class FaturaPagaTest extends TestCase
         ]);
         $this->actingAs($this->user);
         $this->get(route('dashboard'))->assertOk()->assertSeeInOrder(['Fatura Cartão Mercado Pago', 'Pago']);
+
+        // Card de cartões: uso, livre e fatura paga de cada um.
+        $c = app(FinanceiroService::class)->inicio($this->user->tenant_id)['cartoes'];
+        $this->assertSame(1, $c['quantidade']);
+        $this->assertTrue($c['itens'][0]['fatura_paga']);
+        $this->assertSame('2026-10-07', $c['itens'][0]['vencimento']);
+        $this->get(route('dashboard'))->assertSeeInOrder(['Cartões', 'Mercado Pago', 'Fatura', 'Paga']);
     }
 
     public function test_compra_pendente_mantem_a_fatura_a_pagar(): void

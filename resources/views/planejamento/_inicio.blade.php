@@ -97,6 +97,18 @@ body.dark-mode .ini-lancar { background:#2563EB; }
 .ini-cat-barra { height:5px; border-radius:5px; background:var(--color-bg); margin:6px 0 0 20px; overflow:hidden; }
 .ini-cat-barra b { display:block; height:100%; border-radius:5px; }
 
+.ini-cart-total { display:flex; justify-content:space-between; gap:10px; margin-top:4px; }
+.ini-cart-total small { display:block; font-size:12px; color:var(--color-text-muted); }
+.ini-cart-total strong { font-family:'Plus Jakarta Sans',system-ui,sans-serif; font-size:19px; font-weight:800; color:var(--color-text); }
+.ini-uso { height:8px; border-radius:8px; background:var(--color-bg); overflow:hidden; margin-top:8px; }
+.ini-uso.fino { height:5px; margin-top:6px; }
+.ini-uso b { display:block; height:100%; border-radius:8px; transition:width .3s; }
+.ini-cart { padding:12px 0 2px; border-top:1px solid var(--color-border); margin-top:12px; }
+.ini-cart + .ini-cart { margin-top:10px; }
+.ini-cart-linha { display:flex; justify-content:space-between; gap:8px; font-size:14px; }
+.ini-cart-linha strong { font-weight:600; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ini-cart-det { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--color-text-muted); margin-top:5px; }
+.ini-cart-det b { color:var(--color-text); font-weight:600; }
 .ini-atalho { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; text-decoration:none; color:inherit; transition:background .15s; }
 .ini-atalho:hover { background:var(--color-bg); }
 .ini-atalho .ini-ic { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -109,11 +121,11 @@ body.dark-mode .ini-lancar { background:#2563EB; }
 
 @media (max-width:1279px) {
     .ini-principal, .ini-duo, .ini-lado { display:contents; }
-    .a-topo { grid-area:topo; } .a-mov { grid-area:mov; } .a-gasto { grid-area:gasto; } .a-pagar { grid-area:pagar; } .a-resumo { grid-area:resumo; }
-    .ini-grade { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas: "topo topo" "mov gasto" "pagar resumo"; }
+    .a-topo { grid-area:topo; } .a-mov { grid-area:mov; } .a-gasto { grid-area:gasto; } .a-pagar { grid-area:pagar; } .a-cart { grid-area:cart; } .a-resumo { grid-area:resumo; }
+    .ini-grade { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas: "topo topo" "mov gasto" "pagar cart" "resumo cart"; }
 }
 @media (max-width:767px) {
-    .ini-grade { grid-template-columns:minmax(0,1fr); grid-template-areas: "topo" "mov" "pagar" "gasto" "resumo"; }
+    .ini-grade { grid-template-columns:minmax(0,1fr); grid-template-areas: "topo" "mov" "pagar" "cart" "gasto" "resumo"; }
     .ini-cab h1 { font-size:23px; }
     .ini-cab { align-items:flex-start; }
     .ini-acoes { width:100%; }
@@ -296,6 +308,42 @@ body.dark-mode .ini-lancar { background:#2563EB; }
             @endforelse
         </section>
 
+        {{-- Cartões: limite usado e livre de cada um (limite nunca entra no saldo) --}}
+        @if($cartoesInfo['quantidade'])
+        @php $corUso = fn ($p) => $p === null ? 'var(--color-text-muted)' : ($p > 80 ? 'var(--color-danger)' : ($p > 60 ? 'var(--color-warning)' : 'var(--color-primary)')); @endphp
+        <section class="ini-card a-cart" aria-labelledby="t-cart">
+            <div class="ini-card-cab"><h2 id="t-cart">Cartões <span style="font-weight:500;color:var(--color-text-muted);font-size:14px;">({{ $cartoesInfo['quantidade'] }})</span></h2><a class="ini-link" href="{{ route('planejamento.cartoes') }}">Ver cartões →</a></div>
+            <div class="ini-cart-total">
+                <div><small>Livre</small><strong class="ini-num valor">{{ brl($cartoesInfo['limite_disponivel']) }}</strong></div>
+                <div style="text-align:right;"><small>Usado</small><strong class="ini-num valor" style="color:{{ $corUso($cartoesInfo['utilizado_pct']) }};">{{ brl($cartoesInfo['limite_utilizado']) }}</strong></div>
+            </div>
+            <div class="ini-uso" role="img" aria-label="{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% do limite total usado"><b style="width:{{ min(100, $cartoesInfo['utilizado_pct']) }}%;background:{{ $corUso($cartoesInfo['utilizado_pct']) }};"></b></div>
+            <small style="display:block;color:var(--color-text-muted);font-size:12px;margin-top:4px;">{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% de <span class="valor">{{ brl($cartoesInfo['limite_total']) }}</span> de limite · não entra no saldo</small>
+
+            @foreach($cartoesInfo['itens'] as $c)
+                <div class="ini-cart">
+                    <div class="ini-cart-linha">
+                        <strong title="{{ $c['nome'] }}">{{ \Illuminate\Support\Str::of($c['nome'])->replaceFirst('Cartão ', '') }}</strong>
+                        <span class="ini-num valor" style="color:{{ $corUso($c['pct']) }};font-weight:700;">{{ $c['pct'] !== null ? number_format($c['pct'], 0, ',', '.') . '%' : '—' }}</span>
+                    </div>
+                    @if($c['pct'] !== null)
+                        <div class="ini-uso fino"><b style="width:{{ min(100, $c['pct']) }}%;background:{{ $corUso($c['pct']) }};"></b></div>
+                    @endif
+                    <div class="ini-cart-det">
+                        <span>Usado <b class="valor">{{ brl($c['utilizado']) }}</b></span>
+                        <span>Livre <b class="valor">{{ brl($c['disponivel']) }}</b></span>
+                    </div>
+                    @if($c['fatura'])
+                        <div class="ini-cart-det">
+                            <span>Fatura <b class="valor">{{ brl($c['fatura']) }}</b>{{ $c['vencimento'] ? ' · vence ' . $quando($c['vencimento']) : '' }}</span>
+                            @if($c['fatura_paga'])<span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);margin:0;">Paga</span>@endif
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </section>
+        @endif
+
         {{-- Resumo rápido: só o que tem número real --}}
         <section class="ini-card a-resumo" aria-labelledby="t-resumo" style="padding:14px 10px;">
             <h2 id="t-resumo" style="padding:0 10px 6px;">Resumo rápido</h2>
@@ -311,16 +359,6 @@ body.dark-mode .ini-lancar { background:#2563EB; }
                 </div>
                 <i class="fa-solid fa-chevron-right" style="color:var(--color-text-muted);font-size:12px;"></i>
             </a>
-            @if($cartoesInfo['quantidade'])
-            <a class="ini-atalho" href="{{ route('planejamento.cartoes') }}">
-                <span class="ini-ic" style="background:var(--color-primary-soft);color:var(--color-primary);"><i class="fa-regular fa-credit-card"></i></span>
-                <div>
-                    <strong>{{ $cartoesInfo['quantidade'] }} {{ $cartoesInfo['quantidade'] === 1 ? 'cartão' : 'cartões' }}</strong>
-                    <small>Limite livre <span class="valor">{{ brl($cartoesInfo['limite_disponivel']) }}</span></small>
-                </div>
-                <i class="fa-solid fa-chevron-right" style="color:var(--color-text-muted);font-size:12px;"></i>
-            </a>
-            @endif
         </section>
         </aside>
     </div>
