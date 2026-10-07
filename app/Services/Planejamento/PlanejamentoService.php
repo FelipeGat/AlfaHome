@@ -273,7 +273,7 @@ class PlanejamentoService
     /**
      * A planilha marca a fatura como "Aberta" na aba Cartões até alguém mudar;
      * o sinal mais confiável de pagamento são as compras daquela fatura (forma
-     * cartão, mesma conta, lançadas perto do vencimento) estarem todas como Pago.
+     * cartão, mesma conta, lançadas perto do vencimento) estarem como Pago.
      */
     private function faturaPaga(int $tenantId, PlanCartao $cartao, CarbonInterface $vence): bool
     {
@@ -284,7 +284,16 @@ class PlanejamentoService
             ->get()
             ->filter(fn ($l) => $this->chaveConta($l->conta) === $conta);
 
-        return $compras->isNotEmpty() && $compras->every(fn ($l) => $l->status === 'concluido');
+        if ($compras->isEmpty()) {
+            return false;
+        }
+        // Todas pagas, ou as pagas já cobrem o valor da fatura (um encargo
+        // pendente lançado perto, como juros, vai para a fatura seguinte).
+        $pagas = $compras->where('status', 'concluido')
+            ->sum(fn ($l) => (int) round((float) ($l->valor_realizado ?? $l->valor_previsto) * 100));
+
+        return $compras->every(fn ($l) => $l->status === 'concluido')
+            || ((float) $cartao->fatura_atual > 0 && $pagas >= (int) round((float) $cartao->fatura_atual * 100));
     }
 
     /** "Cartão Mercado Pago" e "Mercado Pago" são a mesma conta. */

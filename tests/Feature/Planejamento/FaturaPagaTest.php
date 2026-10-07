@@ -81,4 +81,12 @@ class FaturaPagaTest extends TestCase
         $this->compra('2026-10-08', 183.26, 'concluido', 'Sicoob');
         $this->assertFalse($this->fatura()['pago']);
     }
+
+    public function test_encargo_pendente_nao_impede_quando_as_pagas_cobrem_a_fatura(): void
+    {
+        $this->compra('2026-10-08', 183.26, 'concluido');
+        $this->compra('2026-10-07', 5.49, 'pendente'); // juros da fatura anterior, vai para a próxima
+
+        $this->assertTrue($this->fatura()['pago']);
+    }
 }
