@@ -3,7 +3,6 @@
 namespace App\Services\Planejamento;
 
 use App\Models\Banco;
-use App\Services\Financeiro\FinanceiroService;
 use App\Models\Despesa;
 use App\Models\PlanCartao;
 use App\Models\PlanCompraParcelada;
@@ -13,9 +12,11 @@ use App\Models\PlanilhaImportacao;
 use App\Models\PlanLancamento;
 use App\Models\PlanMeta;
 use App\Models\Receita;
+use App\Services\Financeiro\FinanceiroService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * Única definição dos números do planejamento. Telas web, API e painel inicial
@@ -216,13 +217,14 @@ class PlanejamentoService
         $hoje   = ($hoje ?? now())->copy()->startOfDay();
         $grupos = ['atrasado' => [], 'a_pagar' => [], 'a_receber' => []];
 
-        $item = fn (string $origem, string $tipo, string $descricao, $valor, ?CarbonInterface $data, ?string $detalhe = null) => [
+        $item = fn (string $origem, string $tipo, string $descricao, $valor, ?CarbonInterface $data, ?string $detalhe = null, bool $pago = false) => [
             'origem'    => $origem,
             'tipo'      => $tipo,
             'descricao' => $descricao,
             'valor'     => $valor !== null ? round((float) $valor, 2) : null,
             'data'      => $data?->format('Y-m-d'),
             'detalhe'   => $detalhe,
+            'pago'      => $pago,
         ];
 
         $pendentes = PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
@@ -244,7 +246,8 @@ class PlanejamentoService
         $cartoes = PlanCartao::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereNotNull('dia_vencimento')->orderBy('linha')->get();
         foreach ($cartoes as $c) {
             if ($this->igual($c->status_fatura, 'aberta') && (float) $c->fatura_atual > 0) {
-                $grupos['a_pagar'][] = $item('fatura', 'despesa', 'Fatura ' . $c->nome, $c->fatura_atual, $this->proximoDia($hoje, $c->dia_vencimento), 'Fatura de cartão');
+                $vence = $this->proximoDia($hoje, $c->dia_vencimento);
+                $grupos['a_pagar'][] = $item('fatura', 'despesa', 'Fatura ' . $c->nome, $c->fatura_atual, $vence, 'Fatura de cartão', $this->faturaPaga($tenantId, $c, $vence));
             }
         }
 
@@ -260,10 +263,36 @@ class PlanejamentoService
         }
         unset($itens);
 
+        // Fatura já paga continua na lista até vencer, mas não soma no "a pagar".
         return $grupos + ['totais' => array_map(
-            fn ($itens) => round(array_sum(array_column($itens, 'valor')), 2),
+            fn ($itens) => round(array_sum(array_column(array_filter($itens, fn ($i) => ! $i['pago']), 'valor')), 2),
             $grupos
         )];
+    }
+
+    /**
+     * A planilha marca a fatura como "Aberta" na aba Cartões até alguém mudar;
+     * o sinal mais confiável de pagamento são as compras daquela fatura (forma
+     * cartão, mesma conta, lançadas perto do vencimento) estarem todas como Pago.
+     */
+    private function faturaPaga(int $tenantId, PlanCartao $cartao, CarbonInterface $vence): bool
+    {
+        $conta = $this->chaveConta($cartao->banco ?: $cartao->nome);
+        $compras = PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
+            ->where('forma', 'cartao')->where('tipo', 'despesa')
+            ->whereBetween('data', [$vence->copy()->subDays(10)->toDateString(), $vence->copy()->addDays(10)->toDateString()])
+            ->get()
+            ->filter(fn ($l) => $this->chaveConta($l->conta) === $conta);
+
+        return $compras->isNotEmpty() && $compras->every(fn ($l) => $l->status === 'concluido');
+    }
+
+    /** "Cartão Mercado Pago" e "Mercado Pago" são a mesma conta. */
+    private function chaveConta(?string $nome): string
+    {
+        $n = Str::lower(Str::ascii(trim((string) $nome)));
+
+        return trim(preg_replace('/^cartao\s+(de\s+credito\s+)?/', '', $n));
     }
 
     /**
@@ -276,7 +305,7 @@ class PlanejamentoService
         $hoje   = ($hoje ?? now())->copy()->startOfDay();
         $semana = $hoje->copy()->addDays(7)->format('Y-m-d');
         $fimMes = $hoje->copy()->endOfMonth()->format('Y-m-d');
-        $soma   = fn (array $itens) => round(array_sum(array_column($itens, 'valor')), 2);
+        $soma   = fn (array $itens) => round(array_sum(array_column(array_filter($itens, fn ($i) => ! ($i['pago'] ?? false)), 'valor')), 2);
 
         // Saldo das contas: a definição única do FinanceiroService.
         $saldos = app(FinanceiroService::class)->contas($tenantId, $hoje);

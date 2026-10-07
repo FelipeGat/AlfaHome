@@ -29,12 +29,15 @@
                                 <i class="fa-solid {{ $v['tipo'] === 'receita' ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}" style="color:var(--color-text-muted);" title="{{ $v['tipo'] === 'receita' ? 'A receber' : 'A pagar' }}"></i>
                             @endif
                             {{ $v['descricao'] }}
+                            @if($v['pago'] ?? false)
+                                <span class="badge badge-success" style="margin-left:4px;"><i class="fa-solid fa-check"></i> Pago</span>
+                            @endif
                         </div>
                         <div style="font-size:11px;color:var(--color-text-muted);">
                             {{ $v['data'] ? \Carbon\Carbon::parse($v['data'])->format('d/m/Y') : 'sem data' }}@if($v['detalhe']) · {{ $v['detalhe'] }}@endif
                         </div>
                     </div>
-                    <div style="font-weight:700;white-space:nowrap;">{{ $vBrl($v['valor']) }}</div>
+                    <div style="font-weight:700;white-space:nowrap;{{ ($v['pago'] ?? false) ? 'color:var(--color-success);' : '' }}">{{ $vBrl($v['valor']) }}</div>
                 </div>
             @empty
                 <div style="font-size:13px;color:var(--color-text-muted);padding:8px 0;border-top:1px solid var(--color-border);">{{ $vazio }}</div>

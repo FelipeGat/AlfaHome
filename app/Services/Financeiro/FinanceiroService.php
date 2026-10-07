@@ -173,7 +173,7 @@ class FinanceiroService
         $atrasados = array_values(array_filter($v['atrasado'], fn ($i) => $i['tipo'] !== 'receita'));
 
         return array_map(
-            fn ($i) => ['descricao' => $i['descricao'], 'valor' => $i['valor'], 'data' => $i['data'], 'atrasado' => in_array($i, $atrasados, true), 'detalhe' => $i['detalhe']],
+            fn ($i) => ['descricao' => $i['descricao'], 'valor' => $i['valor'], 'data' => $i['data'], 'atrasado' => in_array($i, $atrasados, true), 'pago' => $i['pago'] ?? false, 'detalhe' => $i['detalhe']],
             array_slice(array_merge($atrasados, $v['a_pagar']), 0, $quantidade)
         );
     }

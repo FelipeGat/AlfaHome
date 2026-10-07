@@ -115,6 +115,9 @@ class NotificacaoService
         $v = $this->planejamento->vencimentos($tenantId, $hoje);
 
         foreach ($v['a_pagar'] as $i) {
+            if ($i['pago'] ?? false) {
+                continue; // fatura já paga: não avisa
+            }
             $dias = $i['data'] ? (int) $hoje->diffInDays($i['data'], false) : null;
             if ($dias === null || $dias < 0 || $dias > 3) {
                 continue;
@@ -273,7 +276,7 @@ class NotificacaoService
     {
         usort($itens, fn ($a, $b) => [$a['data'] ?? '9999', $a['descricao']] <=> [$b['data'] ?? '9999', $b['descricao']]);
         $linhas = array_map(fn ($i) => '  ' . ($comData && $i['data'] ? $this->data($i['data']) . ' ' : '')
-            . ($i['tipo'] === 'receita' ? '↓ ' : '') . $this->e($i['descricao']) . ' — ' . $this->valor($i['valor']), array_slice($itens, 0, 8));
+            . ($i['tipo'] === 'receita' ? '↓ ' : '') . $this->e($i['descricao']) . ' — ' . $this->valor($i['valor']) . (($i['pago'] ?? false) ? ' ✓ pago' : ''), array_slice($itens, 0, 8));
         if (count($itens) > 8) {
             $linhas[] = '  e mais ' . (count($itens) - 8);
         }

@@ -244,13 +244,19 @@ body.dark-mode .ini-lancar { background:#2563EB; }
         <section class="ini-card a-pagar" aria-labelledby="t-pagar">
             <div class="ini-card-cab"><h2 id="t-pagar">Próximos pagamentos</h2><a class="ini-link" href="{{ route('alertas.index') }}">Ver todos →</a></div>
             @forelse($visao['proximos'] as $p)
-                @php $n = $dias($p['data']); @endphp
+                @php $n = $dias($p['data']); $pago = $p['pago'] ?? false; @endphp
                 <div class="ini-linha">
-                    <div class="ini-linha-ic" style="background:var(--color-warning-soft);color:var(--color-warning);border-radius:9px;" aria-hidden="true"><i class="fa-regular fa-calendar"></i></div>
+                    @if($pago)
+                        <div class="ini-linha-ic" style="background:var(--color-success-soft);color:var(--color-success);border-radius:9px;" aria-hidden="true"><i class="fa-solid fa-check"></i></div>
+                    @else
+                        <div class="ini-linha-ic" style="background:var(--color-warning-soft);color:var(--color-warning);border-radius:9px;" aria-hidden="true"><i class="fa-regular fa-calendar"></i></div>
+                    @endif
                     <div class="ini-linha-txt">
                         <div title="{{ $p['descricao'] }}">{{ $p['descricao'] }}</div>
                         <div>
-                            @if($p['atrasado'])
+                            @if($pago)
+                                <span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);">Pago</span>
+                            @elseif($p['atrasado'])
                                 <span class="ini-badge" style="background:var(--color-danger-soft);color:var(--color-danger);">Atrasado</span>
                             @elseif($n === 0)
                                 <span class="ini-badge" style="background:var(--color-warning-soft);color:var(--color-warning);">Vence hoje</span>
@@ -258,7 +264,7 @@ body.dark-mode .ini-lancar { background:#2563EB; }
                             {{ $quando($p['data']) }}
                         </div>
                     </div>
-                    <div class="ini-num valor" style="font-weight:700;color:var(--color-text);">{{ brl($p['valor']) }}</div>
+                    <div class="ini-num valor" style="font-weight:700;color:{{ $pago ? 'var(--color-success)' : 'var(--color-text)' }};">{{ brl($p['valor']) }}</div>
                 </div>
             @empty
                 <p class="ini-vazio">Nada para pagar nos próximos dias.</p>
