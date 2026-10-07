@@ -37,7 +37,7 @@ class LancamentosTelaTest extends TestCase
         $this->assertSame(17632.86, $totais['entradas']);
         $this->assertSame(12225.10, $totais['saidas']);
         $this->assertSame(PlanLancamento::whereBetween('data', ['2026-08-01', '2026-08-31'])->count(), $r->viewData('qtd'));
-        $r->assertSee('Agosto de 2026')->assertSee('R$ 17.632,86')->assertSee('Mantidos na planilha');
+        $r->assertSee('Agosto de 2026')->assertSee('R$ 17.632,86')->assertSee('Os da planilha mudam no Excel.');
     }
 
     public function test_filtros_de_tipo_situacao_categoria_e_conta(): void
@@ -70,7 +70,7 @@ class LancamentosTelaTest extends TestCase
     public function test_mes_vazio_explica(): void
     {
         $this->get(route('planejamento.lancamentos', ['mes' => '2030-01']))->assertOk()
-            ->assertSee('Nenhum lançamento na planilha neste mês.');
+            ->assertSee('Nenhum lançamento neste mês.');
         $this->tela(['q' => 'nao-existe-xyz'])->assertSee('Nenhum lançamento com esses filtros.');
     }
 

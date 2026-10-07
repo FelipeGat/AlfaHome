@@ -7,6 +7,7 @@ use App\Http\Requests\Api\V1\StoreTransferenciaRequest;
 use App\Http\Requests\Api\V1\UpdateTransferenciaRequest;
 use App\Http\Resources\Api\V1\TransferenciaResource;
 use App\Models\Transferencia;
+use App\Services\Lancamentos\LancamentoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -90,9 +91,7 @@ class TransferenciaController extends Controller
 
     public function store(StoreTransferenciaRequest $request): JsonResponse
     {
-        $transferencia = Transferencia::create(array_merge($request->validated(), [
-            'user_id' => $request->user()->id,
-        ]));
+        $transferencia = app(LancamentoService::class)->criarTransferencia($request->validated(), $request->user());
 
         $transferencia->load(['origem', 'destino']);
 

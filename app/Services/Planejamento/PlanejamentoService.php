@@ -12,6 +12,7 @@ use App\Models\PlanilhaImportacao;
 use App\Models\PlanLancamento;
 use App\Models\PlanMeta;
 use App\Models\Receita;
+use App\Models\Transferencia;
 use App\Services\Financeiro\FinanceiroService;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
@@ -80,13 +81,22 @@ class PlanejamentoService
         return ['ano' => $ano, 'meses' => $meses, 'total' => $this->totais($movimentos, $inicio, $fim)];
     }
 
-    /** Lançamentos do mês (planilha + manuais), por data. */
-    public function lancamentos(int $tenantId, CarbonInterface $mes, ?string $tipo = null): array
+    /**
+     * Lançamentos do mês (planilha + manuais), por data. Com `comTransferencias`,
+     * as transferências entre contas próprias entram também (tipo
+     * "transferencia", que não é entrada nem saída).
+     */
+    public function lancamentos(int $tenantId, CarbonInterface $mes, ?string $tipo = null, bool $comTransferencias = false): array
     {
         $inicio = $mes->copy()->startOfMonth();
         $fim    = $mes->copy()->endOfMonth();
 
-        return $this->movimentos($tenantId, $inicio, $fim)
+        $movimentos = $this->movimentos($tenantId, $inicio, $fim);
+        if ($comTransferencias) {
+            $movimentos = $movimentos->concat($this->transferencias($tenantId, $inicio, $fim));
+        }
+
+        return $movimentos
             ->filter(fn ($m) => $m['data']->between($inicio, $fim))
             ->when($tipo, fn ($c) => $c->where('tipo', $tipo))
             ->sortBy([['data', 'asc'], ['ordem', 'asc']])
@@ -110,9 +120,37 @@ class PlanejamentoService
                     'diferenca'       => $previsto !== null && $realizado !== null ? round($realizado - $previsto, 2) : null,
                     'status'          => $m['status'],
                     'observacao'      => $m['observacao'],
-                ];
+                ] + (isset($m['origem_id']) ? ['origem_id' => $m['origem_id'], 'destino_id' => $m['destino_id']] : []);
             })
             ->all();
+    }
+
+    /** Transferências entre contas próprias no período, no formato de movimento. */
+    private function transferencias(int $tenantId, CarbonInterface $inicio, CarbonInterface $fim): Collection
+    {
+        return Transferencia::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)
+            ->whereBetween('data', [$inicio->format('Y-m-d'), $fim->format('Y-m-d')])
+            ->with(['origem', 'destino'])->get()
+            ->map(fn ($t) => [
+                'ref'             => 'transferencia:' . $t->id,
+                'origem'          => 'manual',
+                'ordem'           => 300000 + $t->id,
+                'tipo'            => 'transferencia',
+                'data'            => $t->data,
+                'realizado_em'    => $t->data,
+                'descricao'       => $t->observacao ?: 'Transferência',
+                'categoria'       => null,
+                'forma'           => 'transferencia',
+                'conta'           => ($t->origem?->nome ?? '?') . ' → ' . ($t->destino?->nome ?? '?'),
+                'banco_id'        => null,
+                'registrado_em'   => $t->created_at,
+                'valor_previsto'  => (float) $t->valor,
+                'valor_realizado' => (float) $t->valor,
+                'status'          => 'concluido',
+                'observacao'      => $t->observacao,
+                'origem_id'       => $t->origem_id,
+                'destino_id'      => $t->destino_id,
+            ]);
     }
 
     /**
@@ -138,7 +176,8 @@ class PlanejamentoService
     /** @return array{itens: Collection, resumo: array} */
     public function cartoes(int $tenantId): array
     {
-        $itens = PlanCartao::withoutGlobalScopes()->where('tenant_id', $tenantId)->orderBy('linha')->get();
+        $planilha = PlanCartao::withoutGlobalScopes()->where('tenant_id', $tenantId)->orderBy('linha')->get();
+        $itens    = $planilha->concat($this->cartoesDoSistema($tenantId, $planilha))->values();
 
         // Como na planilha: só entra na conta o cartão com limite informado.
         $comLimite = $itens->filter(fn ($c) => $c->limite_total !== null);
@@ -256,6 +295,39 @@ class PlanejamentoService
             }
         }
 
+        // Lançados no sistema e ainda não pagos/recebidos. Compra no cartão fica
+        // de fora: é paga dentro da fatura. Futuro só até 45 dias (recorrência
+        // sem fim gera anos de lançamentos).
+        $limite = $hoje->copy()->addDays(45)->toDateString();
+        $despesas = Despesa::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)->whereNull('data_pagamento')
+            ->where(fn ($q) => $q->whereNull('tipo_pagamento')->orWhere('tipo_pagamento', '!=', 'credito'))
+            ->where('data_compra', '<=', $limite)->with(['categoria', 'fornecedor'])->orderBy('data_compra')->get();
+        foreach ($despesas as $d) {
+            $grupos[$d->data_compra->lt($hoje) ? 'atrasado' : 'a_pagar'][] = $item('manual', 'despesa', $this->descricaoDespesa($d), $d->valor, $d->data_compra, $d->categoria?->nome) + ['ref' => 'despesa:' . $d->id];
+        }
+        $receitas = Receita::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)->whereNull('data_recebimento')
+            ->where('data_prevista_recebimento', '<=', $limite)->with('categoria')->orderBy('data_prevista_recebimento')->get();
+        foreach ($receitas as $r) {
+            $grupos[$r->data_prevista_recebimento->lt($hoje) ? 'atrasado' : 'a_receber'][] = $item('manual', 'receita', $r->observacoes ?? $r->categoria?->nome ?? 'Receita', $r->valor, $r->data_prevista_recebimento, $r->categoria?->nome) + ['ref' => 'receita:' . $r->id];
+        }
+
+        // Cartões do sistema: fatura atrasada (vencida com compra pendente) e a próxima.
+        foreach ($this->cartoesDoSistema($tenantId, PlanCartao::withoutGlobalScopes()->where('tenant_id', $tenantId)->get()) as $c) {
+            $banco = Banco::withoutGlobalScopes()->find($c->banco_id);
+            $atrasadas = Despesa::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)
+                ->where('tipo_pagamento', 'credito')->where('forma_pagamento', $c->banco_id)->whereNull('data_pagamento')
+                ->where('data_compra', '<', $hoje->toDateString())->get()
+                ->groupBy(fn ($d) => $d->data_compra->format('Y-m'));
+            foreach ($atrasadas as $mes => $compras) {
+                $vence = $c->dia_vencimento ? $this->diaNoMes(Carbon::createFromFormat('!Y-m', $mes), (int) $c->dia_vencimento) : $compras->min('data_compra');
+                $grupos['atrasado'][] = $item('fatura', 'despesa', 'Fatura ' . $c->nome, $compras->sum('valor'), $vence, 'Fatura de cartão') + ['banco_id' => $c->banco_id];
+            }
+            $proxima = $this->proximaFaturaDoSistema($banco, $hoje);
+            if ($proxima) {
+                $grupos['a_pagar'][] = $item('fatura', 'despesa', 'Fatura ' . $c->nome, $proxima['paga'] ? $proxima['total'] : $proxima['pendente'], Carbon::parse($proxima['vencimento']), 'Fatura de cartão', $proxima['paga']) + ['banco_id' => $c->banco_id];
+            }
+        }
+
         $dividas = PlanDivida::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereNotNull('dia_vencimento')->orderBy('linha')->get();
         foreach ($dividas as $d) {
             if ($this->igual($d->status, 'ativa') && (float) $d->parcela_mensal > 0) {
@@ -311,6 +383,9 @@ class PlanejamentoService
     public function faturasDoCartao(int $tenantId, PlanCartao $cartao, int $mesesAtras = 4, int $mesesFrente = 2, ?CarbonInterface $hoje = null): array
     {
         $hoje  = ($hoje ?? now())->copy()->startOfMonth();
+        if ($cartao->banco_id) {
+            return $this->faturasDoSistema($tenantId, (int) $cartao->banco_id, $cartao->dia_vencimento, $hoje->copy()->subMonths($mesesAtras), $hoje->copy()->addMonths($mesesFrente)->endOfMonth());
+        }
         $conta = $this->chaveConta($cartao->banco ?: $cartao->nome);
 
         return PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
@@ -342,6 +417,140 @@ class PlanejamentoService
                     ])->values()->all(),
                 ];
             })->values()->all();
+    }
+
+    /**
+     * Cartões cadastrados em Contas que a planilha não traz (família que lança
+     * pelo sistema). Saem no mesmo formato dos da planilha, sem gravar nada:
+     * limite = o cadastrado; usado = compras no crédito ainda não pagas (todas
+     * as parcelas); fatura = compras do próximo vencimento.
+     */
+    private function cartoesDoSistema(int $tenantId, Collection $planilha): Collection
+    {
+        $daPlanilha = $planilha->map(fn ($c) => $this->chaveConta($c->banco ?: $c->nome))->all();
+        $bancos = Banco::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('tem_cartao_credito', true)->orderBy('nome')->get()
+            ->reject(fn ($b) => in_array($this->chaveConta($b->nome), $daPlanilha, true));
+        if ($bancos->isEmpty()) {
+            return collect();
+        }
+
+        $compras = Despesa::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)
+            ->where('tipo_pagamento', 'credito')->whereIn('forma_pagamento', $bancos->pluck('id'))
+            ->get(['id', 'forma_pagamento', 'valor', 'data_compra', 'data_pagamento'])
+            ->groupBy('forma_pagamento');
+        $hoje = now()->startOfDay();
+
+        return $bancos->map(function (Banco $b) use ($compras, $hoje) {
+            $doCartao  = $compras->get($b->id, collect());
+            $pendentes = $doCartao->whereNull('data_pagamento');
+            $usado     = $pendentes->sum(fn ($d) => (int) round((float) $d->valor * 100));
+            $fatura    = $this->proximaFaturaDoSistema($b, $hoje, $doCartao);
+            $limite    = (float) $b->limite_cartao > 0 ? (float) $b->limite_cartao : null;
+
+            $c = new PlanCartao([
+                'tenant_id'        => $b->tenant_id,
+                'chave'            => 'banco:' . $b->id,
+                'linha'            => 100000 + $b->id,
+                'nome'             => $b->nome,
+                'banco'            => $b->nome,
+                'limite_total'     => $limite,
+                'limite_utilizado' => $limite !== null || $usado > 0 ? round($usado / 100, 2) : null,
+                'dia_fechamento'   => $b->dia_fechamento_cartao,
+                'dia_vencimento'   => $b->dia_vencimento_cartao,
+                'fatura_atual'     => $fatura ? $fatura['total'] : null,
+                'status_fatura'    => $fatura ? ($fatura['paga'] ? 'Paga' : 'Aberta') : null,
+            ]);
+            $c->setAttribute('banco_id', $b->id);
+            $c->setAttribute('fatura_vencimento', $fatura['vencimento'] ?? null);
+            $c->setAttribute('fatura_pendente', $fatura['pendente'] ?? null);
+
+            return $c;
+        })->values();
+    }
+
+    /**
+     * Fatura do cartão do sistema que vence a seguir: a do mês do próximo
+     * vencimento, ou, sem dia cadastrado, o mês mais próximo com compras de
+     * hoje em diante. Nula quando não há compra nela.
+     *
+     * @return ?array{mes: string, vencimento: string, total: float, pendente: float, paga: bool}
+     */
+    private function proximaFaturaDoSistema(Banco $b, CarbonInterface $hoje, ?Collection $compras = null): ?array
+    {
+        $compras ??= Despesa::withoutGlobalScope('tenant')->where('tenant_id', $b->tenant_id)
+            ->where('tipo_pagamento', 'credito')->where('forma_pagamento', $b->id)
+            ->get(['id', 'forma_pagamento', 'valor', 'data_compra', 'data_pagamento']);
+
+        if ($b->dia_vencimento_cartao) {
+            $vence = $this->proximoDia($hoje, (int) $b->dia_vencimento_cartao);
+        } else {
+            $primeira = $compras->filter(fn ($d) => $d->data_compra->gte($hoje))->sortBy('data_compra')->first();
+            if (! $primeira) {
+                return null;
+            }
+            $vence = $primeira->data_compra->copy()->startOfDay();
+        }
+
+        $doMes = $compras->filter(fn ($d) => $d->data_compra->format('Y-m') === $vence->format('Y-m'));
+        if ($doMes->isEmpty()) {
+            return null;
+        }
+        $centavos = fn ($d) => (int) round((float) $d->valor * 100);
+        $pendente = $doMes->whereNull('data_pagamento')->sum($centavos);
+
+        return [
+            'mes'        => $vence->format('Y-m'),
+            'vencimento' => $vence->format('Y-m-d'),
+            'total'      => round($doMes->sum($centavos) / 100, 2),
+            'pendente'   => round($pendente / 100, 2),
+            'paga'       => $pendente === 0,
+        ];
+    }
+
+    /** Faturas de um cartão do sistema: compras no crédito agrupadas pelo mês do vencimento. */
+    private function faturasDoSistema(int $tenantId, int $bancoId, ?int $diaVencimento, CarbonInterface $de, CarbonInterface $ate): array
+    {
+        return Despesa::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)
+            ->where('tipo_pagamento', 'credito')->where('forma_pagamento', $bancoId)
+            ->whereBetween('data_compra', [$de->toDateString(), $ate->toDateString()])
+            ->with(['categoria', 'fornecedor', 'pagoCom'])
+            ->orderBy('data_compra')->orderBy('id')->get()
+            ->groupBy(fn ($d) => $d->data_compra->format('Y-m'))
+            ->sortKeysDesc()
+            ->map(function ($compras, $mes) use ($diaVencimento) {
+                $centavos = fn ($d) => (int) round((float) $d->valor * 100);
+                $pago     = $compras->whereNotNull('data_pagamento')->sum($centavos);
+                $pendente = $compras->whereNull('data_pagamento')->sum($centavos);
+                $vence    = $diaVencimento ? $this->diaNoMes(Carbon::createFromFormat('!Y-m', $mes), $diaVencimento) : $compras->first()->data_compra;
+                $paga     = $compras->first(fn ($d) => $d->data_pagamento);
+
+                return [
+                    'mes'        => $mes,
+                    'vencimento' => $vence->format('Y-m-d'),
+                    'total'      => round(($pago + $pendente) / 100, 2),
+                    'pago'       => round($pago / 100, 2),
+                    'pendente'   => round($pendente / 100, 2),
+                    'paga'       => $pendente === 0,
+                    'paga_em'    => $pendente === 0 ? $paga?->data_pagamento?->format('Y-m-d') : null,
+                    'paga_com'   => $pendente === 0 ? $paga?->pagoCom?->nome : null,
+                    'itens'      => $compras->map(fn ($d) => [
+                        'ref'       => 'despesa:' . $d->id,
+                        'data'      => $d->data_compra->format('Y-m-d'),
+                        'descricao' => $this->descricaoDespesa($d),
+                        'categoria' => $d->categoria?->nome,
+                        'valor'     => round($centavos($d) / 100, 2),
+                        'pago'      => $d->data_pagamento !== null,
+                    ])->values()->all(),
+                ];
+            })->values()->all();
+    }
+
+    /** "Parcela 1/3 — Geladeira" (como a compra parcelada é gravada) vira "Geladeira (1/3)". */
+    private function descricaoDespesa(Despesa $d): string
+    {
+        $texto = $d->fornecedor?->nome ?? $d->observacoes ?? $d->categoria?->nome ?? 'Despesa';
+
+        return preg_match('/^Parcela (\d+\/\d+) — (.+)$/u', $texto, $m) ? "{$m[2]} ({$m[1]})" : $texto;
     }
 
     /** "Cartão Mercado Pago" e "Mercado Pago" são a mesma conta. */
@@ -495,11 +704,12 @@ class PlanejamentoService
                 'tipo'            => 'despesa',
                 'data'            => $d->data_compra,
                 'realizado_em'    => $d->data_pagamento,
-                'descricao'       => $d->fornecedor?->nome ?? $d->observacoes ?? $d->categoria?->nome ?? 'Despesa',
+                'descricao'       => $this->descricaoDespesa($d),
                 'categoria'       => $d->categoria?->nome,
                 'forma'           => $d->tipo_pagamento,
                 'conta'           => $d->banco?->nome,
-                'banco_id'        => $d->forma_pagamento,
+                // Compra no cartão paga pela fatura sai da conta escolhida no pagamento.
+                'banco_id'        => $d->pago_com_banco_id ?? $d->forma_pagamento,
                 'registrado_em'   => $d->created_at,
                 'valor_previsto'  => (float) ($d->valor_previsto ?? $d->valor),
                 'valor_realizado' => $d->data_pagamento ? (float) $d->valor : null,

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\DespesaController as ApiDespesaController;
 use App\Http\Controllers\Api\V1\FamiliarApiController;
 use App\Http\Controllers\Api\V1\FornecedorApiController;
 use App\Http\Controllers\Api\V1\InvestimentoApiController;
+use App\Http\Controllers\Api\V1\FaturaApiController;
 use App\Http\Controllers\Api\V1\FinanceiroApiController;
 use App\Http\Controllers\Api\V1\PlanejamentoApiController;
 use App\Http\Controllers\Api\V1\ReceitaController as ApiReceitaController;
@@ -135,6 +136,8 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
 
         // ── Planejamento (planilha da família — somente leitura + envio) ─
         // ── Fonte única dos números (Início, Resumo do mês, Contas) ─────
+        Route::post('cartoes/{banco}/pagar-fatura', [FaturaApiController::class, 'pagar'])->whereNumber('banco')->name('cartoes.pagar-fatura');
+
         Route::prefix('financeiro')->name('financeiro.')->group(function () {
             Route::get('inicio', [FinanceiroApiController::class, 'inicio'])->name('inicio');
             Route::get('resumo', [FinanceiroApiController::class, 'resumo'])->name('resumo');

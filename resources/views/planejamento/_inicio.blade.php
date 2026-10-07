@@ -34,6 +34,11 @@
 .ini-cab h1 { font-size:26px; font-weight:600; letter-spacing:-.02em; color:var(--color-text); margin:0; line-height:1.15; }
 .ini-cab p { color:var(--color-text-muted); font-size:15px; margin-top:4px; }
 .ini-acoes { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.ini-lancar { padding:9px 16px; font-size:14px; border-radius:10px; }
+.ini-comecar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:16px; border:1px solid var(--color-primary-soft); }
+.ini-comecar h2 { font-size:17px; font-weight:600; margin:0 0 2px; color:var(--color-text); }
+.ini-comecar p { margin:0; color:var(--color-text-muted); font-size:14px; }
+.ini-comecar .ini-ic { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
 .ini-mes-sel { height:42px; border-radius:10px; border:1px solid var(--color-border); background:var(--color-bg-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2364748b'%3E%3Cpath d='M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z'/%3E%3C/svg%3E") no-repeat right 12px center / 16px; -webkit-appearance:none; appearance:none; color:var(--color-text); padding:0 38px 0 14px; font-weight:600; font-size:14px; font-family:inherit; cursor:pointer; }
 .ini-mes-sel:focus-visible, .ini-olho:focus-visible, .ini-link:focus-visible { outline:2px solid var(--color-primary); outline-offset:2px; }
 
@@ -130,6 +135,7 @@
     .ini-grade { grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas: "topo topo" "cart gasto" "pagar mov" "resumo mov"; }
 }
 @media (max-width:767px) {
+    .ini-lancar { display:none; } /* no celular o botão redondo "+" faz isso */
     .ini-grade { grid-template-columns:minmax(0,1fr); grid-template-areas: "topo" "mov" "pagar" "cart" "gasto" "resumo"; }
     .ini-cab h1 { font-size:23px; }
     .ini-cab { align-items:flex-start; }
@@ -154,6 +160,7 @@
             <p>Aqui está o resumo das suas finanças em {{ $nomeMes($mesVisao) }}.</p>
         </div>
         <div class="ini-acoes">
+            <button type="button" class="btn btn-primary ini-lancar" data-lancar><i class="fa-solid fa-plus"></i> Lançar</button>
             <form method="GET" action="{{ route('dashboard') }}">
                 <label for="ini-mes" class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Mês do resumo</label>
                 <select id="ini-mes" name="mes" class="ini-mes-sel" onchange="this.form.submit()">
@@ -164,6 +171,18 @@
             </form>
         </div>
     </header>
+
+    @unless($visao['tem_conta'])
+        {{-- Primeiro passo: sem conta não há onde lançar nem saldo para mostrar. --}}
+        <section class="ini-card ini-comecar" aria-labelledby="t-comecar">
+            <div class="ini-ic" style="background:var(--color-primary-soft);color:var(--color-primary);"><i class="fa-solid fa-building-columns"></i></div>
+            <div style="flex:1;min-width:220px;">
+                <h2 id="t-comecar">Vamos começar?</h2>
+                <p>Cadastre suas contas e cartões com o saldo de hoje. Depois é só lançar o que entra e o que sai.</p>
+            </div>
+            <a class="btn btn-primary" href="{{ route('bancos.index', ['nova' => 1]) }}"><i class="fa-solid fa-plus"></i> Adicionar conta</a>
+        </section>
+    @endunless
 
     <div class="ini-grade">
         <div class="ini-principal">
@@ -194,7 +213,7 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="ini-vazio">Nenhuma conta cadastrada. <a class="ini-link" href="{{ route('bancos.index') }}">Adicionar conta</a></p>
+                    <p class="ini-vazio">Nenhuma conta cadastrada. <a class="ini-link" href="{{ route('bancos.index', ['nova' => 1]) }}">Adicionar conta</a></p>
                 @endif
             </div>
 
@@ -244,7 +263,8 @@
                     @if($c['fatura'])
                         <div class="ini-cart-det">
                             <span>Fatura <b class="valor">{{ brl($c['fatura']) }}</b>{{ $c['vencimento'] ? ' · vence ' . $quando($c['vencimento']) : '' }}</span>
-                            @if($c['fatura_paga'])<span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);margin:0;">Paga</span>@endif
+                            @if($c['fatura_paga'])<span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);margin:0;">Paga</span>
+                            @elseif($c['banco_id'])<a class="ini-link" href="{{ route('planejamento.cartoes', ['cartao' => $c['chave']]) }}#faturas">Pagar</a>@endif
                         </div>
                     @endif
                 </div>

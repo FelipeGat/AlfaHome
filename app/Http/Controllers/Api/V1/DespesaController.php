@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreDespesaRequest;
 use App\Http\Requests\Api\V1\UpdateDespesaRequest;
 use App\Http\Resources\Api\V1\DespesaResource;
-use App\Models\Banco;
 use App\Models\Despesa;
+use App\Services\Lancamentos\LancamentoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -92,19 +92,8 @@ class DespesaController extends Controller
      */
     public function store(StoreDespesaRequest $request): JsonResponse
     {
-        $data = $request->validated();
-
-        if (($data['tipo_pagamento'] ?? null) === 'credito' && ! empty($data['forma_pagamento'])) {
-            $banco = Banco::where('tenant_id', $request->user()->tenant_id)
-                ->find($data['forma_pagamento']);
-
-            if ($banco && $banco->dia_fechamento_cartao && $banco->dia_vencimento_cartao) {
-                $data['dia_fechamento_cartao'] = $banco->dia_fechamento_cartao;
-                $data['dia_vencimento_cartao'] = $banco->dia_vencimento_cartao;
-            }
-        }
-
-        $total = Despesa::criarComRecorrencia($data, $request->user()->id);
+        $r     = app(LancamentoService::class)->criarSaida($request->validated(), $request->user());
+        $total = $r['total'];
 
         // Retorna a primeira despesa do grupo (ou a única, se não houver grupo)
         $created = Despesa::with(['categoria', 'familiar', 'fornecedor', 'banco'])
@@ -119,6 +108,7 @@ class DespesaController extends Controller
         return response()->json([
             'message'    => "{$total} despesa(s) criada(s) com sucesso.",
             'count'      => $total,
+            'aviso'      => $r['aviso'],
             'data'       => DespesaResource::collection($created)->toArray($request),
         ], 201);
     }
@@ -162,40 +152,7 @@ class DespesaController extends Controller
     {
         $this->ensureOwnership($request, $despesa);
 
-        $tenantId = $request->user()->tenant_id;
-        $data     = $request->validated();
-        $escopo   = $data['escopo'] ?? 'apenas_esta';
-
-        $payload = collect($data)->only([
-            'quem_comprou', 'onde_comprou', 'categoria_id',
-            'forma_pagamento', 'tipo_pagamento', 'valor',
-            'data_compra', 'data_pagamento', 'observacoes',
-        ])->all();
-
-        if (array_key_exists('data_pagamento', $payload) && $payload['data_pagamento'] === '') {
-            $payload['data_pagamento'] = null;
-        }
-
-        if ($escopo === 'esta_e_futuras' && $despesa->grupo_recorrencia_id) {
-            // IMPORTANTE: iterar os modelos e chamar ->update() para que o
-            // DespesaObserver dispare em cada item (caso contrário, o ajuste
-            // automático de bancos.saldo / bancos.saldo_cartao fica fora de
-            // sincronia em recorrências de crédito).
-            $payloadSemData = collect($payload)->except('data_compra')->all();
-
-            Despesa::where('tenant_id', $tenantId)
-                ->where('grupo_recorrencia_id', $despesa->grupo_recorrencia_id)
-                ->where('data_compra', '>=', $despesa->data_compra)
-                ->chunkById(100, function ($items) use ($payloadSemData) {
-                    foreach ($items as $d) {
-                        $d->update($payloadSemData);
-                    }
-                });
-
-            $despesa->refresh();
-        } else {
-            $despesa->update($payload);
-        }
+        app(LancamentoService::class)->atualizarSaida($despesa, $request->validated());
 
         $despesa->load(['categoria', 'familiar', 'fornecedor', 'banco']);
         return new DespesaResource($despesa);
@@ -214,26 +171,12 @@ class DespesaController extends Controller
             return response()->json(['message' => 'Sem permissão para excluir despesas.'], 403);
         }
 
-        $tenantId = $request->user()->tenant_id;
-        $escopo   = $request->query('escopo', 'apenas_esta');
+        $count = app(LancamentoService::class)->excluir($despesa, (string) $request->query('escopo', 'apenas_esta'));
 
-        if ($escopo === 'esta_e_futuras' && $despesa->grupo_recorrencia_id) {
-            $count = Despesa::where('tenant_id', $tenantId)
-                ->where('grupo_recorrencia_id', $despesa->grupo_recorrencia_id)
-                ->where('data_compra', '>=', $despesa->data_compra)
-                ->get()
-                ->each
-                ->delete()
-                ->count();
-
-            return response()->json([
-                'message' => "{$count} despesa(s) excluída(s).",
-                'count'   => $count,
-            ]);
-        }
-
-        $despesa->delete();
-        return response()->json(['message' => 'Despesa excluída.', 'count' => 1]);
+        return response()->json([
+            'message' => $count > 1 ? "{$count} despesa(s) excluída(s)." : 'Despesa excluída.',
+            'count'   => $count,
+        ]);
     }
 
     // ─── helpers ───────────────────────────────────────────────────────────

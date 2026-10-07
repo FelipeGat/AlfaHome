@@ -48,9 +48,9 @@ class RegrasUnificadasTest extends TestCase
         $gravado = (float) $cartao->fresh()->saldo_cartao;
         $this->assertEqualsWithDelta(500.0, $gravado, 0.001);
 
-        $painel = $this->get(route('dashboard'))->assertOk();
-        $this->assertEqualsWithDelta(500.0, $painel->viewData('totalFaturaCartoes'), 0.001, 'KPI do painel');
-        $this->assertEqualsWithDelta(500.0, $painel->viewData('cartoes')->first()->saldo_fatura, 0.001, 'lista do painel');
+        $inicio = $this->get(route('dashboard'))->assertOk()->viewData('cartoesInfo');
+        $this->assertEqualsWithDelta(500.0, $inicio['limite_utilizado'], 0.001, 'cartões do Início');
+        $this->assertEqualsWithDelta(500.0, $inicio['itens'][0]['utilizado'], 0.001, 'cartão no Início');
 
         $bancos = $this->get(route('bancos.index'))->assertOk();
         $this->assertEqualsWithDelta(500.0, (float) $bancos->viewData('bancos')->firstWhere('id', $cartao->id)->saldo_cartao, 0.001, 'tela de bancos');
@@ -80,18 +80,5 @@ class RegrasUnificadasTest extends TestCase
         $this->delete(route('investimentos.rendimentos.destroy', [$a, $rendimentoDeB]))->assertNotFound();
 
         $this->assertNotNull($rendimentoDeB->fresh());
-    }
-
-    public function test_grafico_de_investimentos_do_painel_nao_inventa_rendimento(): void
-    {
-        Investimento::create([
-            'tenant_id' => $this->user->tenant_id, 'user_id' => $this->user->id, 'nome_ativo' => 'CDB', 'tipo_investimento' => 'CDB',
-            'data_aporte' => now()->startOfYear()->format('Y-m-d'), 'valor_aportado' => 1000,
-        ]);
-
-        $acumulado = $this->get(route('dashboard'))->assertOk()->assertSee('Aportes acumulados')->viewData('patrimonioAcumulado');
-
-        // Antes: 1000, 1010, 1020.10... (1% ao mês simulado). O aportado é 1000 o ano todo.
-        $this->assertSame(array_fill(0, 12, 1000.0), array_map('floatval', $acumulado));
     }
 }

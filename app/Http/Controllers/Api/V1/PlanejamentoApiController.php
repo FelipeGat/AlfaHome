@@ -37,12 +37,12 @@ class PlanejamentoApiController extends Controller
         return response()->json(['data' => $this->planejamento->anual($request->user()->tenant_id, (int) $request->query('ano', now()->year))]);
     }
 
-    /** GET /api/v1/planejamento/lancamentos?mes=YYYY-MM&tipo=receita|despesa */
+    /** GET /api/v1/planejamento/lancamentos?mes=YYYY-MM&tipo=receita|despesa&transferencias=1 */
     public function lancamentos(Request $request): JsonResponse
     {
-        $request->validate(['tipo' => ['nullable', 'in:receita,despesa']]);
+        $request->validate(['tipo' => ['nullable', 'in:receita,despesa'], 'transferencias' => ['nullable', 'boolean']]);
 
-        return response()->json(['data' => $this->planejamento->lancamentos($request->user()->tenant_id, $this->mes($request), $request->query('tipo'))]);
+        return response()->json(['data' => $this->planejamento->lancamentos($request->user()->tenant_id, $this->mes($request), $request->query('tipo'), $request->boolean('transferencias'))]);
     }
 
     /** GET /api/v1/planejamento/cartoes */
@@ -53,6 +53,9 @@ class PlanejamentoApiController extends Controller
         return response()->json([
             'data' => $r['itens']->map(fn ($c) => [
                 'id'                => $c->id,
+                'chave'             => $c->chave,
+                // Cartão cadastrado no sistema (sem planilha): aceita "Pagar fatura".
+                'banco_id'          => $c->banco_id,
                 'nome'              => $c->nome,
                 'banco'             => $c->banco,
                 'limite_total'      => $this->valor($c->limite_total),
@@ -63,6 +66,8 @@ class PlanejamentoApiController extends Controller
                 'dia_vencimento'    => $c->dia_vencimento,
                 'fatura_atual'      => $this->valor($c->fatura_atual),
                 'status_fatura'     => $c->status_fatura,
+                'fatura_vencimento' => $c->fatura_vencimento,
+                'fatura_pendente'   => $c->fatura_pendente,
                 'observacao'        => $c->observacao,
             ])->values(),
             'resumo' => $r['resumo'],

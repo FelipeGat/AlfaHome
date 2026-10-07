@@ -3,11 +3,14 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Models\Receita;
+use App\Http\Requests\Concerns\AceitaValorComVirgula;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreReceitaRequest extends FormRequest
 {
+    use AceitaValorComVirgula;
+
     public const TIPOS_PAGAMENTO = Receita::TIPOS_PAGAMENTO;
     public const FREQUENCIAS     = ['diaria', 'semanal', 'quinzenal', 'mensal', 'trimestral', 'semestral', 'anual'];
 

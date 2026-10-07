@@ -29,6 +29,12 @@
 .fat-mes { font-weight:600; min-width:120px; }
 .fat-info { font-size:13px; color:var(--color-text-muted); }
 .fat table { margin:0; }
+.fat-pagar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 16px; background:var(--color-primary-soft); font-size:14px; }
+.fat-pagar .form-control { width:auto; min-width:130px; font-size:14px; }
+.fat-erro { color:var(--color-danger); font-size:13px; flex-basis:100%; }
+.fat-erro:empty { display:none; }
+.fat-editavel { cursor:pointer; }
+.fat-editavel:hover { background:var(--color-bg); }
 </style>
 
 @include('planejamento._abas', ['ultima' => $ultima])
@@ -52,7 +58,7 @@
         </span>
     </div>
     @if($cartoes['itens']->isEmpty())
-        <div class="empty-state"><i class="fa-solid fa-credit-card"></i><p>Nenhum cartão na planilha.</p></div>
+        <div class="empty-state"><i class="fa-solid fa-credit-card"></i><p>Nenhum cartão cadastrado.</p><a class="btn btn-primary btn-sm" href="{{ route('bancos.index', ['nova' => 1]) }}" style="margin-top:8px;">Adicionar cartão</a></div>
     @else
         <div class="table-wrapper">
             <table class="table">
@@ -68,7 +74,7 @@
                     @foreach($cartoes['itens'] as $c)
                         @php
                             $marca = $marcas[$c->chave] ?? ['logo' => null, 'cor' => null];
-                            $sel = $selecionado && $selecionado->id === $c->id;
+                            $sel = $selecionado && $selecionado->chave === $c->chave;
                             $url = $sel ? route('planejamento.cartoes') : route('planejamento.cartoes', ['cartao' => $c->chave]) . '#faturas';
                         @endphp
                         <tr class="cart-linha {{ $sel ? 'sel' : '' }}" onclick="location.href='{{ $url }}'">
@@ -110,7 +116,7 @@
 <div class="card" id="faturas" style="padding:18px 20px;margin-bottom:20px;">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
         <div class="card-title">Faturas — {{ $selecionado->nome }}</div>
-        <span style="font-size:12.5px;color:var(--color-text-muted);">Compras da planilha neste cartão, por mês da fatura</span>
+        <span style="font-size:12.5px;color:var(--color-text-muted);">{{ $selecionado->banco_id ? 'Compras lançadas' : 'Compras da planilha' }} neste cartão, por mês da fatura</span>
     </div>
     @forelse($faturas as $i => $f)
         @php $mesNome = ucfirst(\Carbon\Carbon::createFromFormat('!Y-m', $f['mes'])->locale('pt_BR')->isoFormat('MMMM [de] YYYY')); @endphp
@@ -129,12 +135,29 @@
                 @endif
                 <i class="fa-solid fa-chevron-down seta"></i>
             </summary>
+            @if($selecionado->banco_id && $f['pendente'] > 0)
+                {{-- Pagar a fatura: as compras pendentes ficam pagas e o valor sai da conta escolhida. --}}
+                <form class="fat-pagar" data-url="{{ route('lancar.fatura', $selecionado->banco_id) }}" data-vencimento="{{ $f['vencimento'] }}">
+                    <span>Pagar <strong class="plan-num">{{ $brl($f['pendente']) }}</strong> com</span>
+                    <label class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);" for="fat-conta-{{ $i }}">Conta que pagou</label>
+                    <select id="fat-conta-{{ $i }}" name="conta_id" class="form-control" required>
+                        @foreach($contasPagamento as $b)<option value="{{ $b->id }}" @selected($b->id === $selecionado->banco_id)>{{ $b->nome }}</option>@endforeach
+                    </select>
+                    <span>em</span>
+                    <label class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);" for="fat-data-{{ $i }}">Data do pagamento</label>
+                    <input id="fat-data-{{ $i }}" type="date" name="data" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check"></i> Pagar fatura</button>
+                    <span class="fat-erro" role="alert"></span>
+                </form>
+            @elseif($selecionado->banco_id && $f['paga'] && ($f['paga_com'] ?? null))
+                <p style="font-size:13px;color:var(--color-text-muted);margin:8px 0 4px;">Paga com {{ $f['paga_com'] }}{{ $f['paga_em'] ? ' em ' . \Carbon\Carbon::parse($f['paga_em'])->format('d/m') : '' }}.</p>
+            @endif
             <div class="table-wrapper">
                 <table class="table">
                     <thead><tr><th>Data</th><th>Compra</th><th>Categoria</th><th class="plan-num">Valor</th><th>Situação</th></tr></thead>
                     <tbody>
                         @foreach($f['itens'] as $it)
-                            <tr>
+                            <tr @isset($it['ref']) class="fat-editavel" data-editar="saida:{{ \Illuminate\Support\Str::after($it['ref'], ':') }}" title="Abrir para editar" @endisset>
                                 <td style="white-space:nowrap;">{{ \Carbon\Carbon::parse($it['data'])->format('d/m') }}</td>
                                 <td>{{ $it['descricao'] }}</td>
                                 <td>{{ $it['categoria'] ?? '—' }}</td>
@@ -147,11 +170,12 @@
             </div>
         </details>
     @empty
-        <p style="font-size:13px;color:var(--color-text-muted);margin-top:10px;">Nenhuma compra deste cartão na planilha entre {{ now()->subMonths(4)->locale('pt_BR')->isoFormat('MMMM') }} e {{ now()->addMonths(2)->locale('pt_BR')->isoFormat('MMMM') }}.</p>
+        <p style="font-size:13px;color:var(--color-text-muted);margin-top:10px;">Nenhuma compra deste cartão entre {{ now()->subMonths(4)->locale('pt_BR')->isoFormat('MMMM') }} e {{ now()->addMonths(2)->locale('pt_BR')->isoFormat('MMMM') }}.</p>
     @endforelse
 </div>
 @endif
 
+@unless($selecionado?->banco_id)
 <div class="card" style="padding:18px 20px;">
     <div class="card-title" style="margin-bottom:12px;">Compras parceladas{{ $selecionado ? ' — ' . $selecionado->nome : '' }}</div>
     @if($parceladas['itens']->isEmpty())
@@ -195,4 +219,28 @@
         </div>
     @endif
 </div>
+@endunless
 @endsection
+
+@push('scripts')
+<script>
+document.querySelectorAll('.fat-pagar').forEach(function (f) {
+    f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var botao = f.querySelector('button'), erro = f.querySelector('.fat-erro');
+        botao.disabled = true; erro.textContent = '';
+        fetch(f.dataset.url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+            body: JSON.stringify({ vencimento: f.dataset.vencimento, conta_id: f.conta_id.value, data: f.data.value }),
+        }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (r.ok) { location.reload(); return; }
+                botao.disabled = false;
+                erro.textContent = (j.errors && Object.values(j.errors)[0][0]) || j.message || 'Não foi possível pagar. Tente de novo.';
+            });
+        }).catch(function () { botao.disabled = false; erro.textContent = 'Sem conexão. Tente de novo.'; });
+    });
+});
+</script>
+@endpush

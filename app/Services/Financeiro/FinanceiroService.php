@@ -196,6 +196,7 @@ class FinanceiroService
             'vencidas'           => ['quantidade' => count($vencidas), 'total' => $this->reais(array_sum(array_map(fn ($i) => $this->centavos($i['valor']), $vencidas)))],
             'cartoes'            => $this->cartoesDoInicio($cartoes, $v),
             'planilha_importada' => $this->planejamento->ultimaImportacao($tenantId) !== null,
+            'tem_conta'          => Banco::withoutGlobalScopes()->where('tenant_id', $tenantId)->exists(),
         ];
     }
 
@@ -210,6 +211,8 @@ class FinanceiroService
             $fatura = $faturas->get('Fatura ' . $c->nome);
 
             return [
+                'chave'       => $c->chave,
+                'banco_id'    => $c->banco_id,
                 'nome'        => $c->nome,
                 'limite'      => $c->limite_total !== null ? (float) $c->limite_total : null,
                 'utilizado'   => $c->limite_utilizado !== null ? (float) $c->limite_utilizado : null,
@@ -237,9 +240,26 @@ class FinanceiroService
         $hoje  = ($hoje ?? now())->copy()->endOfDay();
         $chave = $this->chave($banco->nome);
 
-        return $this->planejamento->movimentos($banco->tenant_id, $hoje->copy()->subDays($dias)->startOfDay(), $hoje)
+        $desde = $hoje->copy()->subDays($dias)->startOfDay();
+        // Transferência aparece no extrato da conta como entrada ou saída dela.
+        $transferencias = Transferencia::withoutGlobalScope('tenant')->where('tenant_id', $banco->tenant_id)
+            ->where(fn ($q) => $q->where('origem_id', $banco->id)->orWhere('destino_id', $banco->id))
+            ->whereBetween('data', [$desde->toDateString(), $hoje->toDateString()])->with(['origem', 'destino'])->get()
+            ->map(fn ($t) => [
+                'ref'             => 'transferencia:' . $t->id,
+                'ordem'           => 300000 + $t->id,
+                'tipo'            => $t->destino_id === $banco->id ? 'receita' : 'despesa',
+                'descricao'       => $t->destino_id === $banco->id ? 'Transferência de ' . ($t->origem?->nome ?? 'outra conta') : 'Transferência para ' . ($t->destino?->nome ?? 'outra conta'),
+                'categoria'       => 'Transferência',
+                'conta'           => $banco->nome,
+                'realizado_em'    => $t->data,
+                'valor_realizado' => (float) $t->valor,
+            ]);
+
+        return $this->planejamento->movimentos($banco->tenant_id, $desde, $hoje)
             ->filter(fn ($m) => $m['valor_realizado'] !== null && $m['realizado_em'] && $m['realizado_em']->lte($hoje)
                 && ($m['banco_id'] !== null ? $m['banco_id'] === $banco->id : $m['conta'] && $this->chave($m['conta']) === $chave))
+            ->concat($transferencias)
             ->sortBy([['realizado_em', 'desc'], ['ordem', 'desc']])
             ->map(fn ($m) => $this->movimento($m))
             ->values()->all();

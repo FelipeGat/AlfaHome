@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LancamentoManualController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\RelogioController;
 use App\Http\Controllers\TelegramWebhookController;
@@ -114,6 +115,20 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group
     Route::redirect('/fluxo-caixa', '/planejamento/lancamentos');
     Route::redirect('/lancamentos', '/planejamento/lancamentos');
     Route::redirect('/lancamentos-diarios', '/planejamento/lancamentos');
+
+    // "+ Lançar" e ações do Extrato (lançamentos feitos no sistema)
+    Route::prefix('lancar')->name('lancar.')->group(function () {
+        Route::post('/saida', [LancamentoManualController::class, 'criarSaida'])->name('saida');
+        Route::post('/entrada', [LancamentoManualController::class, 'criarEntrada'])->name('entrada');
+        Route::post('/transferencia', [LancamentoManualController::class, 'criarTransferencia'])->name('transferencia');
+        Route::put('/saida/{id}', [LancamentoManualController::class, 'atualizarSaida'])->whereNumber('id')->name('saida.atualizar');
+        Route::put('/entrada/{id}', [LancamentoManualController::class, 'atualizarEntrada'])->whereNumber('id')->name('entrada.atualizar');
+        Route::put('/transferencia/{id}', [LancamentoManualController::class, 'atualizarTransferencia'])->whereNumber('id')->name('transferencia.atualizar');
+        Route::get('/{tipo}/{id}', [LancamentoManualController::class, 'mostrar'])->whereIn('tipo', ['saida', 'entrada', 'transferencia'])->whereNumber('id')->name('mostrar');
+        Route::post('/{tipo}/{id}/pago', [LancamentoManualController::class, 'pagar'])->whereIn('tipo', ['saida', 'entrada'])->whereNumber('id')->name('pagar');
+        Route::delete('/{tipo}/{id}', [LancamentoManualController::class, 'excluir'])->whereIn('tipo', ['saida', 'entrada', 'transferencia'])->whereNumber('id')->name('excluir');
+        Route::post('/fatura/{banco}', [LancamentoManualController::class, 'pagarFatura'])->whereNumber('banco')->name('fatura');
+    });
 
     // Notificações pelo Telegram
     Route::prefix('notificacoes')->name('notificacoes.')->group(function () {

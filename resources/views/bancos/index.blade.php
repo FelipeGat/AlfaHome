@@ -477,6 +477,10 @@ $bancosTemplate = [
 
 @push('scripts')
 <script>
+// Vindo do primeiro passo do Início ("Adicionar conta"): abre o cadastro direto.
+document.addEventListener('DOMContentLoaded', function () {
+    if (new URLSearchParams(location.search).has('nova')) openModal('modal-novo-banco');
+});
 function selecionarBanco(btn) {
     document.querySelectorAll('.banco-picker-btn').forEach(b => {
         b.style.borderColor = 'var(--color-border)';

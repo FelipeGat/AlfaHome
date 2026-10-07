@@ -1,5 +1,17 @@
 # Changelog
 
+## AlfaHome — 07/10/2026 — Lançar pelo sistema, sem planilha
+
+### Novidades
+- **"+ Lançar"** no Início e no Extrato (site e app): saída, entrada ou transferência. Só valor, descrição, categoria, conta e data; pago/pendente, parcelas e "todo mês" ficam em "Mais opções".
+- **Extrato editável**: tocar num lançamento feito no sistema abre para editar, marcar como pago/recebido ou excluir (só este ou este e os próximos). Os da planilha continuam só de leitura.
+- **Transferências no Extrato**, marcadas "Entre contas" — não entram no que entrou nem no que saiu.
+- **Cartão com fatura**: compra no cartão cai na fatura do vencimento (parcelada, uma parcela por fatura). Cartões cadastrados aparecem no Início e em Cartões com limite usado, livre e fatura.
+- **Pagar fatura** (site e app): escolhe a conta e a data; as compras da fatura ficam pagas e o valor sai da conta, sem contar duas vezes.
+- **Início novo para toda família**, com ou sem planilha; sem conta cadastrada, mostra "Vamos começar?".
+- **App**: cadastrar conta e cartão direto na aba Contas.
+
+
 ## AlfaHome — 06/10/2026 — Início novo e marca nova
 
 ### Novidades

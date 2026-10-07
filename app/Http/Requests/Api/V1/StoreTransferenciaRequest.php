@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Http\Requests\Concerns\AceitaValorComVirgula;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreTransferenciaRequest extends FormRequest
 {
+    use AceitaValorComVirgula;
+
     public function authorize(): bool
     {
         return $this->user()?->temPermissao('transferencias', 'criar') ?? false;

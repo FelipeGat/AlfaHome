@@ -31,15 +31,15 @@ class PlanejamentoController extends Controller
         ]);
     }
 
-    /** Lançamentos da planilha do mês, com filtros; substitui as telas manuais de despesas e receitas no menu. */
+    /** Extrato do mês: lançamentos da planilha e do sistema, e transferências, com filtros. */
     public function lancamentos(Request $request)
     {
         $tenantId = Auth::user()->tenant_id;
         $mes      = $this->mes($request) ?? $this->planejamento->mesPadrao($tenantId);
-        $todos    = collect($this->planejamento->lancamentos($tenantId, $mes));
+        $todos    = collect($this->planejamento->lancamentos($tenantId, $mes, comTransferencias: true));
 
         $filtros = [
-            'tipo'      => in_array($request->query('tipo'), ['receita', 'despesa'], true) ? $request->query('tipo') : null,
+            'tipo'      => in_array($request->query('tipo'), ['receita', 'despesa', 'transferencia'], true) ? $request->query('tipo') : null,
             'situacao'  => in_array($request->query('situacao'), ['pendente', 'concluido'], true) ? $request->query('situacao') : null,
             'q'         => trim((string) $request->query('q')),
             'categoria' => (string) $request->query('categoria') ?: null,
@@ -70,7 +70,8 @@ class PlanejamentoController extends Controller
             'filtros' => $filtros,
             'dias'    => $lista->groupBy('data')->sortKeys(),
             'qtd'     => $lista->count(),
-            'totalLista' => round($lista->sum(fn ($l) => ($l['tipo'] === 'receita' ? 1 : -1) * (float) $valor($l)), 2),
+            // Transferência entre contas próprias não muda o resultado.
+            'totalLista' => round($lista->sum(fn ($l) => (['receita' => 1, 'despesa' => -1][$l['tipo']] ?? 0) * (float) $valor($l)), 2),
             'totais'  => [
                 'entradas'  => $soma($feitos->where('tipo', 'receita'), 'valor_realizado'),
                 'saidas'    => $soma($feitos->where('tipo', 'despesa'), 'valor_realizado'),
@@ -80,6 +81,7 @@ class PlanejamentoController extends Controller
             'categorias' => $todos->pluck('categoria')->filter()->unique()->sort()->values(),
             'contas'     => $todos->pluck('conta')->filter()->unique()->sort()->values(),
             'ultima'     => $this->planejamento->ultimaImportacao($tenantId),
+            'temTransferencia' => $todos->contains('tipo', 'transferencia'),
         ]);
     }
 
@@ -125,7 +127,8 @@ class PlanejamentoController extends Controller
 
         $selecionado = $cartoes['itens']->firstWhere('chave', (string) $request->query('cartao'));
         if ($selecionado) {
-            $parceladas['itens'] = $parceladas['itens']->where('plan_cartao_id', $selecionado->id)->values();
+            // Cartão do sistema não tem aba de parceladas: as parcelas estão nas faturas.
+            $parceladas['itens'] = $selecionado->banco_id ? collect() : $parceladas['itens']->where('plan_cartao_id', $selecionado->id)->values();
         }
 
         return view('planejamento.cartoes', [
@@ -134,6 +137,8 @@ class PlanejamentoController extends Controller
             'marcas'      => $marcas,
             'selecionado' => $selecionado,
             'faturas'     => $selecionado ? $this->planejamento->faturasDoCartao($tenantId, $selecionado) : [],
+            // Contas de onde pode sair o pagamento da fatura de um cartão do sistema.
+            'contasPagamento' => $bancos->filter(fn ($b) => $b->tem_conta_corrente || $b->tem_poupanca || $b->eh_dinheiro)->sortBy('nome')->values(),
             'ultima'      => $this->planejamento->ultimaImportacao($tenantId),
         ]);
     }

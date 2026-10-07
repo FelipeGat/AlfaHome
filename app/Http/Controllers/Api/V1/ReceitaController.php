@@ -7,6 +7,7 @@ use App\Http\Requests\Api\V1\StoreReceitaRequest;
 use App\Http\Requests\Api\V1\UpdateReceitaRequest;
 use App\Http\Resources\Api\V1\ReceitaResource;
 use App\Models\Receita;
+use App\Services\Lancamentos\LancamentoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -87,8 +88,7 @@ class ReceitaController extends Controller
      */
     public function store(StoreReceitaRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $total = Receita::criarComRecorrencia($data, $request->user()->id);
+        $total = app(LancamentoService::class)->criarEntrada($request->validated(), $request->user());
 
         $created = Receita::with(['categoria', 'familiar', 'banco'])
             ->where('tenant_id', $request->user()->tenant_id)
@@ -123,40 +123,7 @@ class ReceitaController extends Controller
     {
         $this->ensureOwnership($request, $receita);
 
-        $tenantId = $request->user()->tenant_id;
-        $data     = $request->validated();
-        $escopo   = $data['escopo'] ?? 'apenas_esta';
-
-        $payload = collect($data)->only([
-            'quem_recebeu', 'categoria_id', 'forma_recebimento',
-            'tipo_pagamento', 'valor',
-            'data_prevista_recebimento', 'data_recebimento',
-            'observacoes',
-        ])->all();
-
-        if (array_key_exists('data_recebimento', $payload) && $payload['data_recebimento'] === '') {
-            $payload['data_recebimento'] = null;
-        }
-
-        if ($escopo === 'esta_e_futuras' && $receita->grupo_recorrencia_id) {
-            // IMPORTANTE: iterar os modelos para que o ReceitaObserver dispare
-            // em cada item (caso contrário, ajustes de saldo de banco quando
-            // muda data_recebimento ficam fora de sincronia em recorrências).
-            $payloadSemData = collect($payload)->except('data_prevista_recebimento')->all();
-
-            Receita::where('tenant_id', $tenantId)
-                ->where('grupo_recorrencia_id', $receita->grupo_recorrencia_id)
-                ->where('data_prevista_recebimento', '>=', $receita->data_prevista_recebimento)
-                ->chunkById(100, function ($items) use ($payloadSemData) {
-                    foreach ($items as $r) {
-                        $r->update($payloadSemData);
-                    }
-                });
-
-            $receita->refresh();
-        } else {
-            $receita->update($payload);
-        }
+        app(LancamentoService::class)->atualizarEntrada($receita, $request->validated());
 
         $receita->load(['categoria', 'familiar', 'banco']);
         return new ReceitaResource($receita);
@@ -173,23 +140,12 @@ class ReceitaController extends Controller
             return response()->json(['message' => 'Sem permissão para excluir receitas.'], 403);
         }
 
-        $tenantId = $request->user()->tenant_id;
-        $escopo   = $request->query('escopo', 'apenas_esta');
+        $count = app(LancamentoService::class)->excluir($receita, (string) $request->query('escopo', 'apenas_esta'));
 
-        if ($escopo === 'esta_e_futuras' && $receita->grupo_recorrencia_id) {
-            $count = Receita::where('tenant_id', $tenantId)
-                ->where('grupo_recorrencia_id', $receita->grupo_recorrencia_id)
-                ->where('data_prevista_recebimento', '>=', $receita->data_prevista_recebimento)
-                ->get()
-                ->each
-                ->delete()
-                ->count();
-
-            return response()->json(['message' => "{$count} receita(s) excluída(s).", 'count' => $count]);
-        }
-
-        $receita->delete();
-        return response()->json(['message' => 'Receita excluída.', 'count' => 1]);
+        return response()->json([
+            'message' => $count > 1 ? "{$count} receita(s) excluída(s)." : 'Receita excluída.',
+            'count'   => $count,
+        ]);
     }
 
     private function ensureOwnership(Request $request, Receita $receita): void

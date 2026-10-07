@@ -16,7 +16,7 @@ class Despesa extends Model
 
     protected $fillable = [
         'tenant_id', 'user_id', 'quem_comprou', 'onde_comprou', 'categoria_id',
-        'forma_pagamento', 'tipo_pagamento',
+        'forma_pagamento', 'pago_com_banco_id', 'tipo_pagamento',
         'valor', 'valor_previsto', 'data_compra', 'data_pagamento', 'observacoes',
         'recorrente', 'parcelas', 'frequencia', 'grupo_recorrencia_id',
         'origem', 'numero_documento',
@@ -55,6 +55,12 @@ class Despesa extends Model
     public function banco()
     {
         return $this->belongsTo(Banco::class, 'forma_pagamento');
+    }
+
+    /** Conta de onde saiu o dinheiro ao pagar a fatura (compra no cartão). */
+    public function pagoCom()
+    {
+        return $this->belongsTo(Banco::class, 'pago_com_banco_id');
     }
 
     // ─── Escopos ──────────────────────────────────────────────────────────────

@@ -625,7 +625,7 @@ Convenções: valores monetários como número; percentuais em pontos percentuai
 |---|---|---|
 | GET | `/planejamento/resumo` | `mes=YYYY-MM` (opcional; padrão: o mês corrente se já tem lançamento da planilha, senão o último que tiver — o campo `mes` da resposta diz qual foi) |
 | GET | `/planejamento/anual` | `ano=YYYY` (opcional) |
-| GET | `/planejamento/lancamentos` | `mes=YYYY-MM`, `tipo=receita\|despesa` (opcionais) |
+| GET | `/planejamento/lancamentos` | `mes=YYYY-MM`, `tipo=receita\|despesa`, `transferencias=1` (opcionais) |
 | GET | `/planejamento/cartoes` | — |
 | GET | `/planejamento/parceladas` | — |
 | GET | `/planejamento/dividas` | — |
@@ -744,7 +744,7 @@ Todas as telas (site, app e avisos) leem as mesmas regras do
 
 | Método | Rota | O que devolve |
 |--------|------|---------------|
-| GET | `/financeiro/inicio` | `contas{total, itens[], sem_conta[]}`, `mes{mes, entrou, saiu, resultado, tem_movimentacao, categorias[]}`, `ultimas[]` (5), `proximos[]` (até 3), `planilha_importada` |
+| GET | `/financeiro/inicio` | `contas{total, itens[], sem_conta[]}`, `mes{mes, entrou, saiu, resultado, tem_movimentacao, categorias[]}`, `ultimas[]` (5), `proximos[]` (até 3), `cartoes{…, itens[{chave, banco_id, nome, limite, utilizado, disponivel, pct, fatura, vencimento, fatura_paga}]}`, `planilha_importada`, `tem_conta` |
 | GET | `/financeiro/resumo?mes=AAAA-MM` | o bloco `mes` do mês pedido (padrão: mês atual); 422 se o formato for outro |
 | GET | `/financeiro/contas` | o bloco `contas` |
 | GET | `/financeiro/contas/{banco}` | `id, nome, cor, saldo, movimentos[]` (60 dias), `ajustes[]` (5 últimos); 404 se for de outra família |
@@ -765,3 +765,42 @@ Regras:
 
 Itens de `ultimas[]` e `movimentos[]`: `ref, tipo (receita|despesa), descricao,
 categoria, conta, data, valor` (sempre positivo; o sinal vem do `tipo`).
+
+## 16. Lançamento manual (famílias sem planilha)
+
+Quem não usa planilha lança pelo sistema com as rotas de sempre
+(`POST /despesas`, `POST /receitas`, `POST /transferencias`, `PUT`/`DELETE` com
+`escopo=apenas_esta|esta_e_futuras`). As regras ficam no `LancamentoService`, o
+mesmo do site.
+
+- `valor` aceita `"96,85"` e `"1.234,56"`.
+- **Compra no cartão** (`tipo_pagamento=credito`): cai na fatura do vencimento
+  (`data_compra` = dia do vencimento) e fica pendente até a fatura ser paga;
+  `data_pagamento` enviado é ignorado. `parcelas>1` divide o valor. Sem
+  fechamento/vencimento no cartão, a compra fica na data informada e a resposta
+  traz `aviso`.
+- `POST /despesas` devolve também `aviso` (texto ou `null`).
+
+### POST `/cartoes/{banco}/pagar-fatura`
+
+Corpo: `vencimento` (Y-m-d, qualquer dia do mês da fatura), `conta_id` (conta
+que pagou), `data` (opcional, padrão hoje). As compras pendentes do cartão
+naquele mês ficam pagas na `data`, saindo da conta escolhida — o pagamento não
+é uma saída a mais. Respostas: `200 {message: "Fatura paga.", count}`; `422`
+se não houver compra pendente ou a conta não for da família; `404` se o cartão
+não for da família.
+
+### Cartões do sistema em `/planejamento/cartoes`
+
+Cartões cadastrados em Contas que a planilha não traz aparecem com
+`chave = "banco:{id}"`, `banco_id`, `limite_total` (o cadastrado),
+`limite_utilizado` (compras no crédito pendentes), `fatura_atual` (compras do
+próximo vencimento), `status_fatura` (`Aberta`/`Paga`), `fatura_vencimento` e
+`fatura_pendente`. Cartão da planilha vem com esses três últimos `null`.
+
+### Transferências no Extrato
+
+`GET /planejamento/lancamentos?transferencias=1` inclui itens com
+`tipo = "transferencia"`, `ref = "transferencia:{id}"`, `conta = "Origem →
+Destino"`, `origem_id`, `destino_id`. Não somam em entrou/saiu.
+

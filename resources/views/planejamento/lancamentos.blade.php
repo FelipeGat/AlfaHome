@@ -28,6 +28,8 @@
 .lc-texto .lc-meta { font-size:12px; color:var(--color-text-muted); }
 .lc-valor { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .lc-valor .lc-sit { font-size:11px; }
+.lc-editavel { cursor:pointer; border-radius:8px; margin:0 -8px; padding-left:8px; padding-right:8px; }
+.lc-editavel:hover, .lc-editavel:focus-visible { background:var(--color-bg); outline:none; }
 </style>
 
 {{-- Mês --}}
@@ -37,9 +39,12 @@
         <strong style="font-size:16px;min-width:170px;text-align:center;">{{ $tituloMes }}</strong>
         <a class="btn btn-ghost btn-sm" href="{{ $link(['mes' => $mes->copy()->addMonth()->format('Y-m')]) }}" title="Próximo mês"><i class="fa-solid fa-chevron-right"></i></a>
     </div>
-    <span style="font-size:12px;color:var(--color-text-muted);">
-        <i class="fa-solid fa-file-excel"></i> Mantidos na planilha — para mudar, altere no Excel.
-    </span>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        @if($ultima)
+            <span style="font-size:12px;color:var(--color-text-muted);"><i class="fa-solid fa-file-excel"></i> Os da planilha mudam no Excel.</span>
+        @endif
+        <button type="button" class="btn btn-primary" data-lancar><i class="fa-solid fa-plus"></i> Lançar</button>
+    </div>
 </div>
 
 {{-- Totais do mês --}}
@@ -57,6 +62,9 @@
             <a href="{{ $link(['tipo' => null]) }}" class="btn btn-sm {{ ! $filtros['tipo'] ? 'btn-primary' : 'btn-ghost' }}">Tudo</a>
             <a href="{{ $link(['tipo' => 'despesa']) }}" class="btn btn-sm {{ $filtros['tipo'] === 'despesa' ? 'btn-primary' : 'btn-ghost' }}">Saídas</a>
             <a href="{{ $link(['tipo' => 'receita']) }}" class="btn btn-sm {{ $filtros['tipo'] === 'receita' ? 'btn-primary' : 'btn-ghost' }}">Entradas</a>
+            @if($temTransferencia || $filtros['tipo'] === 'transferencia')
+                <a href="{{ $link(['tipo' => 'transferencia']) }}" class="btn btn-sm {{ $filtros['tipo'] === 'transferencia' ? 'btn-primary' : 'btn-ghost' }}">Transferências</a>
+            @endif
         </div>
         <div class="lc-chips">
             <a href="{{ $link(['situacao' => null]) }}" class="btn btn-sm {{ ! $filtros['situacao'] ? 'btn-primary' : 'btn-ghost' }}">Pagos e pendentes</a>
@@ -89,7 +97,10 @@
     @if($qtd === 0)
         <div style="text-align:center;padding:36px 10px;color:var(--color-text-muted);">
             <i class="fa-regular fa-folder-open" style="font-size:28px;margin-bottom:8px;"></i>
-            <p>{{ $filtrando ? 'Nenhum lançamento com esses filtros.' : 'Nenhum lançamento na planilha neste mês.' }}</p>
+            <p>{{ $filtrando ? 'Nenhum lançamento com esses filtros.' : 'Nenhum lançamento neste mês.' }}</p>
+            @unless($filtrando)
+                <button type="button" class="btn btn-primary" data-lancar style="margin-top:10px;"><i class="fa-solid fa-plus"></i> Lançar</button>
+            @endunless
         </div>
     @else
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-muted);padding-top:12px;">
@@ -102,22 +113,31 @@
             @foreach($itens as $l)
                 @php
                     $entrada = $l['tipo'] === 'receita';
+                    $transf = $l['tipo'] === 'transferencia';
                     $pago = $l['status'] === 'concluido';
                     $valor = $l['valor_realizado'] ?? $l['valor_previsto'];
                     $meta = array_filter([$l['categoria'], $l['conta'] ?: ($formas[$l['forma']] ?? $l['forma'])]);
+                    // Lançamento do sistema abre para editar; o da planilha é só leitura.
+                    [$origemRef, $idRef] = explode(':', $l['ref']) + [1 => null];
+                    $editar = $l['editavel'] ? (['despesa' => 'saida', 'receita' => 'entrada', 'transferencia' => 'transferencia'][$origemRef] ?? null) : null;
+                    $cor = $transf ? 'var(--color-primary)' : ($entrada ? 'var(--color-success)' : 'var(--color-danger)');
                 @endphp
-                <div class="lc-item">
-                    <div class="lc-icone" style="background:{{ $entrada ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.10)' }};color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">
-                        <i class="fa-solid {{ $entrada ? 'fa-arrow-down' : 'fa-arrow-up' }}"></i>
+                <div class="lc-item {{ $editar ? 'lc-editavel' : '' }}" @if($editar) role="button" tabindex="0" data-editar="{{ $editar }}:{{ $idRef }}" title="Abrir para editar" @endif>
+                    <div class="lc-icone" style="background:{{ $transf ? 'var(--color-primary-soft)' : ($entrada ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.10)') }};color:{{ $cor }};">
+                        <i class="fa-solid {{ $transf ? 'fa-right-left' : ($entrada ? 'fa-arrow-down' : 'fa-arrow-up') }}"></i>
                     </div>
                     <div class="lc-texto">
                         <div class="lc-desc" title="{{ $l['observacao'] }}">{{ $l['descricao'] }}</div>
                         <div class="lc-meta">{{ implode(' · ', $meta) ?: '—' }}</div>
                     </div>
                     <div class="lc-valor">
-                        <div style="font-weight:600;color:{{ $entrada ? 'var(--color-success)' : 'var(--color-danger)' }};">{{ $entrada ? '+' : '-' }}{{ $brl($valor) }}</div>
-                        @if($pago)
+                        <div style="font-weight:600;color:{{ $transf ? 'var(--color-text)' : $cor }};">{{ $transf ? '' : ($entrada ? '+' : '-') }}{{ $brl($valor) }}</div>
+                        @if($transf)
+                            <span class="badge lc-sit" style="background:var(--color-primary-soft);color:var(--color-primary);">Entre contas</span>
+                        @elseif($pago)
                             <span class="badge badge-success lc-sit">{{ $entrada ? 'Recebido' : 'Pago' }}</span>
+                        @elseif($l['forma'] === 'credito')
+                            <span class="badge badge-warning lc-sit">Na fatura</span>
                         @else
                             <span class="badge badge-warning lc-sit">Pendente</span>
                         @endif
@@ -128,3 +148,12 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Enter/espaço numa linha editável abre o lançamento (o clique já é tratado pelo "+ Lançar").
+document.querySelectorAll('.lc-editavel').forEach(function (l) {
+    l.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); l.click(); } });
+});
+</script>
+@endpush

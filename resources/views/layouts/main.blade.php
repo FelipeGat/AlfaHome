@@ -1432,6 +1432,9 @@
     </ul>
 </nav>
 
+@if(auth()->check() && auth()->user()->tenant_id && in_array(auth()->user()->role, ['master', 'membro'], true))
+    @include('lancamentos._lancar')
+@endif
 @stack('scripts')
 <script>
     const sidebar     = document.getElementById('sidebar');

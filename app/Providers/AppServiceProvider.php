@@ -39,6 +39,12 @@ class AppServiceProvider extends ServiceProvider
         // de planejamento.
         View::composer('planejamento._abas', fn ($view) => $view->with('fontePlanilha', PlanilhaFonte::first()));
 
+        // "+ Lançar": contas, cartões e categorias da família (escopo de tenant).
+        View::composer('lancamentos._lancar', fn ($view) => $view->with([
+            'lancarBancos'     => \App\Models\Banco::orderBy('nome')->get(['id', 'nome', 'tem_conta_corrente', 'tem_poupanca', 'eh_dinheiro', 'tem_cartao_credito']),
+            'lancarCategorias' => \App\Models\Categoria::orderBy('nome')->get(['id', 'nome', 'tipo']),
+        ]));
+
         // O sistema é só em português: mensagens (lang/pt_BR) e Carbon (nomes
         // de meses), independente do APP_LOCALE que estiver no .env do servidor.
         App::setLocale('pt_BR');

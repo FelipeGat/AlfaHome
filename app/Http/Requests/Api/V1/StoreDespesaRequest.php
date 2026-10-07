@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Http\Requests\Concerns\AceitaValorComVirgula;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreDespesaRequest extends FormRequest
 {
+    use AceitaValorComVirgula;
+
     public const TIPOS_PAGAMENTO = ['dinheiro', 'pix', 'debito', 'credito', 'transferencia', 'boleto'];
     public const FREQUENCIAS     = ['diaria', 'semanal', 'quinzenal', 'mensal', 'trimestral', 'semestral', 'anual'];
 
