@@ -39,9 +39,10 @@ class EmUsoSoftDeletedTest extends TestCase
     use RefreshDatabase;
 
     // ─── Caso RESTRICT: transferencias → bancos ────────────────────────────
-    //   Soft-deleted DEVE bloquear (FK violation real).
+    //   Transferência ativa bloqueia; a já excluída é removida de vez junto
+    //   (senão a FK impediria apagar a conta para sempre).
 
-    public function test_banco_destroy_returns_409_when_only_soft_deleted_transferencia_exists(): void
+    public function test_banco_destroy_bloqueia_transferencia_ativa_e_limpa_a_excluida(): void
     {
         $user    = User::factory()->create();
         $origem  = Banco::factory()->create(['tenant_id' => $user->tenant_id]);
@@ -55,8 +56,6 @@ class EmUsoSoftDeletedTest extends TestCase
             'origem_id'  => $origem->id,
             'destino_id' => $destino->id,
         ]);
-        $transf->delete();
-        $this->assertNotNull($transf->fresh()->deleted_at);
 
         Sanctum::actingAs($user);
 
@@ -64,9 +63,12 @@ class EmUsoSoftDeletedTest extends TestCase
             ->assertStatus(409)
             ->assertJsonPath('em_uso.transferencias', true);
 
-        $this->deleteJson("/api/v1/bancos/{$destino->id}")
-            ->assertStatus(409)
-            ->assertJsonPath('em_uso.transferencias', true);
+        $transf->delete();
+
+        $this->deleteJson("/api/v1/bancos/{$origem->id}")->assertOk();
+        $this->assertNull(Banco::withoutGlobalScopes()->find($origem->id));
+        $this->assertNull(Transferencia::withTrashed()->withoutGlobalScopes()->find($transf->id));
+        $this->deleteJson("/api/v1/bancos/{$destino->id}")->assertOk();
     }
 
     // ─── Casos set null: NÃO deve bloquear quando só há soft-deleted ───────

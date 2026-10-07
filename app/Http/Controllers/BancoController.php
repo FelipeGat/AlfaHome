@@ -206,10 +206,9 @@ class BancoController extends Controller
         //     apenas zera a referência, sem FK violation. Checagem só
         //     pelo uso ATIVO (sem withTrashed) para permitir limpeza
         //     do catálogo quando só restam despesas soft-deletadas.
-        //   - transferencias.origem_id/destino_id são RESTRICT (default):
-        //     soft-deletado ainda tem FK viva apontando para bancos.id
-        //     e gera FK violation real. Por isso só transferencias usa
-        //     withTrashed().
+        //   - transferencias.origem_id/destino_id são RESTRICT: bloqueia a
+        //     transferência ativa; a já excluída (soft delete) é removida de
+        //     vez antes do delete, senão a FK impediria apagar a conta.
         $emUso = [
             'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
                 ->where('forma_pagamento', $banco->id)->exists(),
@@ -217,8 +216,7 @@ class BancoController extends Controller
                 ->where('forma_recebimento', $banco->id)->exists(),
             'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
                 ->where('banco_id', $banco->id)->exists(),
-            'transferencias' => \App\Models\Transferencia::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'transferencias' => \App\Models\Transferencia::where('tenant_id', $tenantId)
                 ->where(function ($q) use ($banco) {
                     $q->where('origem_id', $banco->id)
                       ->orWhere('destino_id', $banco->id);
@@ -233,6 +231,7 @@ class BancoController extends Controller
             ]);
         }
 
+        $banco->apagarTransferenciasExcluidas();
         $banco->delete();
 
         return back()->with('success', 'Conta excluída com sucesso!');

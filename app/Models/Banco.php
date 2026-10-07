@@ -111,4 +111,16 @@ class Banco extends Model
         if (!$this->dia_fechamento_cartao) return null;
         return $this->dia_fechamento_cartao >= 28 ? 1 : $this->dia_fechamento_cartao + 1;
     }
+
+    /**
+     * Remove de vez as transferências já excluídas (soft delete) desta conta:
+     * a FK de transferências é RESTRICT e elas impediriam apagar a conta.
+     */
+    public function apagarTransferenciasExcluidas(): void
+    {
+        Transferencia::onlyTrashed()->withoutGlobalScope('tenant')
+            ->where('tenant_id', $this->tenant_id)
+            ->where(fn ($q) => $q->where('origem_id', $this->id)->orWhere('destino_id', $this->id))
+            ->forceDelete();
+    }
 }

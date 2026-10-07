@@ -52,10 +52,9 @@ class BancoApiController extends Controller
         //     investimentos.banco_id usam onDelete('set null') — não dão
         //     FK violation e não devem bloquear o delete quando o filho
         //     está soft-deletado (sem uso ativo). Checagem sem withTrashed.
-        //   - transferencias.origem_id/destino_id usam o default RESTRICT
-        //     (sem onDelete) — registros soft-deletados ainda têm FK viva
-        //     apontando para bancos.id e dariam FK violation. Por isso
-        //     transferencias usa withTrashed().
+        //   - transferencias.origem_id/destino_id são RESTRICT: bloqueia a
+        //     transferência ativa; a já excluída (soft delete) é removida de
+        //     vez antes do delete, senão a FK impediria apagar a conta.
         $emUso = [
             'despesas'       => \App\Models\Despesa::where('tenant_id', $tenantId)
                 ->where('forma_pagamento', $banco->id)->exists(),
@@ -63,8 +62,7 @@ class BancoApiController extends Controller
                 ->where('forma_recebimento', $banco->id)->exists(),
             'investimentos'  => \App\Models\Investimento::where('tenant_id', $tenantId)
                 ->where('banco_id', $banco->id)->exists(),
-            'transferencias' => \App\Models\Transferencia::withTrashed()
-                ->where('tenant_id', $tenantId)
+            'transferencias' => \App\Models\Transferencia::where('tenant_id', $tenantId)
                 ->where(function ($q) use ($banco) {
                     $q->where('origem_id', $banco->id)
                       ->orWhere('destino_id', $banco->id);
@@ -78,6 +76,7 @@ class BancoApiController extends Controller
             ], Response::HTTP_CONFLICT);
         }
 
+        $banco->apagarTransferenciasExcluidas();
         $banco->delete();
         return response()->json(['message' => 'Banco excluído.']);
     }
