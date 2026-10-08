@@ -29,7 +29,7 @@
 @endphp
 
 <style>
-.ini { max-width:1440px; margin:0 auto; }
+.ini { max-width:1680px; margin:0 auto; }
 .ini-cab { display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
 .ini-cab h1 { font-size:26px; font-weight:600; letter-spacing:-.02em; color:var(--color-text); margin:0; line-height:1.15; }
 .ini-cab p { color:var(--color-text-muted); font-size:15px; margin-top:4px; }
@@ -129,6 +129,20 @@
 
 /* Ocultar valores (só nesta tela, guardado neste navegador) */
 .ini.oculto .valor { filter:blur(9px); user-select:none; }
+
+/* Telas largas: números do mês numa faixa baixa (ícone ao lado) e, quando o
+   card de Cartões/Onde gastou passa de 540px, a rosca fica ao lado da lista. */
+@media (min-width:768px) {
+    .ini-kpi { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:14px; align-items:center; padding:14px 18px; }
+    .ini-kpi .ini-ic { grid-row:span 2; margin-bottom:0; }
+    .ini-kpi .ini-valor-kpi { margin-top:0; }
+}
+@media (min-width:1600px) { .ini-grade { grid-template-columns:minmax(0,1fr) 380px; } }
+.a-cart, .a-gasto { container-type:inline-size; }
+@container (min-width:540px) {
+    [data-donut] { display:grid; grid-template-columns:220px minmax(0,1fr); gap:28px; align-items:start; }
+    [data-donut] .ini-donut-graf { margin:8px 0 0; }
+}
 
 @media (max-width:1279px) {
     .ini-principal, .ini-duo, .ini-lado { display:contents; }
