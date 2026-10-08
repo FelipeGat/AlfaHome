@@ -99,7 +99,8 @@ class LancamentoWebTest extends TestCase
         $this->travelTo('2026-10-07 12:00:00');
         $this->postJson(route('lancar.saida'), ['valor' => 300, 'data_compra' => '2026-10-05', 'forma_pagamento' => $nubank->id, 'tipo_pagamento' => 'credito', 'observacoes' => 'Mercado'])->assertOk();
 
-        $this->get(route('dashboard'))->assertOk()->assertSee('Nubank')->assertSee('Pagar');
+        $this->get(route('dashboard'))->assertOk()->assertSee('Nubank')->assertSee('Pagar')
+            ->assertSeeInOrder(['Limite', 'R$ 3.000,00', 'Livre', 'R$ 2.700,00'])->assertSee('Livre no total');
         $this->get(route('planejamento.cartoes', ['cartao' => 'banco:' . $nubank->id]))->assertOk()
             ->assertSee('Pagar fatura')->assertSee('Compras lançadas')->assertSee('Mercado');
 

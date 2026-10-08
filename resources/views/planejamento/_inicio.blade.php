@@ -119,6 +119,7 @@
 .ini-cart-linha strong { font-weight:500; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ini-cart-det { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--color-text-muted); margin-top:5px; }
 .ini-cart-det b { color:var(--color-text); font-weight:500; }
+.ini-cats .ini-cart-det { margin-left:20px; }
 .ini-atalho { display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px; text-decoration:none; color:inherit; transition:background .15s; }
 .ini-atalho:hover { background:var(--color-bg); }
 .ini-atalho .ini-ic { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -235,40 +236,86 @@
         </section>
 
         <div class="ini-duo">
-        {{-- Cartões: limite usado e livre de cada um (limite nunca entra no saldo) --}}
+        {{-- Cartões: rosca com o usado de cada cartão e o livre; a lista traz limite,
+             usado, livre e fatura. Limite nunca entra no saldo. --}}
         @if($cartoesInfo['quantidade'])
-        @php $corUso = fn ($p) => $p === null ? 'var(--color-text-muted)' : ($p > 80 ? 'var(--color-danger)' : ($p > 60 ? 'var(--color-warning)' : 'var(--color-primary)')); @endphp
+        @php
+            $corUso = fn ($p) => $p === null ? 'var(--color-text-muted)' : ($p > 80 ? 'var(--color-danger)' : ($p > 60 ? 'var(--color-warning)' : 'var(--color-text-muted)'));
+            $nomeCartao = fn ($n) => (string) \Illuminate\Support\Str::of($n)->replaceFirst('Cartão ', '');
+            $comLimite = collect($cartoesInfo['itens'])->filter(fn ($c) => $c['limite'] !== null);
+            $limiteTotal = (float) $cartoesInfo['limite_total'];
+            $usadoTotal = (float) $cartoesInfo['limite_utilizado'];
+            // Base da rosca: o limite total (ou o usado, se passar do limite).
+            $baseRosca = max($limiteTotal, $usadoTotal, 0.01);
+            $livreTotal = max(0, $limiteTotal - $usadoTotal);
+            $acumCart = 0;
+        @endphp
         <section class="ini-card a-cart" aria-labelledby="t-cart">
             <div class="ini-card-cab"><h2 id="t-cart">Cartões <span style="font-weight:500;color:var(--color-text-muted);font-size:14px;">({{ $cartoesInfo['quantidade'] }})</span></h2><a class="ini-link" href="{{ route('planejamento.cartoes') }}">Ver cartões →</a></div>
-            <div class="ini-cart-total">
-                <div><small>Livre</small><strong class="ini-num valor">{{ brl($cartoesInfo['limite_disponivel']) }}</strong></div>
-                <div style="text-align:right;"><small>Usado</small><strong class="ini-num valor" style="color:{{ $corUso($cartoesInfo['utilizado_pct']) }};">{{ brl($cartoesInfo['limite_utilizado']) }}</strong></div>
-            </div>
-            <div class="ini-uso" role="img" aria-label="{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% do limite total usado"><b style="width:{{ min(100, $cartoesInfo['utilizado_pct']) }}%;background:{{ $corUso($cartoesInfo['utilizado_pct']) }};"></b></div>
-            <small style="display:block;color:var(--color-text-muted);font-size:12px;margin-top:4px;">{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% de <span class="valor">{{ brl($cartoesInfo['limite_total']) }}</span> de limite · não entra no saldo</small>
-
-            @foreach($cartoesInfo['itens'] as $c)
-                <div class="ini-cart">
-                    <div class="ini-cart-linha">
-                        <strong title="{{ $c['nome'] }}">{{ \Illuminate\Support\Str::of($c['nome'])->replaceFirst('Cartão ', '') }}</strong>
-                        <span class="ini-num valor" style="color:{{ $corUso($c['pct']) }};font-weight:600;">{{ $c['pct'] !== null ? number_format($c['pct'], 0, ',', '.') . '%' : '—' }}</span>
-                    </div>
-                    @if($c['pct'] !== null)
-                        <div class="ini-uso fino"><b style="width:{{ min(100, $c['pct']) }}%;background:{{ $corUso($c['pct']) }};"></b></div>
-                    @endif
-                    <div class="ini-cart-det">
-                        <span>Usado <b class="valor">{{ brl($c['utilizado']) }}</b></span>
-                        <span>Livre <b class="valor">{{ brl($c['disponivel']) }}</b></span>
-                    </div>
-                    @if($c['fatura'])
-                        <div class="ini-cart-det">
-                            <span>Fatura <b class="valor">{{ brl($c['fatura']) }}</b>{{ $c['vencimento'] ? ' · vence ' . $quando($c['vencimento']) : '' }}</span>
-                            @if($c['fatura_paga'])<span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);margin:0;">Paga</span>
-                            @elseif($c['banco_id'])<a class="ini-link" href="{{ route('planejamento.cartoes', ['cartao' => $c['chave']]) }}#faturas">Pagar</a>@endif
+            <div data-donut>
+                @if($comLimite->isNotEmpty())
+                    <div class="ini-donut-graf">
+                        <svg viewBox="0 0 42 42" role="img" aria-label="Limite dos cartões: {{ $comLimite->map(fn ($c) => $nomeCartao($c['nome']) . ' usado ' . brl($c['utilizado']) . ' de ' . brl($c['limite']))->join(', ') }}; livre {{ brl($livreTotal) }}">
+                            <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-bg)" stroke-width="4.6"/>
+                            @foreach($comLimite->values() as $i => $c)
+                                @php $pctRosca = round((float) $c['utilizado'] / $baseRosca * 100, 2); $fatia = max(0, $pctRosca - ($pctRosca > 1.5 ? 0.8 : 0)); @endphp
+                                <circle class="fatia" data-cat="{{ $i }}" data-nome="{{ $nomeCartao($c['nome']) }}" data-valor="{{ brl($c['utilizado']) }}" data-extra="{{ number_format($c['pct'] ?? 0, 0, ',', '.') }}% de {{ brl($c['limite']) }}" cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i % 6] }}" stroke-width="4.6"
+                                    stroke-dasharray="{{ $fatia }} {{ 100 - $fatia }}" stroke-dashoffset="{{ -$acumCart }}"><title>{{ $nomeCartao($c['nome']) }}: {{ brl($c['utilizado']) }} de {{ brl($c['limite']) }}</title></circle>
+                                @php $acumCart += $pctRosca; @endphp
+                            @endforeach
+                            @if($livreTotal > 0)
+                                @php $pctLivre = round($livreTotal / $baseRosca * 100, 2); $fatia = max(0, $pctLivre - 0.8); @endphp
+                                <circle class="fatia" data-cat="livre" data-nome="Livre" data-valor="{{ brl($livreTotal) }}" data-extra="{{ number_format($pctLivre, 0, ',', '.') }}% do limite total" cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-text-subtle)" stroke-opacity=".35" stroke-width="4.6"
+                                    stroke-dasharray="{{ $fatia }} {{ 100 - $fatia }}" stroke-dashoffset="{{ -$acumCart }}"><title>Livre: {{ brl($livreTotal) }}</title></circle>
+                            @endif
+                        </svg>
+                        @php $textoCart = brl($usadoTotal); @endphp
+                        <div class="ini-donut-centro" aria-live="polite">
+                            <small data-centro="rotulo" data-padrao="Usado">Usado</small>
+                            <strong class="valor" data-centro="valor" data-padrao="{{ $textoCart }}" style="font-size:{{ mb_strlen($textoCart) > 11 ? 17 : 21 }}px;color:{{ $cartoesInfo['utilizado_pct'] > 80 ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ $textoCart }}</strong>
+                            <small data-centro="extra" data-padrao="{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% de {{ brl($limiteTotal) }}">{{ number_format($cartoesInfo['utilizado_pct'], 0, ',', '.') }}% de {{ brl($limiteTotal) }}</small>
                         </div>
+                    </div>
+                @endif
+                <ul class="ini-cats">
+                    @foreach($cartoesInfo['itens'] as $c)
+                        @php $iCor = $comLimite->values()->search(fn ($x) => $x['nome'] === $c['nome']); @endphp
+                        <li @if($iCor !== false) data-cat="{{ $iCor }}" @endif tabindex="0">
+                            <div class="ini-cat-linha">
+                                <i style="background:{{ $iCor !== false ? $cores[$iCor % 6] : 'var(--color-border)' }};"></i>
+                                <span title="{{ $c['nome'] }}">{{ $nomeCartao($c['nome']) }}</span>
+                                <span class="pct" style="color:{{ $corUso($c['pct']) }};">{{ $c['pct'] !== null ? number_format($c['pct'], 0, ',', '.') . '%' : '—' }}</span>
+                                <strong class="ini-num valor">{{ brl($c['utilizado']) }}</strong>
+                            </div>
+                            @if($c['pct'] !== null)
+                                <div class="ini-cat-barra"><b style="width:{{ min(100, $c['pct']) }}%;background:{{ $c['pct'] > 80 ? 'var(--color-danger)' : $cores[$iCor % 6] }};"></b></div>
+                            @endif
+                            <div class="ini-cart-det">
+                                <span>Limite <b class="valor">{{ brl($c['limite']) }}</b></span>
+                                <span>Livre <b class="valor">{{ brl($c['disponivel']) }}</b></span>
+                            </div>
+                            @if($c['fatura'])
+                                <div class="ini-cart-det">
+                                    <span>Fatura <b class="valor">{{ brl($c['fatura']) }}</b>{{ $c['vencimento'] ? ' · vence ' . $quando($c['vencimento']) : '' }}</span>
+                                    @if($c['fatura_paga'])<span class="ini-badge" style="background:var(--color-success-soft);color:var(--color-success);margin:0;">Paga</span>
+                                    @elseif($c['banco_id'])<a class="ini-link" href="{{ route('planejamento.cartoes', ['cartao' => $c['chave']]) }}#faturas">Pagar</a>@endif
+                                </div>
+                            @endif
+                        </li>
+                    @endforeach
+                    @if($comLimite->isNotEmpty())
+                        <li data-cat="livre" tabindex="0">
+                            <div class="ini-cat-linha">
+                                <i style="background:var(--color-text-subtle);opacity:.35;"></i>
+                                <span>Livre no total</span>
+                                <span class="pct">{{ number_format($limiteTotal > 0 ? $livreTotal / $limiteTotal * 100 : 0, 0, ',', '.') }}%</span>
+                                <strong class="ini-num valor">{{ brl($livreTotal) }}</strong>
+                            </div>
+                            <div class="ini-cart-det"><span>Limite total <b class="valor">{{ brl($limiteTotal) }}</b> · não entra no saldo</span></div>
+                        </li>
                     @endif
-                </div>
-            @endforeach
+                </ul>
+            </div>
         </section>
         @endif
 
@@ -277,19 +324,20 @@
             <div class="ini-card-cab"><h2 id="t-gasto">Onde você gastou</h2><a class="ini-link" href="{{ route('planejamento.index', ['mes' => $mesVisao->format('Y-m')]) }}">Ver detalhes →</a></div>
             @if($cats)
                 @php $textoCentro = brl($mes['saiu']); @endphp
+                <div data-donut>
                 <div class="ini-donut-graf">
                     <svg viewBox="0 0 42 42" role="img" aria-label="Saídas de {{ $nomeMes($mesVisao) }} por categoria: {{ collect($cats)->map(fn ($c) => $c['categoria'] . ' ' . number_format($c['pct'], 1, ',', '.') . '%')->join(', ') }}">
                         <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-bg)" stroke-width="4.6"/>
                         @foreach($cats as $i => $c)
                             @php $fatia = max(0, $c['pct'] - ($c['pct'] > 1.5 ? 0.8 : 0)); @endphp
-                            <circle class="fatia" data-cat="{{ $i }}" data-nome="{{ $c['categoria'] }}" data-valor="{{ brl($c['valor']) }}" data-pct="{{ number_format($c['pct'], 1, ',', '.') }}%" cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i] }}" stroke-width="4.6" stroke-linecap="butt"
+                            <circle class="fatia" data-cat="{{ $i }}" data-nome="{{ $c['categoria'] }}" data-valor="{{ brl($c['valor']) }}" data-extra="{{ number_format($c['pct'], 1, ',', '.') }}% do que saiu" cx="21" cy="21" r="15.915" fill="none" stroke="{{ $cores[$i] }}" stroke-width="4.6" stroke-linecap="butt"
                                 stroke-dasharray="{{ $fatia }} {{ 100 - $fatia }}" stroke-dashoffset="{{ -$acumulado }}"><title>{{ $c['categoria'] }}: {{ brl($c['valor']) }}</title></circle>
                             @php $acumulado += $c['pct']; @endphp
                         @endforeach
                     </svg>
                     <div class="ini-donut-centro" aria-live="polite">
                         <small data-centro="rotulo" data-padrao="Saiu em {{ $nomeMes($mesVisao) }}">Saiu em {{ $nomeMes($mesVisao) }}</small>
-                        <strong class="valor" data-centro="valor" data-padrao="{{ $textoCentro }}" style="font-size:{{ mb_strlen($textoCentro) > 12 ? 18 : 21 }}px;">{{ $textoCentro }}</strong>
+                        <strong class="valor" data-centro="valor" data-padrao="{{ $textoCentro }}" style="font-size:{{ mb_strlen($textoCentro) > 11 ? 17 : 21 }}px;">{{ $textoCentro }}</strong>
                         <small data-centro="extra" data-padrao="{{ count($mes['categorias']) }} {{ count($mes['categorias']) === 1 ? 'categoria' : 'categorias' }}">{{ count($mes['categorias']) }} {{ count($mes['categorias']) === 1 ? 'categoria' : 'categorias' }}</small>
                     </div>
                 </div>
@@ -306,6 +354,7 @@
                         </li>
                     @endforeach
                 </ul>
+                </div>
             @else
                 <p class="ini-vazio">Nenhuma saída paga em {{ $nomeMes($mesVisao) }}.</p>
             @endif
@@ -409,10 +458,10 @@
     });
 })();
 
-// Onde você gastou: passar o mouse (ou tocar) numa fatia ou numa linha mostra a
-// categoria no centro e destaca as duas; ao sair, volta ao total do mês.
-(function () {
-    var graf = document.querySelector('.ini-donut-graf'), lista = document.querySelector('.ini-cats');
+// Roscas (Onde você gastou e Cartões): passar o mouse (ou tocar) numa fatia ou
+// numa linha mostra o item no centro e destaca os dois; ao sair, volta ao total.
+document.querySelectorAll('[data-donut]').forEach(function (bloco) {
+    var graf = bloco.querySelector('.ini-donut-graf'), lista = bloco.querySelector('.ini-cats');
     if (!graf || !lista) return;
     var centro = {};
     graf.querySelectorAll('[data-centro]').forEach(function (el) { centro[el.dataset.centro] = el; });
@@ -425,7 +474,7 @@
         linhas.forEach(function (x) { x.classList.toggle('ativa', x.dataset.cat === String(i)); });
         centro.rotulo.textContent = f.dataset.nome;
         centro.valor.textContent = f.dataset.valor;
-        centro.extra.textContent = f.dataset.pct + ' do que saiu';
+        centro.extra.textContent = f.dataset.extra;
     }
     function limpar() {
         graf.classList.remove('foco'); lista.classList.remove('foco');
@@ -441,10 +490,10 @@
         l.addEventListener('mouseenter', function () { mostrar(l.dataset.cat); });
         l.addEventListener('focus', function () { mostrar(l.dataset.cat); });
         l.addEventListener('blur', limpar);
-        l.addEventListener('click', function (e) { e.stopPropagation(); l.classList.contains('ativa') ? limpar() : mostrar(l.dataset.cat); });
+        l.addEventListener('click', function (e) { if (e.target.closest('a')) return; e.stopPropagation(); l.classList.contains('ativa') ? limpar() : mostrar(l.dataset.cat); });
     });
     graf.querySelector('svg').addEventListener('mouseleave', limpar);
     lista.addEventListener('mouseleave', limpar);
-    document.addEventListener('click', function (e) { if (!graf.contains(e.target) && !lista.contains(e.target)) limpar(); });
-})();
+    document.addEventListener('click', function (e) { if (!bloco.contains(e.target)) limpar(); });
+});
 </script>
