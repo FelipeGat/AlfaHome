@@ -96,4 +96,35 @@ class FaturaPagaTest extends TestCase
 
         $this->assertTrue($this->fatura()['pago']);
     }
+
+    public function test_fatura_e_a_soma_das_compras_da_aba_lancamentos(): void
+    {
+        // Caso do Sicoob: a aba Cartões dizia 3.921,44 e a aba Lançamentos tinha
+        // as compras da fatura de 22/10 somando mais (a aba Cartões ficou velha).
+        PlanCartao::withoutGlobalScopes()->create([
+            'tenant_id' => $this->user->tenant_id, 'chave' => sha1('sicoob'), 'conteudo_hash' => sha1('x'), 'linha' => 2,
+            'nome' => 'Cartão Sicoob', 'banco' => 'Sicoob', 'dia_vencimento' => 22, 'dia_fechamento' => 12,
+            'fatura_atual' => 3921.44, 'status_fatura' => 'Aberta',
+        ]);
+        $this->compra('2026-10-22', 4000.00, 'pendente', 'Sicoob');
+        $this->compra('2026-10-22', 2317.66, 'pendente', 'Sicoob');
+        $this->compra('2026-09-22', 999.99, 'concluido', 'Sicoob'); // fatura anterior, fora
+
+        $v = app(PlanejamentoService::class)->vencimentos($this->user->tenant_id);
+        $sicoob = collect($v['a_pagar'])->firstWhere('descricao', 'Fatura Cartão Sicoob');
+        $this->assertSame(6317.66, $sicoob['valor']);
+        $this->assertSame('2026-10-22', $sicoob['data']);
+
+        $cartao = app(PlanejamentoService::class)->cartoes($this->user->tenant_id)['itens']->firstWhere('nome', 'Cartão Sicoob');
+        $this->assertSame(6317.66, (float) $cartao->fatura_atual);
+        $this->assertSame(3921.44, (float) $cartao->fatura_planilha);
+        $inicio = collect(app(FinanceiroService::class)->inicio($this->user->tenant_id)['cartoes']['itens'])->firstWhere('nome', 'Cartão Sicoob');
+        $this->assertSame(6317.66, $inicio['fatura']);
+    }
+
+    public function test_sem_compra_lancada_vale_o_valor_da_aba_cartoes(): void
+    {
+        $f = $this->fatura();
+        $this->assertSame(183.26, $f['valor']);
+    }
 }

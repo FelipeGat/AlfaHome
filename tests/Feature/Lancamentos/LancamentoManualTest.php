@@ -203,4 +203,33 @@ class LancamentoManualTest extends TestCase
         $this->assertSame(1, Despesa::withoutGlobalScopes()->count());
         $this->assertSame([], app(PlanejamentoService::class)->cartoes($outro->tenant_id)['itens']->all());
     }
+
+    public function test_todo_mes_no_cartao_so_consome_o_limite_da_fatura_atual(): void
+    {
+        // Reclamação do Alexandre: uma assinatura "todo mês" estourou o limite.
+        $this->postJson('/api/v1/despesas', ['valor' => 100, 'data_compra' => '2026-10-07', 'forma_pagamento' => $this->nubank->id, 'tipo_pagamento' => 'credito', 'parcelas' => 0, 'recorrente' => true, 'frequencia' => 'mensal', 'observacoes' => 'Academia'])
+            ->assertCreated()->assertJsonPath('count', 60);
+        $this->postJson('/api/v1/despesas', ['valor' => 900, 'data_compra' => '2026-10-07', 'forma_pagamento' => $this->nubank->id, 'tipo_pagamento' => 'credito', 'parcelas' => 3, 'observacoes' => 'Geladeira'])->assertCreated();
+
+        $this->assertSame(60, Despesa::withoutGlobalScopes()->where('recorrencia_sem_fim', true)->count());
+        $cartao = app(PlanejamentoService::class)->cartoes($this->user->tenant_id)['itens']->firstWhere('nome', 'Nubank');
+        $this->assertSame(1000.0, (float) $cartao->limite_utilizado, 'parcelada inteira + só a assinatura deste mês');
+        $this->assertSame(400.0, (float) $cartao->fatura_atual);
+    }
+
+    public function test_fatura_atual_e_a_primeira_com_compra(): void
+    {
+        // Fecha dia 5, vence dia 10: compra de 07/10 cai na fatura de 10/11, e a
+        // de 10/10 não tem nada. A atual é a de novembro, não "—".
+        $inter = $this->conta('Inter', ['tem_conta_corrente' => false, 'tem_cartao_credito' => true, 'limite_cartao' => 4000, 'dia_fechamento_cartao' => 5, 'dia_vencimento_cartao' => 10]);
+        $this->travelTo('2026-10-08 10:00:00');
+        $this->postJson('/api/v1/despesas', ['valor' => 415.95, 'data_compra' => '2026-10-07', 'forma_pagamento' => $inter->id, 'tipo_pagamento' => 'credito'])->assertCreated();
+
+        $cartao = app(PlanejamentoService::class)->cartoes($this->user->tenant_id)['itens']->firstWhere('nome', 'Inter');
+        $this->assertSame(415.95, (float) $cartao->fatura_atual);
+        $this->assertSame('2026-11-10', $cartao->fatura_vencimento);
+        $this->assertSame(415.95, app(PlanejamentoService::class)->cartoes($this->user->tenant_id)['resumo']['faturas_abertas']);
+        $fatura = collect($this->vencimentos()['a_pagar'])->firstWhere('descricao', 'Fatura Inter');
+        $this->assertSame(['2026-11-10', 415.95], [$fatura['data'], $fatura['valor']]);
+    }
 }

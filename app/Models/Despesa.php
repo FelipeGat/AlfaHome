@@ -18,7 +18,7 @@ class Despesa extends Model
         'tenant_id', 'user_id', 'quem_comprou', 'onde_comprou', 'categoria_id',
         'forma_pagamento', 'pago_com_banco_id', 'tipo_pagamento',
         'valor', 'valor_previsto', 'data_compra', 'data_pagamento', 'observacoes',
-        'recorrente', 'parcelas', 'frequencia', 'grupo_recorrencia_id',
+        'recorrente', 'recorrencia_sem_fim', 'parcelas', 'frequencia', 'grupo_recorrencia_id',
         'origem', 'numero_documento',
     ];
 
@@ -28,6 +28,7 @@ class Despesa extends Model
         'data_compra'    => 'date',
         'data_pagamento' => 'date',
         'recorrente'     => 'boolean',
+        'recorrencia_sem_fim' => 'boolean',
     ];
 
     // ─── Relacionamentos ──────────────────────────────────────────────────────
@@ -202,6 +203,8 @@ class Despesa extends Model
                         ? null
                         : (! empty($data['data_pagamento']) ? $data['data_pagamento'] : null),
                     'recorrente'           => $isRecorrente,
+                    // "Todo mês" (parcelas = 0): no cartão só a do mês consome limite.
+                    'recorrencia_sem_fim'  => $parcelas === 0,
                     'parcelas'             => $total,
                     'frequencia'           => $frequencia,
                     'observacoes'          => $obs,

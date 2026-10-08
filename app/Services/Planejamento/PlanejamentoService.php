@@ -177,7 +177,16 @@ class PlanejamentoService
     public function cartoes(int $tenantId): array
     {
         $planilha = PlanCartao::withoutGlobalScopes()->where('tenant_id', $tenantId)->orderBy('linha')->get();
-        $itens    = $planilha->concat($this->cartoesDoSistema($tenantId, $planilha))->values();
+        $hoje     = now()->startOfDay();
+        foreach ($planilha as $c) {
+            // A fatura é a soma das compras da aba Lançamentos; o valor digitado
+            // na aba Cartões fica só para quando não há compra lançada.
+            $c->setAttribute('fatura_planilha', $c->fatura_atual);
+            if ($c->dia_vencimento && ($soma = $this->faturaPelasCompras($tenantId, $c, $this->proximoDia($hoje, (int) $c->dia_vencimento))) !== null) {
+                $c->fatura_atual = $soma;
+            }
+        }
+        $itens = $planilha->concat($this->cartoesDoSistema($tenantId, $planilha))->values();
 
         // Como na planilha: só entra na conta o cartão com limite informado.
         $comLimite = $itens->filter(fn ($c) => $c->limite_total !== null);
@@ -289,9 +298,10 @@ class PlanejamentoService
 
         $cartoes = PlanCartao::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereNotNull('dia_vencimento')->orderBy('linha')->get();
         foreach ($cartoes as $c) {
-            if ($this->igual($c->status_fatura, 'aberta') && (float) $c->fatura_atual > 0) {
-                $vence = $this->proximoDia($hoje, $c->dia_vencimento);
-                $grupos['a_pagar'][] = $item('fatura', 'despesa', 'Fatura ' . $c->nome, $c->fatura_atual, $vence, 'Fatura de cartão', $this->faturaPaga($tenantId, $c, $vence));
+            $vence = $this->proximoDia($hoje, $c->dia_vencimento);
+            $valor = $this->faturaPelasCompras($tenantId, $c, $vence) ?? (float) $c->fatura_atual;
+            if ($this->igual($c->status_fatura, 'aberta') && $valor > 0) {
+                $grupos['a_pagar'][] = $item('fatura', 'despesa', 'Fatura ' . $c->nome, $valor, $vence, 'Fatura de cartão', $this->faturaPaga($tenantId, $c, $vence));
             }
         }
 
@@ -374,6 +384,27 @@ class PlanejamentoService
     }
 
     /**
+     * Soma das compras da planilha (forma cartão, mesma conta) lançadas até 10
+     * dias antes ou depois do vencimento — a mesma janela de `faturaPaga`. Nula
+     * quando não há compra: aí vale o valor digitado na aba Cartões.
+     */
+    private function faturaPelasCompras(int $tenantId, PlanCartao $cartao, CarbonInterface $vence): ?float
+    {
+        $conta = $this->chaveConta($cartao->banco ?: $cartao->nome);
+        $compras = PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
+            ->where('forma', 'cartao')->where('tipo', 'despesa')
+            ->whereBetween('data', [$vence->copy()->subDays(10)->toDateString(), $vence->copy()->addDays(10)->toDateString()])
+            ->get()
+            ->filter(fn ($l) => $this->chaveConta($l->conta) === $conta);
+
+        if ($compras->isEmpty()) {
+            return null;
+        }
+
+        return round($compras->sum(fn ($l) => (int) round((float) ($l->status === 'concluido' ? ($l->valor_realizado ?? $l->valor_previsto) : $l->valor_previsto) * 100)) / 100, 2);
+    }
+
+    /**
      * Faturas de um cartão: as compras da planilha (forma cartão, mesma conta)
      * agrupadas pelo mês em que caem, com total, pago e pendente. Mais recentes
      * primeiro; `meses_atras`/`meses_frente` limitam a janela.
@@ -436,15 +467,19 @@ class PlanejamentoService
 
         $compras = Despesa::withoutGlobalScope('tenant')->where('tenant_id', $tenantId)
             ->where('tipo_pagamento', 'credito')->whereIn('forma_pagamento', $bancos->pluck('id'))
-            ->get(['id', 'forma_pagamento', 'valor', 'data_compra', 'data_pagamento'])
+            ->get(['id', 'forma_pagamento', 'valor', 'data_compra', 'data_pagamento', 'recorrencia_sem_fim'])
             ->groupBy('forma_pagamento');
         $hoje = now()->startOfDay();
 
         return $bancos->map(function (Banco $b) use ($compras, $hoje) {
-            $doCartao  = $compras->get($b->id, collect());
-            $pendentes = $doCartao->whereNull('data_pagamento');
-            $usado     = $pendentes->sum(fn ($d) => (int) round((float) $d->valor * 100));
-            $fatura    = $this->proximaFaturaDoSistema($b, $hoje, $doCartao);
+            $doCartao = $compras->get($b->id, collect());
+            $fatura   = $this->proximaFaturaDoSistema($b, $hoje, $doCartao);
+            // Parcelada prende o valor todo no limite; "todo mês" só até a
+            // fatura atual (os meses seguintes ainda não foram cobrados).
+            $ate   = $fatura ? Carbon::parse($fatura['vencimento'])->endOfMonth() : $hoje->copy()->endOfMonth();
+            $usado = $doCartao->whereNull('data_pagamento')
+                ->reject(fn ($d) => $d->recorrencia_sem_fim && $d->data_compra->gt($ate))
+                ->sum(fn ($d) => (int) round((float) $d->valor * 100));
             $limite    = (float) $b->limite_cartao > 0 ? (float) $b->limite_cartao : null;
 
             $c = new PlanCartao([
@@ -481,14 +516,17 @@ class PlanejamentoService
             ->where('tipo_pagamento', 'credito')->where('forma_pagamento', $b->id)
             ->get(['id', 'forma_pagamento', 'valor', 'data_compra', 'data_pagamento']);
 
-        if ($b->dia_vencimento_cartao) {
-            $vence = $this->proximoDia($hoje, (int) $b->dia_vencimento_cartao);
-        } else {
-            $primeira = $compras->filter(fn ($d) => $d->data_compra->gte($hoje))->sortBy('data_compra')->first();
+        // A do próximo vencimento; se ela não tem compra (ex.: tudo lançado
+        // caiu na seguinte), a primeira fatura com compra daí em diante.
+        $vence = $b->dia_vencimento_cartao ? $this->proximoDia($hoje, (int) $b->dia_vencimento_cartao) : $hoje->copy();
+        if (! $compras->contains(fn ($d) => $d->data_compra->format('Y-m') === $vence->format('Y-m'))) {
+            $primeira = $compras->filter(fn ($d) => $d->data_compra->format('Y-m') > $vence->format('Y-m'))->sortBy('data_compra')->first();
             if (! $primeira) {
                 return null;
             }
-            $vence = $primeira->data_compra->copy()->startOfDay();
+            $vence = $b->dia_vencimento_cartao
+                ? $this->diaNoMes($primeira->data_compra, (int) $b->dia_vencimento_cartao)
+                : $primeira->data_compra->copy()->startOfDay();
         }
 
         $doMes = $compras->filter(fn ($d) => $d->data_compra->format('Y-m') === $vence->format('Y-m'));

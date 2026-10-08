@@ -104,7 +104,10 @@ class VencimentosTest extends TestCase
         $this->assertNotContains('Compra parcelada no cartão', $descricoes);
         $this->assertContains('Boleto do mesmo dia', $descricoes);
         $this->assertContains('Fatura Cartão Sicoob', $descricoes);
-        $this->assertSame(7227.95, $v['totais']['a_pagar'], 'faturas e dívidas (7.147,95) + o boleto (80,00), sem a compra do cartão');
+        // A fatura do Sicoob passa a ser a soma das compras lançadas (219,90) no
+        // lugar dos 3.921,44 da aba Cartões; a compra não entra uma segunda vez.
+        $this->assertSame(219.90, collect($v['a_pagar'])->firstWhere('descricao', 'Fatura Cartão Sicoob')['valor']);
+        $this->assertSame(3526.41, $v['totais']['a_pagar'], 'faturas e dívidas + o boleto (80,00), sem contar a compra do cartão duas vezes');
     }
 
     public function test_conta_fixa_pendente_atrasa_depois_do_dia_de_vencimento(): void

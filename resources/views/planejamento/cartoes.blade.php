@@ -120,7 +120,11 @@
     </div>
     @forelse($faturas as $i => $f)
         @php $mesNome = ucfirst(\Carbon\Carbon::createFromFormat('!Y-m', $f['mes'])->locale('pt_BR')->isoFormat('MMMM [de] YYYY')); @endphp
-        @php $abrir = $f['mes'] === now()->format('Y-m') || (! collect($faturas)->contains('mes', now()->format('Y-m')) && $i === 0); @endphp
+        @php
+            // Abre a próxima fatura a vencer; sem nenhuma futura, a mais recente.
+            $abrirMes ??= collect($faturas)->filter(fn ($x) => $x['vencimento'] && $x['vencimento'] >= now()->format('Y-m-d'))->sortBy('vencimento')->first()['mes'] ?? ($faturas[0]['mes'] ?? null);
+            $abrir = $f['mes'] === $abrirMes;
+        @endphp
         <details class="fat" {{ $abrir ? 'open' : '' }}>
             <summary>
                 <span class="fat-mes">{{ $mesNome }}</span>
