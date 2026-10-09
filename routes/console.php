@@ -225,4 +225,7 @@ Artisan::command('notificacoes:processar', function (\App\Services\Notificacoes\
     }
 })->purpose('Envia os avisos do Telegram que estiverem na hora');
 
-\Illuminate\Support\Facades\Schedule::command('notificacoes:processar')->everyFifteenMinutes();
+// Em produção, o cron do LXC 114 roda `schedule:run` a cada minuto (T-327).
+// Uma rodada lenta (planilha demorando) não deixa a seguinte começar por cima;
+// a trava expira em 10 min caso o processo morra no meio.
+\Illuminate\Support\Facades\Schedule::command('notificacoes:processar')->everyFifteenMinutes()->withoutOverlapping(10);

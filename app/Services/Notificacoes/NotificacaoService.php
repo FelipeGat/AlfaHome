@@ -20,9 +20,10 @@ use Illuminate\Support\Facades\Log;
  * Avisos da família pelo Telegram, no molde do AlfaControl: cada ocorrência
  * vira uma linha por destinatário em `notificacao_envios` (a chave única
  * impede duplicata), e o envio toma a linha de forma atômica antes de chamar
- * o Telegram. Não há worker nem agendador em produção: quem chama
- * `processar()` é o relógio externo, o comando agendado e o fim de cada
- * análise da planilha.
+ * o Telegram. Quem chama `processar()` é o comando agendado
+ * `notificacoes:processar` (cron do servidor rodando `schedule:run` a cada
+ * minuto), o relógio externo do GitHub (reserva) e o fim de cada análise da
+ * planilha. Chamar mais de uma vez é seguro.
  */
 class NotificacaoService
 {
