@@ -15,7 +15,8 @@ permissions: {}
 jobs:
   tick:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    # Pior caso do curl abaixo: 4 tentativas x 90 s + 3 pausas x 20 s = 420 s (7 min).
+    timeout-minutes: 8
     steps:
       - name: Chamar o relógio
         env:
@@ -25,4 +26,8 @@ jobs:
             echo "Segredo ALFAHOME_RELOGIO_URL não configurado; nada a fazer."
             exit 0
           fi
-          curl -fsS -X POST --max-time 120 -A "alfahome-relogio" "$URL"
+          # Uma parada curta da produção (ex.: backup do container) não vira falha:
+          # tenta de novo até 3 vezes, 20 s entre elas. Repetir é seguro: os avisos
+          # têm chave única por pessoa e o envio toma cada linha antes de mandar.
+          curl -fsS -X POST --max-time 90 --retry 3 --retry-all-errors --retry-delay 20 \
+            -A "alfahome-relogio" "$URL"
