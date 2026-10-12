@@ -41,12 +41,16 @@
     </form>
 </div>
 
-{{-- Realizado --}}
+{{-- Previsto do mês em destaque; o realizado vem embaixo --}}
+@php
+    $saldoPrev = $resumo['saldo']['previsto'];
+    $econPrev  = $resumo['receitas']['previsto'] != 0 ? round($saldoPrev / $resumo['receitas']['previsto'] * 100, 2) : 0;
+@endphp
 <div class="plan-grid">
-    @include('planejamento._kpi', ['rotulo' => 'Receitas realizadas', 'valor' => $brl($resumo['receitas']['realizado']), 'cor' => 'var(--color-success)', 'nota' => 'Previsto ' . $brl($resumo['receitas']['previsto'])])
-    @include('planejamento._kpi', ['rotulo' => 'Despesas realizadas', 'valor' => $brl($resumo['despesas']['realizado']), 'cor' => 'var(--color-danger)', 'nota' => 'Previsto ' . $brl($resumo['despesas']['previsto'])])
-    @include('planejamento._kpi', ['rotulo' => 'Saldo do mês', 'valor' => $brl($saldoReal), 'cor' => $saldoReal >= 0 ? 'var(--color-success)' : 'var(--color-danger)', 'nota' => 'Previsto ' . $brl($resumo['saldo']['previsto'])])
-    @include('planejamento._kpi', ['rotulo' => 'Economia', 'valor' => $pct($resumo['economia_pct']), 'nota' => 'Comprometimento da renda ' . $pct($resumo['comprometimento_pct'])])
+    @include('planejamento._kpi', ['rotulo' => 'Receitas previstas', 'valor' => $brl($resumo['receitas']['previsto']), 'cor' => 'var(--color-success)', 'nota' => 'Recebido ' . $brl($resumo['receitas']['realizado'])])
+    @include('planejamento._kpi', ['rotulo' => 'Despesas previstas', 'valor' => $brl($resumo['despesas']['previsto']), 'cor' => 'var(--color-danger)', 'nota' => 'Pago ' . $brl($resumo['despesas']['realizado'])])
+    @include('planejamento._kpi', ['rotulo' => 'Saldo previsto', 'valor' => $brl($saldoPrev), 'cor' => $saldoPrev >= 0 ? 'var(--color-success)' : 'var(--color-danger)', 'nota' => 'Realizado ' . $brl($saldoReal)])
+    @include('planejamento._kpi', ['rotulo' => 'Economia prevista', 'valor' => $pct($econPrev), 'nota' => 'Realizada ' . $pct($resumo['economia_pct']) . ' · renda comprometida ' . $pct($resumo['comprometimento_pct'])])
 </div>
 
 <div class="plan-duo">
