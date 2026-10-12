@@ -77,7 +77,7 @@ class ContaPagamentoCartaoTest extends TestCase
     {
         $this->actingAs($this->user);
         $this->get(route('planejamento.cartoes'))->assertOk()
-            ->assertSee('Valor da fatura')->assertSee('Melhor dia de compra')->assertSee('03/11')->assertSee('Fatura paga com');
+            ->assertSee('Fatura')->assertSee('Melhor dia')->assertSee('03/11')->assertSee('Fatura paga com');
 
         $this->postJson(route('planejamento.cartoes.conta-pagamento'), ['cartao' => 'Mercado Pago', 'banco_id' => $this->sicoob->id])->assertOk();
         $this->assertSame(3432.32, $this->saldo($this->sicoob));

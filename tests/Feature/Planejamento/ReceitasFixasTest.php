@@ -66,8 +66,9 @@ class ReceitasFixasTest extends TestCase
         $faltando = app(PlanejamentoService::class)->contasFixasSemLancamento($this->user->tenant_id, Carbon::parse('2026-11-01'));
         $this->assertSame(['Pró-labore (Grupo soluções)', 'Celular Vivo (Ju)'], array_column($faltando, 'conta'));
 
-        $this->actingAs($this->user)->get(route('planejamento.index', ['mes' => '2026-11']))->assertOk()
-            ->assertSee('2 contas fixas não estão lançadas em novembro')->assertSee('Celular Vivo (Ju)');
+        // O aviso fica no sininho (mês atual e o próximo).
+        $this->actingAs($this->user)->getJson(route('avisos.index'))->assertOk()
+            ->assertJsonFragment(['titulo' => '2 contas fixas não lançadas em novembro', 'detalhe' => 'Pró-labore (Grupo soluções), Celular Vivo (Ju)']);
         // Antes do mês inicial nada é cobrado.
         $this->assertSame([], app(PlanejamentoService::class)->contasFixasSemLancamento($this->user->tenant_id, Carbon::parse('2026-07-01')));
     }

@@ -625,6 +625,24 @@
         .kpi-sub { font-size: 12px; color: var(--color-text-muted); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--color-border); }
         .kpi-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
 
+
+        /* ─── Avisos (sininho) ───────────────────────────────────── */
+        .avisos { position:relative; }
+        .avisos-btn { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border:1px solid var(--color-border); border-radius:9999px; background:var(--color-bg); color:var(--color-text-muted); cursor:pointer; position:relative; }
+        .avisos-btn:hover, .avisos-btn[aria-expanded="true"] { color:var(--color-primary); }
+        .avisos-conta { position:absolute; top:-4px; right:-4px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--color-danger); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+        .avisos-conta[hidden] { display:none; }
+        .avisos-painel { position:absolute; right:0; top:44px; width:min(360px, calc(100vw - 32px)); background:var(--color-bg-card); border:1px solid var(--color-border); border-radius:12px; box-shadow:0 16px 40px rgba(15,23,42,.18); z-index:400; overflow:hidden; }
+        .avisos-painel[hidden] { display:none; }
+        .avisos-cab { padding:12px 16px; font-weight:600; border-bottom:1px solid var(--color-border); color:var(--color-text); }
+        .avisos-lista { max-height:min(420px, 70vh); overflow-y:auto; }
+        .avisos-item { display:flex; gap:12px; padding:12px 16px; border-bottom:1px solid var(--color-border); text-decoration:none; color:inherit; }
+        .avisos-item:hover { background:var(--color-bg); }
+        .avisos-item i { width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:13px; }
+        .avisos-item strong { display:block; font-size:13.5px; font-weight:600; color:var(--color-text); }
+        .avisos-item small { display:block; font-size:12.5px; color:var(--color-text-muted); }
+        .avisos-vazio { padding:18px 16px; font-size:13.5px; color:var(--color-text-muted); margin:0; }
+
         /* ─── Buttons ────────────────────────────────────────────── */
         .btn {
             display: inline-flex; align-items: center; gap: 6px;
@@ -1267,14 +1285,19 @@
         </button>
         <span class="topbar-title">@yield('page-title', 'Dashboard')</span>
         <div class="topbar-actions">
-            {{-- Push notification toggle --}}
-            <button id="push-toggle"
-                    onclick="alfaPushToggle(this)"
-                    title="Ativar notificações"
-                    aria-label="Ativar notificações push"
-                    style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--color-border);border-radius:9999px;background:var(--color-bg);color:#9ca3af;cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
-                <i class="fa-regular fa-bell" style="font-size:15px;"></i>
-            </button>
+            {{-- Avisos: o que pede atenção agora (contas vencidas, faturas, contas fixas não lançadas, dízimo) --}}
+            @if(auth()->check() && auth()->user()->tenant_id && in_array(auth()->user()->role, ['master', 'membro'], true))
+                <div class="avisos" id="avisos">
+                    <button type="button" class="avisos-btn" id="avisos-btn" aria-haspopup="true" aria-expanded="false" aria-controls="avisos-painel" title="Avisos" aria-label="Avisos">
+                        <i class="fa-regular fa-bell" style="font-size:15px;"></i>
+                        <span class="avisos-conta" id="avisos-conta" hidden></span>
+                    </button>
+                    <div class="avisos-painel" id="avisos-painel" role="dialog" aria-label="Avisos" hidden>
+                        <div class="avisos-cab">Avisos</div>
+                        <div class="avisos-lista" id="avisos-lista"><p class="avisos-vazio">Carregando…</p></div>
+                    </div>
+                </div>
+            @endif
             <button class="theme-toggle" id="theme-toggle" title="Alternar tema" aria-label="Alternar modo claro/escuro">
                 <i class="fa-solid fa-sun  icon-sun"  style="font-size:15px;"></i>
                 <i class="fa-solid fa-moon icon-moon" style="font-size:15px;"></i>
@@ -1435,6 +1458,32 @@
 @if(auth()->check() && auth()->user()->tenant_id && in_array(auth()->user()->role, ['master', 'membro'], true))
     @include('lancamentos._lancar')
 @endif
+
+<script>
+// Avisos do sininho: busca ao abrir a página (para a contagem) e mostra ao tocar.
+(function () {
+    var raiz = document.getElementById('avisos'); if (!raiz) return;
+    var btn = document.getElementById('avisos-btn'), painel = document.getElementById('avisos-painel');
+    var lista = document.getElementById('avisos-lista'), conta = document.getElementById('avisos-conta');
+    var icones = { vencida: ['fa-calendar-xmark', 'var(--color-danger)', 'var(--color-danger-soft)'], fatura: ['fa-credit-card', 'var(--color-warning)', 'var(--color-warning-soft)'],
+                   fixa: ['fa-list-check', 'var(--color-primary)', 'var(--color-primary-soft)'], dizimo: ['fa-hand-holding-heart', 'var(--color-primary)', 'var(--color-primary-soft)'] };
+    function esc(t) { var d = document.createElement('div'); d.textContent = t || ''; return d.innerHTML; }
+    fetch('{{ route('avisos.index') }}', { headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.ok ? r.json() : { total: 0, itens: [] }; })
+        .then(function (d) {
+            if (d.total > 0) { conta.textContent = d.total; conta.hidden = false; btn.setAttribute('aria-label', d.total + (d.total === 1 ? ' aviso' : ' avisos')); }
+            lista.innerHTML = d.itens.length ? d.itens.map(function (i) {
+                var ic = icones[i.tipo] || icones.fixa;
+                return '<a class="avisos-item" href="' + esc(i.link) + '"><i class="fa-solid ' + ic[0] + '" style="color:' + ic[1] + ';background:' + ic[2] + ';"></i><span><strong>' + esc(i.titulo) + '</strong><small>' + esc(i.detalhe) + '</small></span></a>';
+            }).join('') : '<p class="avisos-vazio">Nenhum aviso. Tudo em dia.</p>';
+        })
+        .catch(function () { lista.innerHTML = '<p class="avisos-vazio">Não foi possível carregar os avisos.</p>'; });
+    function abrir(sim) { painel.hidden = !sim; btn.setAttribute('aria-expanded', sim ? 'true' : 'false'); }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); abrir(painel.hidden); });
+    document.addEventListener('click', function (e) { if (!raiz.contains(e.target)) abrir(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') abrir(false); });
+})();
+</script>
 @stack('scripts')
 <script>
     const sidebar     = document.getElementById('sidebar');
@@ -1782,33 +1831,6 @@
         setTimeout(function () { el.style.opacity = '0'; }, 3200);
         setTimeout(function () { el.remove(); }, 3600);
     };
-
-    // ════════════════════════════════════════════════════════════════════
-    //  5b. Push toggle button logic (updates bell icon state)
-    // ════════════════════════════════════════════════════════════════════
-    window.alfaPushToggle = async function (btn) {
-        var enabled = localStorage.getItem('alfahome-push-enabled') === '1';
-        if (enabled) {
-            await window.alfaUnsubscribePush();
-            btn.querySelector('i').className = 'fa-regular fa-bell';
-            btn.style.color = '#9ca3af';
-        } else {
-            var ok = await window.alfaSubscribePush();
-            if (ok) {
-                btn.querySelector('i').className = 'fa-solid fa-bell';
-                btn.style.color = 'var(--color-primary, #4f46e5)';
-            }
-        }
-    };
-
-    // Restore push button state on load
-    document.addEventListener('DOMContentLoaded', function () {
-        var btn = document.getElementById('push-toggle');
-        if (btn && localStorage.getItem('alfahome-push-enabled') === '1') {
-            btn.querySelector('i').className = 'fa-solid fa-bell';
-            btn.style.color = 'var(--color-primary, #4f46e5)';
-        }
-    });
 
     // ════════════════════════════════════════════════════════════════════
     //  6. Theme-color meta sync with dark/light toggle

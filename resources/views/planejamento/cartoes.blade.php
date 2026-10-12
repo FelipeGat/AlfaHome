@@ -33,9 +33,23 @@
 .fat-pagar .form-control { width:auto; min-width:130px; font-size:14px; }
 .fat-erro { color:var(--color-danger); font-size:13px; flex-basis:100%; }
 .fat-erro:empty { display:none; }
+.parc-filtros { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+.parc-chips { display:flex; gap:6px; flex-wrap:wrap; }
+.parc-resumo { font-size:12.5px; color:var(--color-text-muted); margin-left:auto; }
+.parc-vazio { font-size:13px; color:var(--color-text-muted); padding:12px 0; }
 .fat-editavel { cursor:pointer; }
 .fat-editavel:hover { background:var(--color-bg); }
-.cc-grade { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); margin-bottom:20px; }
+.cc-grade { display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(max(270px, calc((100% - 64px) / 5)), 1fr)); margin-bottom:20px; }
+.cc { container-type:inline-size; }
+@container (max-width:330px) {
+    .cc-corpo { grid-template-columns:70px minmax(0,1fr); gap:12px; }
+    .cc-plastico { height:112px; padding:8px; }
+    .cc-plastico span { font-size:11px; max-height:80px; }
+    .cc-dados div { font-size:12.5px; }
+    .cc-limites strong { font-size:14.5px; }
+    .cc-pagador { margin-left:0; width:100%; }
+    .cc-pagador .form-control { flex:1; min-width:0; }
+}
 @media (max-width:480px) { .cc-grade { grid-template-columns:1fr; } }
 .cc { background:var(--color-bg-card); border:1px solid var(--color-border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; gap:12px; min-width:0; }
 .cc.sel { border-color:var(--color-primary); box-shadow:0 0 0 3px var(--color-primary-soft); }
@@ -119,10 +133,10 @@
                         <span>{{ $nome }}</span>
                     </div>
                     <dl class="cc-dados">
-                        <div><dt>Valor da fatura</dt><dd class="plan-num">{{ $brl($c->fatura_atual) }}</dd></div>
+                        <div><dt>Fatura</dt><dd class="plan-num">{{ $brl($c->fatura_atual) }}</dd></div>
                         <div><dt>Vencimento</dt><dd>{{ $vence ? \Carbon\Carbon::parse($vence)->format('d/m') : '—' }}</dd></div>
-                        <div><dt>Melhor dia de compra</dt><dd>{{ $melhor ? $melhor->format('d/m') : '—' }}</dd></div>
-                        <div><dt>Status da fatura</dt><dd>@if($c->fatura_atual)<span class="cc-status {{ $paga ? 'paga' : '' }}">{{ $paga ? 'Paga' : 'Aberta' }}</span>@else—@endif</dd></div>
+                        <div><dt title="Melhor dia de compra: o dia seguinte ao fechamento">Melhor dia</dt><dd>{{ $melhor ? $melhor->format('d/m') : '—' }}</dd></div>
+                        <div><dt>Status</dt><dd>@if($c->fatura_atual)<span class="cc-status {{ $paga ? 'paga' : '' }}">{{ $paga ? 'Paga' : 'Aberta' }}</span>@else—@endif</dd></div>
                     </dl>
                 </div>
                 @if($usoPct !== null)
@@ -227,8 +241,29 @@
     @if($parceladas['itens']->isEmpty())
         <div class="empty-state"><i class="fa-solid fa-layer-group"></i><p>Nenhuma compra parcelada na planilha.</p></div>
     @else
+        @php
+            $hojeStr = now()->toDateString();
+            $situacaoP = fn ($p) => ((int) $p->parcelas_restantes <= 0 && $p->parcelas_restantes !== null) ? 'quitada'
+                : ($p->proximo_vencimento && $p->proximo_vencimento->toDateString() < $hojeStr ? 'atrasada' : 'avencer');
+            $cartoesP = $parceladas['itens']->pluck('cartao')->filter()->unique()->sort()->values();
+        @endphp
+        <div class="parc-filtros">
+            <div class="parc-chips" role="group" aria-label="Situação">
+                @foreach(['' => 'Todas', 'avencer' => 'A vencer', 'atrasada' => 'Atrasadas', 'quitada' => 'Quitadas'] as $v => $r)
+                    <button type="button" class="btn btn-sm {{ $v === '' ? 'btn-primary' : 'btn-ghost' }}" data-situacao="{{ $v }}" aria-pressed="{{ $v === '' ? 'true' : 'false' }}">{{ $r }}</button>
+                @endforeach
+            </div>
+            @if($cartoesP->count() > 1)
+                <select class="form-control" id="parc-cartao" aria-label="Cartão" style="width:auto;min-width:180px;">
+                    <option value="">Todos os cartões</option>
+                    @foreach($cartoesP as $nomeC)<option value="{{ $nomeC }}">{{ $nomeC }}</option>@endforeach
+                </select>
+            @endif
+            <input type="search" class="form-control" id="parc-busca" placeholder="Buscar compra" style="width:auto;flex:1;min-width:160px;">
+            <span class="parc-resumo" id="parc-resumo"></span>
+        </div>
         <div class="table-wrapper">
-            <table class="table">
+            <table class="table" id="parc-tabela">
                 <thead>
                     <tr>
                         <th>Compra</th><th>Cartão</th><th>Data</th>
@@ -239,8 +274,8 @@
                 </thead>
                 <tbody>
                     @foreach($parceladas['itens'] as $p)
-                        @php $andamento = $p->parcelas ? min((int) $p->parcelas_pagas / $p->parcelas * 100, 100) : 0; @endphp
-                        <tr>
+                        @php $andamento = $p->parcelas ? min((int) $p->parcelas_pagas / $p->parcelas * 100, 100) : 0; $sit = $situacaoP($p); @endphp
+                        <tr data-situacao="{{ $sit }}" data-cartao="{{ $p->cartao }}" data-texto="{{ \Illuminate\Support\Str::lower(\Illuminate\Support\Str::ascii($p->compra . ' ' . $p->observacao)) }}" data-saldo="{{ (float) $p->saldo }}">
                             <td><strong>{{ $p->compra }}</strong>@if($p->observacao)<div style="font-size:11px;color:var(--color-text-muted);">{{ $p->observacao }}</div>@endif</td>
                             <td>
                                 {{ $p->cartao ?? '—' }}
@@ -257,12 +292,13 @@
                             </td>
                             <td class="plan-num">{{ $p->parcelas_restantes ?? '—' }}</td>
                             <td class="plan-num"><strong>{{ $brl($p->saldo) }}</strong></td>
-                            <td style="white-space:nowrap;">{{ $p->proximo_vencimento?->format('d/m/Y') ?? '—' }}</td>
+                            <td style="white-space:nowrap;">{{ $p->proximo_vencimento?->format('d/m/Y') ?? '—' }}@if($sit === 'atrasada') <span class="badge badge-danger">Atrasada</span>@elseif($sit === 'quitada') <span class="badge badge-success">Quitada</span>@endif</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
+        <p class="parc-vazio" id="parc-vazio" hidden>Nenhuma compra com esses filtros.</p>
     @endif
 </div>
 @endunless
@@ -270,6 +306,33 @@
 
 @push('scripts')
 <script>
+// Compras parceladas: filtros por situação, cartão e busca (na própria página).
+(function () {
+    var tab = document.getElementById('parc-tabela'); if (!tab) return;
+    var linhas = tab.querySelectorAll('tbody tr'), estado = { situacao: '', cartao: '', busca: '' };
+    var resumo = document.getElementById('parc-resumo'), vazio = document.getElementById('parc-vazio');
+    var norm = function (t) { return (t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); };
+    var brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    function aplicar() {
+        var n = 0, saldo = 0;
+        linhas.forEach(function (l) {
+            var ok = (!estado.situacao || l.dataset.situacao === estado.situacao) && (!estado.cartao || l.dataset.cartao === estado.cartao) && (!estado.busca || l.dataset.texto.indexOf(estado.busca) >= 0);
+            l.hidden = !ok; if (ok) { n++; saldo += parseFloat(l.dataset.saldo || 0); }
+        });
+        resumo.textContent = n + (n === 1 ? ' compra' : ' compras') + ' · saldo ' + brl.format(saldo);
+        vazio.hidden = n > 0;
+    }
+    document.querySelectorAll('.parc-chips button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            estado.situacao = b.dataset.situacao;
+            document.querySelectorAll('.parc-chips button').forEach(function (x) { var on = x === b; x.classList.toggle('btn-primary', on); x.classList.toggle('btn-ghost', !on); x.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+            aplicar();
+        });
+    });
+    var sel = document.getElementById('parc-cartao'); if (sel) sel.addEventListener('change', function () { estado.cartao = sel.value; aplicar(); });
+    document.getElementById('parc-busca').addEventListener('input', function (e) { estado.busca = norm(e.target.value.trim()); aplicar(); });
+    aplicar();
+})();
 // Conta que paga a fatura de um cartão da planilha: grava ao escolher.
 document.querySelectorAll('.cc-pagador select').forEach(function (sel) {
     sel.addEventListener('change', function () {

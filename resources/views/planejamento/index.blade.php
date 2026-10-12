@@ -25,6 +25,19 @@
 .prev-val { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
 .prev-val .badge { font-size:10.5px; }
 .prev-linha.feito .prev-txt span, .prev-linha.feito strong { color:var(--color-text-muted); }
+.cat-modo { display:inline-flex; background:var(--color-bg); border-radius:8px; padding:3px; gap:2px; }
+.cat-modo button { border:0; background:transparent; color:var(--color-text-muted); width:32px; height:28px; border-radius:6px; cursor:pointer; }
+.cat-modo button[aria-pressed="true"] { background:var(--color-bg-card); color:var(--color-primary); box-shadow:0 1px 3px rgba(15,23,42,.12); }
+.cat-pizza { display:grid; grid-template-columns:180px minmax(0,1fr); gap:20px; align-items:center; }
+.cat-svg { width:180px; height:180px; transform:rotate(-90deg); }
+.cat-leg { list-style:none; margin:0; padding:0; }
+.cat-leg li { display:grid; grid-template-columns:10px minmax(0,1fr) auto auto; gap:8px; align-items:center; padding:6px 0; border-top:1px solid var(--color-border); font-size:13.5px; }
+.cat-leg li:first-child { border-top:0; }
+.cat-leg i { width:10px; height:10px; border-radius:3px; }
+.cat-leg span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cat-leg small { color:var(--color-text-muted); font-size:12px; }
+.cat-leg strong { font-weight:600; min-width:84px; text-align:right; }
+@media (max-width:560px) { .cat-pizza { grid-template-columns:1fr; justify-items:center; } .cat-leg { width:100%; } }
 .diz-cab { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
 .diz-num { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
 .diz-num small { display:block; font-size:12px; color:var(--color-text-muted); }
@@ -90,20 +103,56 @@
         </div>
     </div>
 
-    {{-- Despesas por categoria --}}
-    <div class="card" style="padding:18px 20px;">
-        <div class="card-title" style="margin-bottom:12px;">Despesas por categoria</div>
-        @forelse($resumo['por_categoria'] as $categoria)
-            <div style="margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
-                    <span>{{ $categoria['categoria'] }}</span>
-                    <span class="plan-num"><strong>{{ $brl($categoria['realizado']) }}</strong> <span style="color:var(--color-text-muted);">· {{ $pct($categoria['pct']) }}</span></span>
+    {{-- Despesas por categoria: pizza ou barras, à escolha (fica guardado neste navegador) --}}
+    @php
+        $coresCat = ['#2563EB', '#14B8A6', '#F59E0B', '#8B5CF6', '#EC4899', '#0EA5E9', '#94A3B8'];
+        $catTop = array_slice($resumo['por_categoria'], 0, 6);
+        $catResto = array_slice($resumo['por_categoria'], 6);
+        if ($catResto) {
+            $catTop[] = ['categoria' => 'Outras (' . count($catResto) . ')', 'realizado' => round(array_sum(array_column($catResto, 'realizado')), 2), 'pct' => round(array_sum(array_column($catResto, 'pct')), 2)];
+        }
+        $acumCat = 0;
+    @endphp
+    <div class="card cat-card" style="padding:18px 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px;">
+            <div class="card-title">Despesas por categoria</div>
+            @if($catTop)
+                <div class="cat-modo" role="group" aria-label="Tipo de gráfico">
+                    <button type="button" data-modo="pizza" aria-pressed="true" title="Pizza"><i class="fa-solid fa-chart-pie"></i></button>
+                    <button type="button" data-modo="barras" aria-pressed="false" title="Barras"><i class="fa-solid fa-chart-simple"></i></button>
                 </div>
-                <div class="progress-bar"><div class="progress-bar-fill" style="width:{{ min($categoria['pct'], 100) }}%;background:var(--color-primary);"></div></div>
+            @endif
+        </div>
+        @if($catTop)
+            <div class="cat-pizza">
+                <svg viewBox="0 0 42 42" class="cat-svg" role="img" aria-label="Despesas por categoria: {{ collect($catTop)->map(fn ($c) => $c['categoria'] . ' ' . number_format($c['pct'], 1, ',', '.') . '%')->join(', ') }}">
+                    <circle cx="21" cy="21" r="15.915" fill="none" stroke="var(--color-bg)" stroke-width="6"/>
+                    @foreach($catTop as $i => $c)
+                        @php $f = max(0, $c['pct'] - ($c['pct'] > 1.5 ? 0.6 : 0)); @endphp
+                        <circle cx="21" cy="21" r="15.915" fill="none" stroke="{{ $coresCat[$i] }}" stroke-width="6" stroke-dasharray="{{ $f }} {{ 100 - $f }}" stroke-dashoffset="{{ -$acumCat }}"><title>{{ $c['categoria'] }}: {{ $brl($c['realizado']) }}</title></circle>
+                        @php $acumCat += $c['pct']; @endphp
+                    @endforeach
+                </svg>
+                <ul class="cat-leg">
+                    @foreach($catTop as $i => $c)
+                        <li><i style="background:{{ $coresCat[$i] }};"></i><span>{{ $c['categoria'] }}</span><small>{{ $pct($c['pct']) }}</small><strong class="plan-num">{{ $brl($c['realizado']) }}</strong></li>
+                    @endforeach
+                </ul>
             </div>
-        @empty
+            <div class="cat-barras" hidden>
+                @foreach($resumo['por_categoria'] as $categoria)
+                    <div style="margin-bottom:10px;">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+                            <span>{{ $categoria['categoria'] }}</span>
+                            <span class="plan-num"><strong>{{ $brl($categoria['realizado']) }}</strong> <span style="color:var(--color-text-muted);">· {{ $pct($categoria['pct']) }}</span></span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-bar-fill" style="width:{{ min($categoria['pct'], 100) }}%;background:var(--color-primary);"></div></div>
+                    </div>
+                @endforeach
+            </div>
+        @else
             <div class="empty-state"><i class="fa-solid fa-chart-pie"></i><p>Nenhuma despesa realizada neste mês.</p></div>
-        @endforelse
+        @endif
     </div>
 </div>
 
@@ -131,21 +180,6 @@
                 @endforeach
             </div>
         @endif
-    </div>
-@endif
-
-{{-- Contas fixas que não aparecem nos lançamentos do mês --}}
-@if($fixasFaltando)
-    <div class="card" style="padding:14px 18px;margin-bottom:14px;border-left:4px solid var(--color-warning);">
-        <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-triangle-exclamation" style="color:var(--color-warning);"></i>
-            {{ count($fixasFaltando) === 1 ? 'Uma conta fixa não está lançada' : count($fixasFaltando) . ' contas fixas não estão lançadas' }} em {{ $meses[$mes->month - 1] }}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;">
-            @foreach($fixasFaltando as $f)
-                <span><i class="fa-solid {{ $f['tipo'] === 'receita' ? 'fa-arrow-down' : 'fa-arrow-up' }}" style="color:{{ $f['tipo'] === 'receita' ? 'var(--color-success)' : 'var(--color-danger)' }};font-size:11px;"></i>
-                    {{ $f['conta'] }} <span style="color:var(--color-text-muted);">· {{ $f['valor'] !== null ? $brl($f['valor']) : '—' }}{{ $f['dia'] ? ' · dia ' . $f['dia'] : '' }}</span></span>
-            @endforeach
-        </div>
-        <p style="font-size:12px;color:var(--color-text-muted);margin:6px 0 0;">Elas ficam fora do previsto abaixo até entrarem na aba Lançamentos da planilha.</p>
     </div>
 @endif
 
@@ -217,3 +251,23 @@
     </p>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var card = document.querySelector('.cat-card'); if (!card) return;
+    var pizza = card.querySelector('.cat-pizza'), barras = card.querySelector('.cat-barras');
+    function aplicar(modo) {
+        if (!pizza || !barras) return;
+        pizza.hidden = modo !== 'pizza'; barras.hidden = modo !== 'barras';
+        card.querySelectorAll('.cat-modo button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.modo === modo ? 'true' : 'false'); });
+    }
+    var salvo = 'pizza';
+    try { salvo = localStorage.getItem('alfahome-grafico-categorias') || 'pizza'; } catch (e) {}
+    aplicar(salvo);
+    card.querySelectorAll('.cat-modo button').forEach(function (b) {
+        b.addEventListener('click', function () { aplicar(b.dataset.modo); try { localStorage.setItem('alfahome-grafico-categorias', b.dataset.modo); } catch (e) {} });
+    });
+})();
+</script>
+@endpush

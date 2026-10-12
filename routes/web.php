@@ -108,6 +108,7 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group
 
     // Alertas financeiros
     Route::get('/alertas', [AlertaController::class, 'index'])->name('alertas.index');
+    Route::get('/avisos', [\App\Http\Controllers\AvisosController::class, 'index'])->name('avisos.index');
 
     // Telas antigas de lançamento manual: os endereços levam ao Extrato.
     Route::redirect('/despesas', '/planejamento/lancamentos');

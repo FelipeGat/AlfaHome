@@ -97,7 +97,7 @@ class TelasTest extends TestCase
 
         $this->get(route('planejamento.cartoes'))->assertOk()
             ->assertSee('Sicoob')->assertSee('Disponível de R$ 23.593,00')->assertSee('R$ 21.737,85')->assertSee('R$ 3.921,44')
-            ->assertSee('Melhor dia de compra')->assertSee('celebre')
+            ->assertSee('Melhor dia')->assertSee('celebre')
             ->assertSee('Celular Iphone')->assertSee('10 x 519,90')->assertSee('R$ 2.079,60')
             ->assertSee('Cartão Mercado Pago')->assertSee('Este cartão não está na aba Cartões da planilha');
 
