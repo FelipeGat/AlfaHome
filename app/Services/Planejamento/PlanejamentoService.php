@@ -714,7 +714,7 @@ class PlanejamentoService
                     $usados[$dom] = true;
                 }
             }
-            $valor = (int) round($d['base'] / 10);
+            $valor = intdiv($d['base'], 10);
             $pago = min($caixa, $valor);
             $caixa -= $pago;
             foreach ($falta as $dom => $resta) {
@@ -740,21 +740,21 @@ class PlanejamentoService
         foreach ($domingos as $d) {
             $lista[] = [
                 'data'     => $d['data'],
-                'valor'    => (int) round($d['base'] / 10) / 100,
+                'valor'    => intdiv($d['base'], 10) / 100,
                 'base'     => $d['base'] / 100,
                 'receitas' => array_values(array_unique($d['receitas'])),
                 'situacao' => $falta[$d['data']] <= 0 ? 'devolvido' : (Carbon::parse($d['data'])->lt($hoje) ? 'atrasado' : 'pendente'),
             ];
         }
 
-        $devido = (int) round($baseRecebida / 10);
+        $devido = intdiv($baseRecebida, 10);
 
         return [
             'mes'             => $inicio->format('Y-m'),
             'base_recebida'   => $baseRecebida / 100,
             'dizimo_devido'   => $devido / 100,
             'base_prevista'   => $basePrevista / 100,
-            'dizimo_previsto' => (int) round($basePrevista / 10) / 100,
+            'dizimo_previsto' => intdiv($basePrevista, 10) / 100,
             'devolvido'       => $devolvido / 100,
             'falta'           => max(0, $devido - $devolvido) / 100,
             'domingos'        => $lista,
