@@ -24,11 +24,73 @@ class PlanejamentoController extends Controller
         $tenantId = Auth::user()->tenant_id;
         $mes      = $this->mes($request) ?? $this->planejamento->mesPadrao($tenantId);
 
+        $lancamentos = $this->planejamento->lancamentos($tenantId, $mes);
+
         return view('planejamento.index', [
             'mes'         => $mes,
             'resumo'      => $this->planejamento->resumoMes($tenantId, $mes),
-            'lancamentos' => $this->planejamento->lancamentos($tenantId, $mes),
+            'lancamentos' => $lancamentos,
+            'previsto'    => $this->previstoDoMes($lancamentos),
         ]);
+    }
+
+    /**
+     * O que o mês tem a receber e a pagar, item a item. Compras no cartão
+     * viram uma linha por fatura (a da planilha e a do sistema).
+     *
+     * @return array{receber: array, pagar: array}
+     */
+    private function previstoDoMes(array $lancamentos): array
+    {
+        $hoje = now()->toDateString();
+        $item = fn (array $l) => [
+            'data'      => $l['data'],
+            'descricao' => $l['descricao'],
+            'detalhe'   => implode(' · ', array_filter([$l['categoria'], $l['conta']])),
+            'valor'     => (float) ($l['valor_realizado'] ?? $l['valor_previsto'] ?? 0),
+            'feito'     => $l['status'] === 'concluido',
+            'atrasado'  => $l['status'] !== 'concluido' && $l['data'] < $hoje,
+            'itens'     => 1,
+        ];
+        $cartao = fn (array $l) => in_array($l['forma'], ['cartao', 'credito'], true);
+
+        $grupos = ['receber' => [], 'pagar' => []];
+        foreach ($lancamentos as $l) {
+            if ($l['tipo'] === 'receita') {
+                $grupos['receber'][] = $item($l);
+            } elseif ($l['tipo'] === 'despesa' && ! $cartao($l)) {
+                $grupos['pagar'][] = $item($l);
+            }
+        }
+        // Uma linha por fatura: conta do cartão + dia (as compras da planilha caem no vencimento).
+        $faturas = collect($lancamentos)->filter(fn ($l) => $l['tipo'] === 'despesa' && $cartao($l))
+            ->groupBy(fn ($l) => ($l['conta'] ?? 'Cartão') . '|' . $l['data']);
+        foreach ($faturas as $chave => $compras) {
+            [$conta, $data] = explode('|', $chave);
+            $feito = $compras->every(fn ($l) => $l['status'] === 'concluido');
+            $grupos['pagar'][] = [
+                'data'      => $data,
+                'descricao' => 'Fatura ' . preg_replace('/^Cart[aã]o\s+/iu', '', $conta),
+                'detalhe'   => $compras->count() . ' ' . ($compras->count() === 1 ? 'compra' : 'compras') . ' no cartão',
+                'valor'     => round($compras->sum(fn ($l) => (float) ($l['valor_realizado'] ?? $l['valor_previsto'] ?? 0)), 2),
+                'feito'     => $feito,
+                'atrasado'  => ! $feito && $data < $hoje,
+                'itens'     => $compras->count(),
+            ];
+        }
+        foreach ($grupos as &$lista) {
+            usort($lista, fn ($a, $b) => [$a['data'], $a['descricao']] <=> [$b['data'], $b['descricao']]);
+        }
+        unset($lista);
+
+        $soma = fn (array $lista, ?bool $feito = null) => round(array_sum(array_map(fn ($i) => $i['valor'], array_filter($lista, fn ($i) => $feito === null || $i['feito'] === $feito))), 2);
+
+        return array_map(fn ($lista) => [
+            'itens'  => $lista,
+            'total'  => $soma($lista),
+            'feito'  => $soma($lista, true),
+            'falta'  => $soma($lista, false),
+        ], $grupos);
     }
 
     /** Extrato do mês: lançamentos da planilha e do sistema, e transferências, com filtros. */

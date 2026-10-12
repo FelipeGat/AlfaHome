@@ -17,6 +17,14 @@
 @media (max-width:900px) { .plan-grid { grid-template-columns:repeat(2,1fr); } .plan-duo { grid-template-columns:1fr; } }
 @media (max-width:480px) { .plan-grid { grid-template-columns:1fr; } }
 .plan-num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.prev-linha { display:grid; grid-template-columns:44px minmax(0,1fr) auto; gap:10px; align-items:center; padding:9px 0; border-top:1px solid var(--color-border); }
+.prev-dia { font-size:12.5px; font-weight:600; color:var(--color-text-muted); font-variant-numeric:tabular-nums; }
+.prev-txt { min-width:0; }
+.prev-txt span { display:block; font-size:14px; color:var(--color-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.prev-txt small { display:block; font-size:12px; color:var(--color-text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.prev-val { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.prev-val .badge { font-size:10.5px; }
+.prev-linha.feito .prev-txt span, .prev-linha.feito strong { color:var(--color-text-muted); }
 </style>
 
 @include('planejamento._abas', ['ultima' => $resumo['ultima_importacao']])
@@ -80,6 +88,34 @@
             <div class="empty-state"><i class="fa-solid fa-chart-pie"></i><p>Nenhuma despesa realizada neste mês.</p></div>
         @endforelse
     </div>
+</div>
+
+{{-- O que o mês tem a receber e a pagar --}}
+<div class="plan-duo">
+    @foreach(['receber' => ['A receber', 'Recebido', 'var(--color-success)', 'fa-arrow-down'], 'pagar' => ['A pagar', 'Pago', 'var(--color-danger)', 'fa-arrow-up']] as $lado => [$titulo, $feitoTxt, $cor, $icone])
+        @php $p = $previsto[$lado]; @endphp
+        <div class="card prev-card" style="padding:18px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                <div class="card-title">{{ $titulo }} em {{ $meses[$mes->month - 1] }}</div>
+                <strong class="plan-num" style="font-size:17px;color:{{ $cor }};">{{ $brl($p['total']) }}</strong>
+            </div>
+            <p style="font-size:12.5px;color:var(--color-text-muted);margin:0 0 8px;">{{ $feitoTxt }} {{ $brl($p['feito']) }} · falta {{ $brl($p['falta']) }}</p>
+            @forelse($p['itens'] as $i)
+                <div class="prev-linha {{ $i['feito'] ? 'feito' : '' }}">
+                    <span class="prev-dia">{{ \Carbon\Carbon::parse($i['data'])->format('d/m') }}</span>
+                    <span class="prev-txt"><span>{{ $i['descricao'] }}</span><small>{{ $i['detalhe'] }}</small></span>
+                    <span class="prev-val">
+                        <strong class="plan-num">{{ $brl($i['valor']) }}</strong>
+                        @if($i['feito'])<span class="badge badge-success">{{ $feitoTxt }}</span>
+                        @elseif($i['atrasado'])<span class="badge badge-danger">Atrasado</span>
+                        @else<span class="badge badge-warning">Pendente</span>@endif
+                    </span>
+                </div>
+            @empty
+                <p style="font-size:13px;color:var(--color-text-muted);">Nada previsto {{ $lado === 'receber' ? 'a receber' : 'a pagar' }} neste mês.</p>
+            @endforelse
+        </div>
+    @endforeach
 </div>
 
 {{-- Onde o mês fugiu do previsto: a lista completa fica em Lançamentos --}}
