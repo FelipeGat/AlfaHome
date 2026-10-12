@@ -248,10 +248,52 @@ class PlanejamentoService
         $itens = PlanContaFixa::withoutGlobalScopes()->where('tenant_id', $tenantId)
             ->orderByRaw('dia_vencimento is null')->orderBy('dia_vencimento')->orderBy('linha')->get();
 
-        return ['itens' => $itens, 'resumo' => [
-            'previsto_total'  => round($itens->sum(fn ($c) => (float) $c->valor_previsto), 2),
-            'realizado_total' => round($itens->sum(fn ($c) => (float) $c->valor_realizado), 2),
+        $receitas = $itens->filter(fn ($c) => $c->eh_receita)->values();
+        $despesas = $itens->reject(fn ($c) => $c->eh_receita)->values();
+        $soma = fn ($lista) => round($lista->sum(fn ($c) => (float) $c->valor_previsto), 2);
+
+        return ['itens' => $itens, 'receitas' => $receitas, 'despesas' => $despesas, 'resumo' => [
+            'previsto_total'  => $soma($despesas),
+            'realizado_total' => round($despesas->sum(fn ($c) => (float) $c->valor_realizado), 2),
+            'receitas_total'  => $soma($receitas),
+            'despesas_total'  => $soma($despesas),
+            'sobra'           => round($soma($receitas) - $soma($despesas), 2),
         ]];
+    }
+
+    /**
+     * Contas fixas (receitas e despesas) sem lançamento no mês: compara pelo
+     * nome — todas as palavras do nome da conta fixa precisam estar na
+     * descrição de algum lançamento do mesmo tipo ("Celular Vivo (Ju)" acha
+     * "Celular Vivo (Ju)"; "Academia (Fe)" acha "Wellness Club - Fe (academia)").
+     *
+     * @return list<array{conta: string, tipo: string, dia: ?int, valor: ?float}>
+     */
+    public function contasFixasSemLancamento(int $tenantId, CarbonInterface $mes): array
+    {
+        $inicio = $mes->copy()->startOfMonth();
+        $fim    = $mes->copy()->endOfMonth();
+        $palavras = fn (?string $t) => array_values(array_filter(preg_split('/[^a-z0-9]+/', Str::lower(Str::ascii((string) $t))), fn ($p) => $p !== '' && ! in_array($p, ['de', 'da', 'do', 'e'], true)));
+
+        $lancados = $this->movimentos($tenantId, $inicio, $fim)
+            ->filter(fn ($m) => $m['data']->between($inicio, $fim))
+            ->map(fn ($m) => ['tipo' => $m['tipo'], 'palavras' => $palavras($m['descricao'])]);
+
+        return PlanContaFixa::withoutGlobalScopes()->where('tenant_id', $tenantId)
+            ->orderByRaw('dia_vencimento is null')->orderBy('dia_vencimento')->orderBy('linha')->get()
+            ->filter(fn ($c) => $c->mes_inicial === null || $c->mes_inicial->copy()->startOfMonth()->lte($inicio))
+            ->reject(function ($c) use ($lancados, $palavras) {
+                $tipo = $c->eh_receita ? 'receita' : 'despesa';
+                $nome = $palavras($c->conta);
+
+                return $nome === [] || $lancados->contains(fn ($l) => $l['tipo'] === $tipo && array_diff($nome, $l['palavras']) === []);
+            })
+            ->map(fn ($c) => [
+                'conta' => $c->conta,
+                'tipo'  => $c->eh_receita ? 'receita' : 'despesa',
+                'dia'   => $c->dia_vencimento,
+                'valor' => $c->valor_previsto !== null ? (float) $c->valor_previsto : null,
+            ])->values()->all();
     }
 
     /**
@@ -292,7 +334,8 @@ class PlanejamentoService
         }
 
         $fixas = PlanContaFixa::withoutGlobalScopes()->where('tenant_id', $tenantId)
-            ->where('status', 'pendente')->whereNotNull('dia_vencimento')->orderBy('dia_vencimento')->get();
+            ->where('status', 'pendente')->whereNotNull('dia_vencimento')->orderBy('dia_vencimento')->get()
+            ->reject(fn ($c) => $c->eh_receita); // receita fixa a receber já vem dos lançamentos
         foreach ($fixas as $c) {
             $data = $this->diaNoMes($hoje, $c->dia_vencimento);
             $grupos[$data->lt($hoje) ? 'atrasado' : 'a_pagar'][] = $item('conta_fixa', 'despesa', $c->conta, $c->valor_previsto, $data, 'Conta fixa');

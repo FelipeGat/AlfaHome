@@ -20,4 +20,16 @@ class PlanContaFixa extends Model
         'recorrente' => 'boolean',
         'mes_inicial' => 'date',
     ];
+
+    /**
+     * Receita fixa (salário, pró-labore, venda da casa...): a planilha não tem
+     * coluna de tipo, então vale a categoria — Renda fixa, Renda variável ou
+     * Reembolso. O resto é despesa.
+     */
+    public function getEhReceitaAttribute(): bool
+    {
+        $c = mb_strtolower(\Illuminate\Support\Str::ascii(trim((string) $this->categoria)));
+
+        return str_starts_with($c, 'renda') || $c === 'reembolso';
+    }
 }

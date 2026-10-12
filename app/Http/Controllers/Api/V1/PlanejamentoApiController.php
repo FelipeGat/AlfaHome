@@ -173,6 +173,7 @@ class PlanejamentoApiController extends Controller
             'data' => $r['itens']->map(fn ($c) => [
                 'id'              => $c->id,
                 'conta'           => $c->conta,
+                'tipo'            => $c->eh_receita ? 'receita' : 'despesa',
                 'categoria'       => $c->categoria,
                 'dia_vencimento'  => $c->dia_vencimento,
                 'valor_previsto'  => $this->valor($c->valor_previsto),

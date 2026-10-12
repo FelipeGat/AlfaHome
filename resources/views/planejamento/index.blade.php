@@ -90,6 +90,21 @@
     </div>
 </div>
 
+{{-- Contas fixas que não aparecem nos lançamentos do mês --}}
+@if($fixasFaltando)
+    <div class="card" style="padding:14px 18px;margin-bottom:14px;border-left:4px solid var(--color-warning);">
+        <div style="font-weight:600;margin-bottom:6px;"><i class="fa-solid fa-triangle-exclamation" style="color:var(--color-warning);"></i>
+            {{ count($fixasFaltando) === 1 ? 'Uma conta fixa não está lançada' : count($fixasFaltando) . ' contas fixas não estão lançadas' }} em {{ $meses[$mes->month - 1] }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13.5px;">
+            @foreach($fixasFaltando as $f)
+                <span><i class="fa-solid {{ $f['tipo'] === 'receita' ? 'fa-arrow-down' : 'fa-arrow-up' }}" style="color:{{ $f['tipo'] === 'receita' ? 'var(--color-success)' : 'var(--color-danger)' }};font-size:11px;"></i>
+                    {{ $f['conta'] }} <span style="color:var(--color-text-muted);">· {{ $f['valor'] !== null ? $brl($f['valor']) : '—' }}{{ $f['dia'] ? ' · dia ' . $f['dia'] : '' }}</span></span>
+            @endforeach
+        </div>
+        <p style="font-size:12px;color:var(--color-text-muted);margin:6px 0 0;">Elas ficam fora do previsto abaixo até entrarem na aba Lançamentos da planilha.</p>
+    </div>
+@endif
+
 {{-- O que o mês tem a receber e a pagar --}}
 <div class="plan-duo">
     @foreach(['receber' => ['A receber', 'Recebido', 'var(--color-success)', 'fa-arrow-down'], 'pagar' => ['A pagar', 'Pago', 'var(--color-danger)', 'fa-arrow-up']] as $lado => [$titulo, $feitoTxt, $cor, $icone])
