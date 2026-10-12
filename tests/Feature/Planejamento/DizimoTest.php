@@ -51,8 +51,8 @@ class DizimoTest extends TestCase
         $this->assertSame([11234.0, 1123.4], [(float) $d['base_prevista'], (float) $d['dizimo_previsto']]);
         $this->assertSame([820.0, 3.4], [(float) $d['devolvido'], (float) $d['falta']]);
         $this->assertSame([
-            ['2026-10-04', 73.4, 'devolvido'],
-            ['2026-10-11', 750.0, 'atrasado'],
+            ['2026-10-04', 73.4, 'atrasado'],   // 70 pagos em 02/10: faltou 3,40
+            ['2026-10-11', 750.0, 'devolvido'],  // os 750 de 06/10 são deste domingo
             ['2026-10-18', 300.0, 'pendente'],
         ], array_map(fn ($x) => [$x['data'], (float) $x['valor'], $x['situacao']], $d['domingos']));
     }
@@ -68,11 +68,11 @@ class DizimoTest extends TestCase
     {
         $this->actingAs($this->user)->get(route('planejamento.index', ['mes' => '2026-10']))->assertOk()
             ->assertSee('Dízimo de outubro')->assertSee('R$ 823,40')->assertSee('R$ 820,00')->assertSee('R$ 3,40')
-            ->assertSeeInOrder(['Dom 04/10', 'Devolvido', 'Dom 11/10', 'Atrasado', 'Dom 18/10', 'Pendente']);
+            ->assertSeeInOrder(['Dom 04/10', 'Atrasado', 'Dom 11/10', 'Devolvido', 'Dom 18/10', 'Pendente']);
 
         Sanctum::actingAs($this->user);
         $this->getJson('/api/v1/planejamento/dizimo?mes=2026-10')->assertOk()
-            ->assertJsonPath('data.dizimo_devido', 823.4)->assertJsonPath('data.domingos.1.situacao', 'atrasado');
+            ->assertJsonPath('data.dizimo_devido', 823.4)->assertJsonPath('data.domingos.1.situacao', 'devolvido');
     }
 
     public function test_outra_familia_nao_ve_o_dizimo_desta(): void
@@ -80,5 +80,14 @@ class DizimoTest extends TestCase
         Sanctum::actingAs(User::factory()->create());
         $this->getJson('/api/v1/planejamento/dizimo?mes=2026-10')->assertOk()
             ->assertJsonPath('data.base_recebida', 0)->assertJsonPath('data.domingos', []);
+    }
+
+    public function test_devolucao_adiantada_cobre_os_domingos_seguintes(): void
+    {
+        $this->l('2026-10-09', 'despesa', 'Devolução dízimo', 'Devolução Dízimo', 303.40, true); // sex → cobre o resto
+        $d = app(PlanejamentoService::class)->dizimo($this->user->tenant_id, Carbon::parse('2026-10-01'));
+        // os 303,40 quitam primeiro os 3,40 que faltaram em 04/10 e adiantam 18/10
+        $this->assertSame(['devolvido', 'devolvido', 'devolvido'], array_column($d['domingos'], 'situacao'));
+        $this->assertSame(0.0, (float) $d['falta']);
     }
 }

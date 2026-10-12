@@ -688,23 +688,62 @@ class PlanejamentoService
         }
         ksort($domingos);
 
-        $devolvido = $movs->filter(fn ($m) => $m['tipo'] === 'despesa' && $chave($m['categoria']) === 'devolucao dizimo'
-                && $m['realizado_em'] && Carbon::parse($m['realizado_em'])->between($inicio, $fim))
-            ->sum(fn ($m) => $cent($m['valor_realizado']));
+        // Devoluções pagas no mês: cada uma vale para o domingo da semana em que
+        // foi paga; o que passa do valor daquele domingo adianta os seguintes.
+        $pagas = $movs->filter(fn ($m) => $m['tipo'] === 'despesa' && $chave($m['categoria']) === 'devolucao dizimo'
+                && $m['realizado_em'] && Carbon::parse($m['realizado_em'])->between($inicio, $fim));
+        $devolvido = $pagas->sum(fn ($m) => $cent($m['valor_realizado']));
+        $pagoNoDomingo = [];
+        foreach ($pagas as $m) {
+            $dp = Carbon::parse($m['realizado_em'])->startOfDay();
+            $dom = ($dp->isSunday() ? $dp : $dp->copy()->next(Carbon::SUNDAY))->format('Y-m-d');
+            $pagoNoDomingo[$dom] = ($pagoNoDomingo[$dom] ?? 0) + $cent($m['valor_realizado']);
+        }
+        ksort($pagoNoDomingo);
 
-        // Situação de cada domingo: o devolvido no mês cobre os domingos em ordem.
-        $sobra = $devolvido;
+        // Cada domingo usa o que foi pago até ele: primeiro o próprio domingo
+        // (a devolução da semana é dele), depois domingos anteriores que ficaram
+        // devendo (do mais antigo); o que sobra adianta os próximos.
+        $caixa = 0;
+        $usados = [];
+        $falta = [];   // data => centavos ainda devidos
+        foreach ($domingos as $d) {
+            foreach ($pagoNoDomingo as $dom => $v) {
+                if ($dom <= $d['data'] && ! isset($usados[$dom])) {
+                    $caixa += $v;
+                    $usados[$dom] = true;
+                }
+            }
+            $valor = (int) round($d['base'] / 10);
+            $pago = min($caixa, $valor);
+            $caixa -= $pago;
+            foreach ($falta as $dom => $resta) {
+                $quita = min($caixa, $resta);
+                $caixa -= $quita;
+                $falta[$dom] -= $quita;
+            }
+            $falta[$d['data']] = $valor - $pago;
+        }
+        // Pagamentos depois do último domingo (no mês) ainda quitam o que ficou.
+        foreach ($pagoNoDomingo as $dom => $v) {
+            if (! isset($usados[$dom])) {
+                $caixa += $v;
+            }
+        }
+        foreach ($falta as $dom => $resta) {
+            $pago = min($caixa, $resta);
+            $caixa -= $pago;
+            $falta[$dom] -= $pago;
+        }
+
         $lista = [];
         foreach ($domingos as $d) {
-            $valor = (int) round($d['base'] / 10);
-            $coberto = $sobra >= $valor;
-            $sobra = max(0, $sobra - $valor);
             $lista[] = [
                 'data'     => $d['data'],
-                'valor'    => $valor / 100,
+                'valor'    => (int) round($d['base'] / 10) / 100,
                 'base'     => $d['base'] / 100,
                 'receitas' => array_values(array_unique($d['receitas'])),
-                'situacao' => $coberto ? 'devolvido' : (Carbon::parse($d['data'])->lt($hoje) ? 'atrasado' : 'pendente'),
+                'situacao' => $falta[$d['data']] <= 0 ? 'devolvido' : (Carbon::parse($d['data'])->lt($hoje) ? 'atrasado' : 'pendente'),
             ];
         }
 
