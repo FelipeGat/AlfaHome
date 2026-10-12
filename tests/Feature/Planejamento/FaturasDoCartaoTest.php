@@ -45,7 +45,7 @@ class FaturasDoCartaoTest extends TestCase
         $r->assertSee('Faturas — Cartão Sicoob')->assertSee('Falta R$ 21,59')->assertDontSee('Outro cartão');
 
         // Sem filtro: lista todos, sem bloco de faturas.
-        $this->get(route('planejamento.cartoes'))->assertOk()->assertDontSee('Faturas — ')->assertSee('Clique num cartão');
+        $this->get(route('planejamento.cartoes'))->assertOk()->assertDontSee('Faturas — ')->assertSee('Toque num cartão');
         // Cartão inexistente: ignora o filtro.
         $this->assertSame([], $this->get(route('planejamento.cartoes', ['cartao' => 'nao-existe']))->viewData('faturas'));
     }

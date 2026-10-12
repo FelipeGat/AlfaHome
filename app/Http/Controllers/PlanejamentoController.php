@@ -139,8 +139,19 @@ class PlanejamentoController extends Controller
             'faturas'     => $selecionado ? $this->planejamento->faturasDoCartao($tenantId, $selecionado) : [],
             // Contas de onde pode sair o pagamento da fatura de um cartão do sistema.
             'contasPagamento' => $bancos->filter(fn ($b) => $b->tem_conta_corrente || $b->tem_poupanca || $b->eh_dinheiro)->sortBy('nome')->values(),
+            'pagadores'   => $this->planejamento->contasPagamento($tenantId),
+            // Próxima fatura de cada cartão (data e se já está paga), a mesma do Início.
+            'proximas'    => collect($this->planejamento->vencimentos($tenantId)['a_pagar'])->where('origem', 'fatura')->keyBy('descricao'),
             'ultima'      => $this->planejamento->ultimaImportacao($tenantId),
         ]);
+    }
+
+    /** Conta que paga a fatura de um cartão da planilha (JSON para a tela de Cartões). */
+    public function contaPagamento(\App\Http\Requests\Api\V1\ContaPagamentoCartaoRequest $request)
+    {
+        $this->planejamento->definirContaPagamento($request->user()->tenant_id, $request->validated('cartao'), $request->validated('banco_id'));
+
+        return response()->json(['message' => 'Conta de pagamento salva.']);
     }
 
     public function dividas()

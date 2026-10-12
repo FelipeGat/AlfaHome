@@ -96,8 +96,8 @@ class TelasTest extends TestCase
             ->assertSee('Ago/2026')->assertSee('Total 2026')->assertSee('R$ 17.632,86')->assertSee('R$ 5.407,76');
 
         $this->get(route('planejamento.cartoes'))->assertOk()
-            ->assertSee('Cartão Sicoob')->assertSee('R$ 23.593,00')->assertSee('R$ 21.737,85')->assertSee('R$ 3.921,44')
-            ->assertSee('92,64%')->assertSee('Cartão celebre')
+            ->assertSee('Sicoob')->assertSee('Disponível de R$ 23.593,00')->assertSee('R$ 21.737,85')->assertSee('R$ 3.921,44')
+            ->assertSee('Melhor dia de compra')->assertSee('celebre')
             ->assertSee('Celular Iphone')->assertSee('10 x 519,90')->assertSee('R$ 2.079,60')
             ->assertSee('Cartão Mercado Pago')->assertSee('Este cartão não está na aba Cartões da planilha');
 
@@ -123,13 +123,14 @@ class TelasTest extends TestCase
             ->assertSee('são mantidos na planilha', false);
 
         // Não existe rota de escrita para os dados da planilha, na web nem na API:
-        // só gravam as que trazem a planilha (importar, analisar e o link dela).
+        // só gravam as que trazem a planilha (importar, analisar e o link dela) e
+        // a conta que paga a fatura de um cartão, que é configuração do sistema.
         $escrita = collect(app('router')->getRoutes()->getRoutes())
             ->filter(fn ($r) => str_contains($r->uri(), 'planejamento') && array_diff($r->methods(), ['GET', 'HEAD']))
             ->map(fn ($r) => $r->uri())->unique()->sort()->values()->all();
         $this->assertSame([
-            'api/v1/planejamento/analisar', 'api/v1/planejamento/importar',
-            'planejamento/analisar', 'planejamento/fonte', 'planejamento/importar',
+            'api/v1/planejamento/analisar', 'api/v1/planejamento/cartoes/conta-pagamento', 'api/v1/planejamento/importar',
+            'planejamento/analisar', 'planejamento/cartoes/conta-pagamento', 'planejamento/fonte', 'planejamento/importar',
         ], $escrita);
 
         $lancamento = PlanLancamento::first();

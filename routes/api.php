@@ -151,6 +151,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
             Route::get( 'anual',        [PlanejamentoApiController::class, 'anual'])->name('anual');
             Route::get( 'lancamentos',  [PlanejamentoApiController::class, 'lancamentos'])->name('lancamentos');
             Route::get( 'cartoes',      [PlanejamentoApiController::class, 'cartoes'])->name('cartoes');
+            Route::put( 'cartoes/conta-pagamento', [PlanejamentoApiController::class, 'contaPagamento'])->name('cartoes.conta-pagamento');
             Route::get( 'parceladas',   [PlanejamentoApiController::class, 'parceladas'])->name('parceladas');
             Route::get( 'dividas',      [PlanejamentoApiController::class, 'dividas'])->name('dividas');
             Route::get( 'metas',        [PlanejamentoApiController::class, 'metas'])->name('metas');

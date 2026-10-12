@@ -35,6 +35,31 @@
 .fat-erro:empty { display:none; }
 .fat-editavel { cursor:pointer; }
 .fat-editavel:hover { background:var(--color-bg); }
+.cc-grade { display:grid; gap:16px; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); margin-bottom:20px; }
+@media (max-width:480px) { .cc-grade { grid-template-columns:1fr; } }
+.cc { background:var(--color-bg-card); border:1px solid var(--color-border); border-radius:14px; padding:16px 18px; box-shadow:var(--shadow-card); display:flex; flex-direction:column; gap:12px; min-width:0; }
+.cc.sel { border-color:var(--color-primary); box-shadow:0 0 0 3px var(--color-primary-soft); }
+.cc-cab { display:flex; align-items:center; gap:10px; color:inherit; text-decoration:none; padding-bottom:12px; border-bottom:1px solid var(--color-border); }
+.cc-cab strong { display:block; font-size:15px; font-weight:600; color:var(--color-text); }
+.cc-cab small { display:block; font-size:12px; color:var(--color-text-muted); }
+.cc-corpo { display:grid; grid-template-columns:96px minmax(0,1fr); gap:16px; align-items:center; }
+.cc-plastico { height:140px; border-radius:10px; background:linear-gradient(160deg, var(--cc-cor), color-mix(in srgb, var(--cc-cor) 55%, #000)); color:#fff; padding:10px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 6px 14px rgba(15,23,42,.18); }
+.cc-plastico span { writing-mode:vertical-rl; transform:rotate(180deg); align-self:center; font-weight:700; letter-spacing:.06em; font-size:13px; text-transform:uppercase; opacity:.95; max-height:100px; overflow:hidden; }
+.cc-dados { margin:0; display:flex; flex-direction:column; gap:7px; }
+.cc-dados div { display:flex; justify-content:space-between; gap:10px; font-size:13.5px; }
+.cc-dados dt { color:var(--color-text-muted); }
+.cc-dados dd { margin:0; font-weight:600; color:var(--color-text); text-align:right; }
+.cc-status { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12.5px; font-weight:600; border:1px solid var(--color-warning); color:var(--color-warning); background:var(--color-warning-soft); }
+.cc-status.paga { border-color:var(--color-success); color:var(--color-success); background:var(--color-success-soft); }
+.cc-barra { height:8px; border-radius:8px; background:var(--color-bg); overflow:hidden; }
+.cc-barra b { display:block; height:100%; border-radius:8px; }
+.cc-limites { display:flex; justify-content:space-between; gap:10px; margin-top:-4px; }
+.cc-limites strong { display:block; font-size:16px; font-weight:600; }
+.cc-limites small { font-size:12px; color:var(--color-text-muted); }
+.cc-acoes { display:flex; gap:8px; flex-wrap:wrap; align-items:center; border-top:1px solid var(--color-border); padding-top:12px; margin-top:auto; }
+.cc-pagador { display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--color-text-muted); margin-left:auto; }
+.cc-pagador .form-control { width:auto; min-width:150px; font-size:13px; padding:6px 8px; }
+.cc-pagador.salvo .form-control { border-color:var(--color-success); }
 </style>
 
 @include('planejamento._abas', ['ultima' => $ultima])
@@ -46,71 +71,88 @@
     @include('planejamento._kpi', ['rotulo' => 'Saldo das parceladas', 'valor' => $brl($parceladas['resumo']['saldo_total']), 'nota' => $brl($parceladas['resumo']['parcela_mensal_total']) . ' em parcelas por mês'])
 </div>
 
-<div class="card" style="padding:18px 20px;margin-bottom:20px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <div class="card-title">Cartões</div>
-        <span style="font-size:12.5px;color:var(--color-text-muted);">
-            @if($selecionado)
-                Mostrando {{ $selecionado->nome }} · <a href="{{ route('planejamento.cartoes') }}" style="color:var(--color-primary);font-weight:600;">ver todos</a>
-            @else
-                Clique num cartão para ver as faturas
-            @endif
-        </span>
-    </div>
-    @if($cartoes['itens']->isEmpty())
-        <div class="empty-state"><i class="fa-solid fa-credit-card"></i><p>Nenhum cartão cadastrado.</p><a class="btn btn-primary btn-sm" href="{{ route('bancos.index', ['nova' => 1]) }}" style="margin-top:8px;">Adicionar cartão</a></div>
-    @else
-        <div class="table-wrapper">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Cartão</th><th>Banco</th>
-                        <th class="plan-num">Limite total</th><th class="plan-num">Utilizado</th><th class="plan-num">Disponível</th>
-                        <th style="min-width:120px;">Uso</th>
-                        <th class="plan-num">Fecha dia</th><th class="plan-num">Vence dia</th><th class="plan-num">Fatura atual</th><th>Situação</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($cartoes['itens'] as $c)
-                        @php
-                            $marca = $marcas[$c->chave] ?? ['logo' => null, 'cor' => null];
-                            $sel = $selecionado && $selecionado->chave === $c->chave;
-                            $url = $sel ? route('planejamento.cartoes') : route('planejamento.cartoes', ['cartao' => $c->chave]) . '#faturas';
-                        @endphp
-                        <tr class="cart-linha {{ $sel ? 'sel' : '' }}" onclick="location.href='{{ $url }}'">
-                            <td>
-                                <a href="{{ $url }}" class="cart-marca" aria-current="{{ $sel ? 'true' : 'false' }}" title="{{ $sel ? 'Ver todos os cartões' : 'Ver faturas deste cartão' }}">
-                                    @if($marca['logo'])
-                                        <img class="cart-logo" src="{{ asset($marca['logo']) }}" alt="">
-                                    @else
-                                        <span class="cart-letra" style="background:{{ $marca['cor'] ?: '#64748B' }};">{{ mb_strtoupper(mb_substr(\Illuminate\Support\Str::of($c->nome)->replaceFirst('Cartão ', ''), 0, 1)) }}</span>
-                                    @endif
-                                    <span><strong>{{ $c->nome }}</strong>@if($c->observacao)<div style="font-size:11px;color:var(--color-text-muted);font-weight:400;">{{ $c->observacao }}</div>@endif</span>
-                                </a>
-                            </td>
-                            <td>{{ $c->banco ?? '—' }}</td>
-                            <td class="plan-num">{{ $brl($c->limite_total) }}</td>
-                            <td class="plan-num">{{ $brl($c->limite_utilizado) }}</td>
-                            <td class="plan-num">{{ $brl($c->limite_disponivel) }}</td>
-                            <td>
-                                @if($c->utilizado_pct !== null)
-                                    <div class="progress-bar"><div class="progress-bar-fill" style="width:{{ min($c->utilizado_pct, 100) }}%;background:{{ $c->utilizado_pct >= 80 ? 'var(--color-danger)' : 'var(--color-primary)' }};"></div></div>
-                                    <div style="font-size:11px;color:var(--color-text-muted);margin-top:2px;">{{ $pct($c->utilizado_pct) }}</div>
-                                @else
-                                    <span style="color:var(--color-text-faint);">—</span>
-                                @endif
-                            </td>
-                            <td class="plan-num">{{ $c->dia_fechamento ?? '—' }}</td>
-                            <td class="plan-num">{{ $c->dia_vencimento ?? '—' }}</td>
-                            <td class="plan-num">{{ $brl($c->fatura_atual) }}</td>
-                            <td>@if($c->status_fatura)<span class="badge {{ mb_strtolower($c->status_fatura) === 'aberta' ? 'badge-warning' : 'badge-success' }}">{{ $c->status_fatura }}</span>@else<span style="color:var(--color-text-faint);">—</span>@endif</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    @endif
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+    <div class="card-title" style="font-size:16px;">Cartões</div>
+    <span style="font-size:12.5px;color:var(--color-text-muted);">
+        @if($selecionado)
+            Mostrando {{ $selecionado->nome }} · <a href="{{ route('planejamento.cartoes') }}" style="color:var(--color-primary);font-weight:600;">ver todos</a>
+        @else
+            Toque num cartão para ver as faturas
+        @endif
+    </span>
 </div>
+@if($cartoes['itens']->isEmpty())
+    <div class="card" style="padding:18px 20px;margin-bottom:20px;"><div class="empty-state"><i class="fa-solid fa-credit-card"></i><p>Nenhum cartão cadastrado.</p><a class="btn btn-primary btn-sm" href="{{ route('bancos.index', ['nova' => 1]) }}" style="margin-top:8px;">Adicionar cartão</a></div></div>
+@else
+    <div class="cc-grade">
+        @foreach($cartoes['itens'] as $c)
+            @php
+                $marca = $marcas[$c->chave] ?? ['logo' => null, 'cor' => null];
+                $sel = $selecionado && $selecionado->chave === $c->chave;
+                $url = $sel ? route('planejamento.cartoes') : route('planejamento.cartoes', ['cartao' => $c->chave]) . '#faturas';
+                $nome = (string) \Illuminate\Support\Str::of($c->nome)->replaceFirst('Cartão ', '');
+                $prox = $proximas->get('Fatura ' . $c->nome);
+                $paga = $prox['pago'] ?? (mb_strtolower((string) $c->status_fatura) === 'paga');
+                $vence = $prox['data'] ?? null;
+                // Melhor dia de compra: o dia seguinte ao fechamento, de hoje em diante.
+                $melhor = null;
+                if ($c->dia_fechamento) {
+                    $noMes = fn ($m) => $m->copy()->startOfMonth()->day(min((int) $c->dia_fechamento + 1, $m->daysInMonth));
+                    $melhor = $noMes(now());
+                    if ($melhor->lt(now()->startOfDay())) $melhor = $noMes(now()->startOfMonth()->addMonth());
+                }
+                $usoPct = $c->utilizado_pct;
+                $corBarra = $usoPct === null ? 'var(--color-text-muted)' : ($usoPct > 80 ? 'var(--color-danger)' : 'var(--color-primary)');
+                $cor = $marca['cor'] ?: '#334155';
+                $chaveCartao = $c->banco ?: $c->nome;
+                $pagador = $c->banco_id ? null : ($pagadores[app(\App\Services\Planejamento\PlanejamentoService::class)->chaveConta($chaveCartao)] ?? null);
+            @endphp
+            <article class="cc {{ $sel ? 'sel' : '' }}">
+                <a class="cc-cab" href="{{ $url }}" aria-current="{{ $sel ? 'true' : 'false' }}" title="{{ $sel ? 'Ver todos os cartões' : 'Ver faturas deste cartão' }}">
+                    @if($marca['logo'])<img class="cart-logo" src="{{ asset($marca['logo']) }}" alt="">@else<span class="cart-letra" style="background:{{ $cor }};">{{ mb_strtoupper(mb_substr($nome, 0, 1)) }}</span>@endif
+                    <span style="min-width:0;"><strong>{{ $nome }}</strong><small>{{ $c->dia_fechamento ? 'Fecha dia ' . $c->dia_fechamento : '' }}{{ $c->dia_fechamento && $c->dia_vencimento ? ' · ' : '' }}{{ $c->dia_vencimento ? 'vence dia ' . $c->dia_vencimento : '' }}</small></span>
+                    <i class="fa-solid fa-chevron-right" style="margin-left:auto;color:var(--color-text-muted);font-size:12px;"></i>
+                </a>
+                <div class="cc-corpo">
+                    <div class="cc-plastico" style="--cc-cor:{{ $cor }};" aria-hidden="true">
+                        <i class="fa-solid fa-wifi" style="transform:rotate(90deg);font-size:11px;opacity:.8;"></i>
+                        <span>{{ $nome }}</span>
+                    </div>
+                    <dl class="cc-dados">
+                        <div><dt>Valor da fatura</dt><dd class="plan-num">{{ $brl($c->fatura_atual) }}</dd></div>
+                        <div><dt>Vencimento</dt><dd>{{ $vence ? \Carbon\Carbon::parse($vence)->format('d/m') : '—' }}</dd></div>
+                        <div><dt>Melhor dia de compra</dt><dd>{{ $melhor ? $melhor->format('d/m') : '—' }}</dd></div>
+                        <div><dt>Status da fatura</dt><dd>@if($c->fatura_atual)<span class="cc-status {{ $paga ? 'paga' : '' }}">{{ $paga ? 'Paga' : 'Aberta' }}</span>@else—@endif</dd></div>
+                    </dl>
+                </div>
+                @if($usoPct !== null)
+                    <div class="cc-barra" role="img" aria-label="{{ number_format($usoPct, 0, ',', '.') }}% do limite usado"><b style="width:{{ min(100, $usoPct) }}%;background:{{ $corBarra }};"></b></div>
+                    <div class="cc-limites">
+                        <div><strong class="plan-num" style="color:{{ $usoPct > 80 ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ $brl($c->limite_utilizado) }}</strong><small>Limite utilizado</small></div>
+                        <div style="text-align:right;"><strong class="plan-num">{{ $brl($c->limite_disponivel) }}</strong><small>Disponível de {{ $brl($c->limite_total) }}</small></div>
+                    </div>
+                @else
+                    <p style="font-size:13px;color:var(--color-text-muted);margin:6px 0 0;">Sem limite informado.</p>
+                @endif
+                <div class="cc-acoes">
+                    <a class="btn btn-secondary btn-sm" href="{{ $url }}"><i class="fa-regular fa-file-lines"></i> {{ $sel ? 'Ver todos' : 'Ver faturas' }}</a>
+                    @if($c->banco_id)
+                        @if($c->fatura_pendente > 0)<a class="btn btn-primary btn-sm" href="{{ route('planejamento.cartoes', ['cartao' => $c->chave]) }}#faturas"><i class="fa-solid fa-check"></i> Pagar fatura</a>@endif
+                    @else
+                        <label class="cc-pagador" title="Conta de onde sai o dinheiro quando a fatura é paga">
+                            <span>Fatura paga com</span>
+                            <select class="form-control" data-cartao="{{ $chaveCartao }}" aria-label="Conta que paga a fatura de {{ $nome }}">
+                                @php $temMesma = $contasPagamento->contains(fn ($b) => app(\App\Services\Planejamento\PlanejamentoService::class)->chaveConta($b->nome) === app(\App\Services\Planejamento\PlanejamentoService::class)->chaveConta($chaveCartao)); @endphp
+                                <option value="">{{ $temMesma ? ($c->banco ?: $nome) . ' (mesma conta)' : 'Escolha a conta' }}</option>
+                                @foreach($contasPagamento as $b)<option value="{{ $b->id }}" @selected($pagador === $b->id)>{{ $b->nome }}</option>@endforeach
+                            </select>
+                        </label>
+                    @endif
+                </div>
+            </article>
+        @endforeach
+    </div>
+@endif
 
 @if($selecionado)
 <div class="card" id="faturas" style="padding:18px 20px;margin-bottom:20px;">
@@ -228,6 +270,19 @@
 
 @push('scripts')
 <script>
+// Conta que paga a fatura de um cartão da planilha: grava ao escolher.
+document.querySelectorAll('.cc-pagador select').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+        var rot = sel.closest('.cc-pagador');
+        rot.classList.remove('salvo'); sel.disabled = true;
+        fetch('{{ route('planejamento.cartoes.conta-pagamento') }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+            body: JSON.stringify({ cartao: sel.dataset.cartao, banco_id: sel.value ? parseInt(sel.value, 10) : null }),
+        }).then(function (r) { sel.disabled = false; if (r.ok) rot.classList.add('salvo'); else alert('Não foi possível salvar. Tente de novo.'); })
+          .catch(function () { sel.disabled = false; alert('Sem conexão. Tente de novo.'); });
+    });
+});
 document.querySelectorAll('.fat-pagar').forEach(function (f) {
     f.addEventListener('submit', function (e) {
         e.preventDefault();

@@ -146,6 +146,7 @@ Route::middleware(['auth', 'tenant.ativo', 'manutencao', 'planilha.dia'])->group
         Route::get('/lancamentos', [PlanejamentoController::class, 'lancamentos'])->name('lancamentos');
         Route::get('/anual', [PlanejamentoController::class, 'anual'])->name('anual');
         Route::get('/cartoes', [PlanejamentoController::class, 'cartoes'])->name('cartoes');
+        Route::post('/cartoes/conta-pagamento', [PlanejamentoController::class, 'contaPagamento'])->name('cartoes.conta-pagamento');
         Route::get('/dividas', [PlanejamentoController::class, 'dividas'])->name('dividas');
         Route::get('/metas', [PlanejamentoController::class, 'metas'])->name('metas');
         Route::get('/contas-fixas', [PlanejamentoController::class, 'contasFixas'])->name('contas-fixas');

@@ -3,6 +3,7 @@
 namespace App\Services\Planejamento;
 
 use App\Models\Banco;
+use App\Models\CartaoContaPagamento;
 use App\Models\Despesa;
 use App\Models\PlanCartao;
 use App\Models\PlanCompraParcelada;
@@ -14,6 +15,7 @@ use App\Models\PlanMeta;
 use App\Models\Receita;
 use App\Models\Transferencia;
 use App\Services\Financeiro\FinanceiroService;
+use App\Services\Financeiro\RecalcularSaldos;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
@@ -591,6 +593,24 @@ class PlanejamentoService
         return preg_match('/^Parcela (\d+\/\d+) — (.+)$/u', $texto, $m) ? "{$m[2]} ({$m[1]})" : $texto;
     }
 
+    /** @return array<string, int> nome normalizado do cartão => conta que paga a fatura */
+    public function contasPagamento(int $tenantId): array
+    {
+        return CartaoContaPagamento::withoutGlobalScopes()->where('tenant_id', $tenantId)->pluck('banco_id', 'cartao')->all();
+    }
+
+    /** Define (ou, com nulo, tira) a conta que paga a fatura do cartão da planilha. */
+    public function definirContaPagamento(int $tenantId, string $cartao, ?int $bancoId): void
+    {
+        $chave = $this->chaveConta($cartao);
+        if ($bancoId === null) {
+            CartaoContaPagamento::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('cartao', $chave)->delete();
+        } else {
+            CartaoContaPagamento::withoutGlobalScopes()->updateOrCreate(['tenant_id' => $tenantId, 'cartao' => $chave], ['banco_id' => $bancoId]);
+        }
+        RecalcularSaldos::para($tenantId);
+    }
+
     /** "Cartão Mercado Pago" e "Mercado Pago" são a mesma conta. */
     public function chaveConta(?string $nome): string
     {
@@ -705,9 +725,13 @@ class PlanejamentoService
         // Realizado é o que está com situação Pago/Realizado — a família às vezes
         // preenche o valor realizado de contas futuras, que continuam pendentes.
         // Pago sem valor realizado vale o previsto.
+        // Compra no cartão da planilha sai da conta que paga a fatura, quando
+        // ela foi informada (sem isso, da conta de mesmo nome do cartão).
+        $pagadores = $this->contasPagamento($tenantId);
+
         $planilha = PlanLancamento::withoutGlobalScopes()->where('tenant_id', $tenantId)
             ->whereBetween('data', [$de, $ate])->get()
-            ->map(function ($l) {
+            ->map(function ($l) use ($pagadores) {
                 $realizado = $l->status === 'concluido' ? ($l->valor_realizado ?? $l->valor_previsto) : null;
 
                 return [
@@ -721,7 +745,7 @@ class PlanejamentoService
                     'categoria'       => $l->categoria,
                     'forma'           => $l->forma,
                     'conta'           => $l->conta,
-                    'banco_id'        => null,
+                    'banco_id'        => $l->forma === 'cartao' ? ($pagadores[$this->chaveConta($l->conta)] ?? null) : null,
                     'registrado_em'   => $l->created_at,
                     'valor_previsto'  => $l->valor_previsto !== null ? (float) $l->valor_previsto : null,
                     'valor_realizado' => $realizado !== null ? (float) $realizado : null,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\ContaPagamentoCartaoRequest;
 use App\Models\PlanilhaFonte;
 use App\Models\PlanilhaImportacao;
 use App\Services\Planejamento\PlanilhaFonteService;
@@ -49,6 +50,7 @@ class PlanejamentoApiController extends Controller
     public function cartoes(Request $request): JsonResponse
     {
         $r = $this->planejamento->cartoes($request->user()->tenant_id);
+        $pagadores = $this->planejamento->contasPagamento($request->user()->tenant_id);
 
         return response()->json([
             'data' => $r['itens']->map(fn ($c) => [
@@ -67,11 +69,24 @@ class PlanejamentoApiController extends Controller
                 'fatura_atual'      => $this->valor($c->fatura_atual),
                 'status_fatura'     => $c->status_fatura,
                 'fatura_vencimento' => $c->fatura_vencimento,
+                // Cartão da planilha: conta que paga a fatura (nula = a de mesmo nome).
+                'conta_pagamento_id' => $c->banco_id ? null : ($pagadores[$this->planejamento->chaveConta($c->banco ?: $c->nome)] ?? null),
                 'fatura_pendente'   => $c->fatura_pendente,
                 'observacao'        => $c->observacao,
             ])->values(),
             'resumo' => $r['resumo'],
         ]);
+    }
+
+    /**
+     * PUT /api/v1/planejamento/cartoes/conta-pagamento
+     * Corpo: cartao (nome do cartão ou do banco), banco_id (conta que paga; nulo = a do próprio cartão).
+     */
+    public function contaPagamento(ContaPagamentoCartaoRequest $request): JsonResponse
+    {
+        $this->planejamento->definirContaPagamento($request->user()->tenant_id, $request->validated('cartao'), $request->validated('banco_id'));
+
+        return response()->json(['message' => 'Conta de pagamento salva.']);
     }
 
     /** GET /api/v1/planejamento/parceladas */
