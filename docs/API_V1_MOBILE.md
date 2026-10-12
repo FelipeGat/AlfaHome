@@ -804,3 +804,18 @@ próximo vencimento), `status_fatura` (`Aberta`/`Paga`), `fatura_vencimento` e
 `tipo = "transferencia"`, `ref = "transferencia:{id}"`, `conta = "Origem →
 Destino"`, `origem_id`, `destino_id`. Não somam em entrou/saiu.
 
+## 17. Dízimo
+
+### GET `/planejamento/dizimo?mes=AAAA-MM`
+
+10% das receitas da base (categorias Renda fixa e Renda variável — salários,
+pró-labore, Vixcard, trimestral, ticket; fora venda de imóvel, reembolso e
+outros), no domingo da data da receita ou no primeiro depois dela. Receita
+prevista que passou da data sem entrar conta no próximo domingo a partir de
+hoje. O mês do domingo é o mês do dízimo.
+
+Devolve `mes, base_recebida, dizimo_devido` (10% do recebido), `base_prevista,
+dizimo_previsto` (10% de toda a base), `devolvido` (despesas "Devolução Dízimo"
+pagas no mês), `falta` (devido − devolvido, mínimo 0) e `domingos[]`
+(`data, valor, base, receitas[], situacao: devolvido|pendente|atrasado`).
+

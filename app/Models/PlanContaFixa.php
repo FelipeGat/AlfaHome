@@ -23,13 +23,13 @@ class PlanContaFixa extends Model
 
     /**
      * Receita fixa (salário, pró-labore, venda da casa...): a planilha não tem
-     * coluna de tipo, então vale a categoria — Renda fixa, Renda variável ou
-     * Reembolso. O resto é despesa.
+     * coluna de tipo, então vale a categoria — Renda fixa, Renda variável,
+     * Reembolso ou Venda de imóvel. O resto é despesa.
      */
     public function getEhReceitaAttribute(): bool
     {
         $c = mb_strtolower(\Illuminate\Support\Str::ascii(trim((string) $this->categoria)));
 
-        return str_starts_with($c, 'renda') || $c === 'reembolso';
+        return str_starts_with($c, 'renda') || $c === 'reembolso' || $c === 'venda de imovel';
     }
 }

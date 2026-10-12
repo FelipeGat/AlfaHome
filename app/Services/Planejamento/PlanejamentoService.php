@@ -636,6 +636,92 @@ class PlanejamentoService
         return preg_match('/^Parcela (\d+\/\d+) — (.+)$/u', $texto, $m) ? "{$m[2]} ({$m[1]})" : $texto;
     }
 
+    /** Categorias que formam a base do dízimo (salários, pró-labore, Vixcard, trimestral, ticket). */
+    private const BASE_DIZIMO = ['renda fixa', 'renda variavel'];
+
+    /**
+     * Dízimo do mês: 10% de cada receita da base vai para o domingo da data
+     * dela (ou o primeiro domingo depois). Receita prevista que já passou da
+     * data e não entrou conta no próximo domingo a partir de hoje. O mês do
+     * domingo é o mês do dízimo. Devolvido = despesas "Devolução Dízimo" pagas
+     * no mês. Somas em centavos.
+     *
+     * @return array{mes: string, base_recebida: float, dizimo_devido: float, base_prevista: float, dizimo_previsto: float, devolvido: float, falta: float, domingos: list<array>}
+     */
+    public function dizimo(int $tenantId, CarbonInterface $mes, ?CarbonInterface $hoje = null): array
+    {
+        $hoje   = ($hoje ?? now())->copy()->startOfDay();
+        $inicio = $mes->copy()->startOfMonth()->startOfDay();
+        $fim    = $mes->copy()->endOfMonth()->endOfDay();
+        $chave  = fn (?string $t) => Str::lower(Str::ascii(trim((string) $t)));
+        $cent   = fn ($v) => (int) round(((float) $v) * 100);
+
+        // Receitas de até 6 dias antes caem no 1º domingo do mês; no mês corrente,
+        // pendentes antigas também (vão para o próximo domingo).
+        $desde = $hoje->between($inicio, $fim) ? $inicio->copy()->subMonths(3) : $inicio->copy()->subDays(6);
+        $movs  = $this->movimentos($tenantId, $desde, $fim);
+
+        $domingos = [];
+        $baseRecebida = $basePrevista = 0;
+        foreach ($movs as $m) {
+            if ($m['tipo'] !== 'receita' || ! in_array($chave($m['categoria']), self::BASE_DIZIMO, true)) {
+                continue;
+            }
+            $recebida = $m['realizado_em'] !== null;
+            $data = Carbon::parse($recebida ? $m['realizado_em'] : $m['data'])->startOfDay();
+            if (! $recebida && $data->lt($hoje)) {
+                $data = $hoje->copy();
+            }
+            $domingo = $data->isSunday() ? $data : $data->copy()->next(Carbon::SUNDAY);
+            if (! $domingo->between($inicio, $fim)) {
+                continue;
+            }
+            $valor = $cent($recebida ? $m['valor_realizado'] : $m['valor_previsto']);
+            $d = $domingo->format('Y-m-d');
+            $domingos[$d] ??= ['data' => $d, 'base' => 0, 'receitas' => []];
+            $domingos[$d]['base'] += $valor;
+            $domingos[$d]['receitas'][] = $m['descricao'];
+            $basePrevista += $valor;
+            if ($recebida) {
+                $baseRecebida += $valor;
+            }
+        }
+        ksort($domingos);
+
+        $devolvido = $movs->filter(fn ($m) => $m['tipo'] === 'despesa' && $chave($m['categoria']) === 'devolucao dizimo'
+                && $m['realizado_em'] && Carbon::parse($m['realizado_em'])->between($inicio, $fim))
+            ->sum(fn ($m) => $cent($m['valor_realizado']));
+
+        // Situação de cada domingo: o devolvido no mês cobre os domingos em ordem.
+        $sobra = $devolvido;
+        $lista = [];
+        foreach ($domingos as $d) {
+            $valor = (int) round($d['base'] / 10);
+            $coberto = $sobra >= $valor;
+            $sobra = max(0, $sobra - $valor);
+            $lista[] = [
+                'data'     => $d['data'],
+                'valor'    => $valor / 100,
+                'base'     => $d['base'] / 100,
+                'receitas' => array_values(array_unique($d['receitas'])),
+                'situacao' => $coberto ? 'devolvido' : (Carbon::parse($d['data'])->lt($hoje) ? 'atrasado' : 'pendente'),
+            ];
+        }
+
+        $devido = (int) round($baseRecebida / 10);
+
+        return [
+            'mes'             => $inicio->format('Y-m'),
+            'base_recebida'   => $baseRecebida / 100,
+            'dizimo_devido'   => $devido / 100,
+            'base_prevista'   => $basePrevista / 100,
+            'dizimo_previsto' => (int) round($basePrevista / 10) / 100,
+            'devolvido'       => $devolvido / 100,
+            'falta'           => max(0, $devido - $devolvido) / 100,
+            'domingos'        => $lista,
+        ];
+    }
+
     /** @return array<string, int> nome normalizado do cartão => conta que paga a fatura */
     public function contasPagamento(int $tenantId): array
     {

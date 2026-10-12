@@ -25,6 +25,19 @@
 .prev-val { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
 .prev-val .badge { font-size:10.5px; }
 .prev-linha.feito .prev-txt span, .prev-linha.feito strong { color:var(--color-text-muted); }
+.diz-cab { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.diz-num { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.diz-num small { display:block; font-size:12px; color:var(--color-text-muted); }
+.diz-num strong { font-size:17px; font-weight:600; }
+.diz-domingos { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--color-border); }
+.diz-dom { border:1px solid var(--color-border); border-radius:10px; padding:6px 12px; min-width:104px; }
+.diz-dom span, .diz-dom small { display:block; font-size:12px; color:var(--color-text-muted); }
+.diz-dom strong { display:block; font-size:14px; font-weight:600; }
+.diz-dom.devolvido { border-color:var(--color-success); background:var(--color-success-soft); }
+.diz-dom.devolvido small { color:var(--color-success); }
+.diz-dom.atrasado { border-color:var(--color-danger); }
+.diz-dom.atrasado small { color:var(--color-danger); }
+@media (max-width:767px) { .diz-num { grid-template-columns:1fr 1fr; } }
 </style>
 
 @include('planejamento._abas', ['ultima' => $resumo['ultima_importacao']])
@@ -93,6 +106,33 @@
         @endforelse
     </div>
 </div>
+
+{{-- Dízimo: 10% das receitas da base, devolvido todo domingo --}}
+@if($dizimo['domingos'] || $dizimo['devolvido'] > 0)
+    <div class="card diz" style="padding:16px 20px;margin-bottom:14px;">
+        <div class="diz-cab">
+            <div class="card-title"><i class="fa-solid fa-hand-holding-heart" style="color:var(--color-primary);"></i> Dízimo de {{ $meses[$mes->month - 1] }}</div>
+            <span style="font-size:12.5px;color:var(--color-text-muted);">10% de salários, pró-labore, Vixcard, trimestral e ticket · todo domingo</span>
+        </div>
+        <div class="diz-num">
+            <div><small>Devido (10% de {{ $brl($dizimo['base_recebida']) }} recebidos)</small><strong class="plan-num">{{ $brl($dizimo['dizimo_devido']) }}</strong></div>
+            <div><small>Devolvido</small><strong class="plan-num" style="color:var(--color-success);">{{ $brl($dizimo['devolvido']) }}</strong></div>
+            <div><small>Falta</small><strong class="plan-num" style="color:{{ $dizimo['falta'] > 0 ? 'var(--color-danger)' : 'var(--color-text)' }};">{{ $brl($dizimo['falta']) }}</strong></div>
+            <div><small>Previsto no mês (10% de {{ $brl($dizimo['base_prevista']) }})</small><strong class="plan-num">{{ $brl($dizimo['dizimo_previsto']) }}</strong></div>
+        </div>
+        @if($dizimo['domingos'])
+            <div class="diz-domingos">
+                @foreach($dizimo['domingos'] as $d)
+                    <div class="diz-dom {{ $d['situacao'] }}" title="{{ implode(', ', $d['receitas']) }}">
+                        <span>Dom {{ \Carbon\Carbon::parse($d['data'])->format('d/m') }}</span>
+                        <strong class="plan-num">{{ $brl($d['valor']) }}</strong>
+                        <small>{{ ['devolvido' => 'Devolvido', 'pendente' => 'Pendente', 'atrasado' => 'Atrasado'][$d['situacao']] }}</small>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+    </div>
+@endif
 
 {{-- Contas fixas que não aparecem nos lançamentos do mês --}}
 @if($fixasFaltando)

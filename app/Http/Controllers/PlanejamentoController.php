@@ -32,6 +32,7 @@ class PlanejamentoController extends Controller
             'lancamentos' => $lancamentos,
             'previsto'    => $this->previstoDoMes($lancamentos),
             'fixasFaltando' => $this->planejamento->contasFixasSemLancamento($tenantId, $mes),
+            'dizimo'      => $this->planejamento->dizimo($tenantId, $mes),
         ]);
     }
 

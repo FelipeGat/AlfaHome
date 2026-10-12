@@ -89,6 +89,12 @@ class PlanejamentoApiController extends Controller
         return response()->json(['message' => 'Conta de pagamento salva.']);
     }
 
+    /** GET /api/v1/planejamento/dizimo?mes=YYYY-MM — 10% das receitas da base por domingo e o devolvido. */
+    public function dizimo(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->planejamento->dizimo($request->user()->tenant_id, $this->mes($request))]);
+    }
+
     /** GET /api/v1/planejamento/parceladas */
     public function parceladas(Request $request): JsonResponse
     {
