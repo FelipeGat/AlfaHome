@@ -1,3708 +1,660 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AlfaHome — Gestão financeira para a família toda</title>
-  <meta name="description" content="Organize receitas, despesas, cartões, contas e investimentos da sua família em um só lugar. Sem conectar banco, com backup diário e em conformidade com a LGPD." />
-  <meta name="keywords" content="gestão financeira, controle de gastos, orçamento familiar, finanças pessoais, despesas, cartão de crédito, investimentos, AlfaHome" />
-  <meta name="author" content="Alfa Soluções Tecnológicas" />
-  <meta name="theme-color" content="#56b988" />
-  <link rel="canonical" href="https://home.alfasolucoes.cloud/" />
-  <link rel="icon" type="image/png" href="/favicon.png" />
-  <link rel="apple-touch-icon" href="/favicon.png" />
-
-  <!-- Open Graph / Facebook / WhatsApp -->
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="AlfaHome" />
-  <meta property="og:locale" content="pt_BR" />
-  <meta property="og:url" content="https://home.alfasolucoes.cloud/" />
-  <meta property="og:title" content="AlfaHome — Gestão financeira para a família toda" />
-  <meta property="og:description" content="Organize receitas, despesas, cartões, contas e investimentos da sua família em um só lugar. Sem conectar banco e em conformidade com a LGPD." />
-  <meta property="og:image" content="https://home.alfasolucoes.cloud/landing/screenshots/dashboard-light.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Dashboard do AlfaHome mostrando saldo, receitas e despesas" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="AlfaHome — Gestão financeira para a família toda" />
-  <meta name="twitter:description" content="Organize receitas, despesas, cartões e investimentos da sua família em um só lugar. Sem conectar banco e em conformidade com a LGPD." />
-  <meta name="twitter:image" content="https://home.alfasolucoes.cloud/landing/screenshots/dashboard-light.png" />
-  <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
-  <link rel="preload" as="style" href="https://fonts.bunny.net/css?family=inter:400,600,700,800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,600,700,800&display=swap" /></noscript>
-  <link rel="preload" as="image" href="/landing/screenshots/dashboard-light.webp" fetchpriority="high" />
-
-  <script>
-    // Aplicar tema antes do render para evitar flash
-    (function() {
-      var saved = localStorage.getItem('lp-theme');
-      var theme = saved || 'light';
-      document.documentElement.setAttribute('data-theme', theme);
-    })();
-  </script>
-  <style>
-    /* ─── Reset & Base ─────────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --white:       #ffffff;
-      --bg-alt:      #f8fafc;
-      --navy:        #0f172a;
-      --teal:        #1696a3;
-      --teal-dark:   #117a85;
-      --orange:      #56b988;
-      --orange-dark: #3fa06f;
-      --text:        #0f172a;
-      --text-sm:     #64748b;
-      --border:      #e2e8f0;
-      --radius:      12px;
-      --shadow:      0 4px 24px rgba(15,23,42,.08);
-      --shadow-lg:   0 12px 48px rgba(15,23,42,.14);
-      --bg-body:     #ffffff;
-      --bg-section:  #ffffff;
-      --bg-card:     #ffffff;
-      --card-shadow: 0 2px 12px rgba(0,0,0,.06);
-      --dep-text:    #334155;
-      --faq-bg:      #ffffff;
-      --faq-hover:   #f8fafc;
-    }
-
-    [data-theme="dark"] {
-      --white:       #0f172a;
-      --bg-alt:      #1e293b;
-      --text:        #e2e8f0;
-      --text-sm:     #94a3b8;
-      --border:      #334155;
-      --shadow:      0 4px 24px rgba(0,0,0,.25);
-      --shadow-lg:   0 12px 48px rgba(0,0,0,.35);
-      --bg-body:     #0b1120;
-      --bg-section:  #0f172a;
-      --bg-card:     #1e293b;
-      --card-shadow: 0 2px 12px rgba(0,0,0,.2);
-      --dep-text:    #cbd5e1;
-      --faq-bg:      #1e293b;
-      --faq-hover:   #263548;
-    }
-
-    /* ─── Light overrides para seções escuras ──────────────────────────────── */
-    [data-theme="light"] #hero {
-      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 40%, #f1f5f9 70%, #f8fafc 100%);
-    }
-    [data-theme="light"] #hero::before {
-      background:
-        radial-gradient(ellipse 60% 50% at 70% 40%, rgba(22,150,163,.08) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 40% at 20% 70%, rgba(86,185,136,.05) 0%, transparent 50%);
-    }
-    [data-theme="light"] .hero-title { color: #0f172a; }
-    [data-theme="light"] .hero-title span { color: var(--orange); }
-    [data-theme="light"] .hero-subtitle { color: #64748b; }
-    [data-theme="light"] .hero-eyebrow-text { color: #94a3b8; }
-    [data-theme="light"] .hero-trust-text { color: #94a3b8; }
-    [data-theme="light"] .hero-trust-text strong { color: #475569; }
-    [data-theme="light"] .hero-trust-avatars span { border-color: #e2e8f0; }
-    [data-theme="light"] .btn-ghost {
-      color: #0f172a;
-      border-color: rgba(15,23,42,.2);
-    }
-    [data-theme="light"] .btn-ghost:hover {
-      background: rgba(15,23,42,.06);
-      border-color: rgba(15,23,42,.35);
-    }
-
-    /* Navbar light */
-    [data-theme="light"] #navbar.scrolled {
-      background: rgba(255,255,255,.92);
-      backdrop-filter: blur(16px);
-      box-shadow: 0 1px 3px rgba(0,0,0,.08);
-    }
-    [data-theme="light"] .nav-links a { color: #475569; }
-    [data-theme="light"] .nav-links a:hover { color: #0f172a; }
-    [data-theme="light"] .nav-logo-text { color: #0f172a; }
-    [data-theme="light"] .nav-hamburger span { background: #0f172a; }
-    [data-theme="light"] #navbar.scrolled .btn-ghost {
-      color: #0f172a;
-      border-color: rgba(15,23,42,.2);
-    }
-    [data-theme="light"] #navbar.scrolled .btn-ghost:hover {
-      background: rgba(15,23,42,.06);
-      border-color: rgba(15,23,42,.35);
-    }
-    [data-theme="light"] .theme-toggle { background: rgba(15,23,42,.08); }
-    [data-theme="light"] .theme-toggle:hover { background: rgba(15,23,42,.14); }
-    [data-theme="light"] .theme-toggle svg { color: #475569; }
-
-    /* Números bar — mantém orange */
-
-    /* Planos light */
-    [data-theme="light"] #planos { background: var(--bg-section); }
-    [data-theme="light"] #planos::before {
-      background: radial-gradient(circle, rgba(22,150,163,.06) 0%, transparent 70%);
-    }
-    [data-theme="light"] #planos .section-header .section-title { color: #0f172a; }
-    [data-theme="light"] #planos .section-header .section-subtitle { color: #64748b; }
-    [data-theme="light"] .plano-card {
-      background: #ffffff;
-      border-color: #e2e8f0;
-    }
-    [data-theme="light"] .plano-card:hover {
-      background: #ffffff;
-      border-color: rgba(22,150,163,.3);
-      box-shadow: 0 12px 48px rgba(15,23,42,.1);
-    }
-    [data-theme="light"] .plano-card.featured {
-      background: var(--orange);
-      border-color: var(--orange);
-    }
-    [data-theme="light"] .plano-name { color: #0f172a; }
-    [data-theme="light"] .plano-card.featured .plano-name { color: #fff; }
-    [data-theme="light"] .plano-desc { color: #64748b; }
-    [data-theme="light"] .plano-card.featured .plano-desc { color: rgba(255,255,255,.8); }
-    [data-theme="light"] .plano-item { color: #475569; }
-    [data-theme="light"] .plano-card.featured .plano-item { color: rgba(255,255,255,.9); }
-    [data-theme="light"] .plano-item svg { color: #475569; }
-    [data-theme="light"] .plano-card.featured .plano-item svg { color: rgba(255,255,255,.9); }
-    [data-theme="light"] .plano-cta-ghost {
-      border-color: #e2e8f0;
-      color: #475569;
-    }
-    [data-theme="light"] .plano-cta-ghost:hover {
-      background: #f8fafc;
-      border-color: rgba(22,150,163,.3);
-      color: #0f172a;
-    }
-    [data-theme="light"] .plano-badge { background: rgba(22,150,163,.1); color: var(--teal); }
-    [data-theme="light"] .plano-card.featured .plano-badge { background: rgba(255,255,255,.2); color: #fff; }
-
-    /* Contato light */
-    [data-theme="light"] #contato { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); }
-    [data-theme="light"] #contato::before { background: rgba(86,185,136,.04); }
-    [data-theme="light"] #contato::after { background: rgba(86,185,136,.03); }
-    [data-theme="light"] .contato-text .section-label { color: var(--orange); }
-    [data-theme="light"] .contato-text .section-title { color: #0f172a; }
-    [data-theme="light"] .contato-text .section-subtitle { color: #64748b; }
-    [data-theme="light"] .contato-item { color: #475569; }
-    [data-theme="light"] .contato-item-icon { background: rgba(86,185,136,.1); }
-    [data-theme="light"] .contato-item-icon svg { stroke: var(--orange); }
-    [data-theme="light"] .contato-form {
-      background: #ffffff;
-      border-color: #e2e8f0;
-    }
-    [data-theme="light"] .contato-form h3 { color: #0f172a; }
-    [data-theme="light"] .form-group-lp label { color: #64748b; }
-    [data-theme="light"] .form-group-lp input,
-    [data-theme="light"] .form-group-lp select {
-      background: #f8fafc;
-      border-color: #e2e8f0;
-      color: #0f172a;
-    }
-    [data-theme="light"] .form-group-lp input::placeholder { color: #94a3b8; }
-    [data-theme="light"] .form-group-lp input:focus,
-    [data-theme="light"] .form-group-lp select:focus {
-      border-color: var(--orange);
-      background: #ffffff;
-    }
-    [data-theme="light"] .form-group-lp select option { background: #fff; color: #0f172a; }
-    [data-theme="light"] .form-submit {
-      background: var(--orange);
-      color: #fff;
-    }
-    [data-theme="light"] .form-submit:hover {
-      background: var(--orange-dark);
-      box-shadow: 0 6px 24px rgba(86,185,136,.25);
-    }
-
-    /* Revenda light */
-    [data-theme="light"] #revenda { background: linear-gradient(135deg, #f0fdfa 0%, #e0f7fa 50%, #f0f9ff 100%); }
-    [data-theme="light"] #revenda::before { background: rgba(22,150,163,.05); }
-    [data-theme="light"] #revenda::after { background: rgba(86,185,136,.03); }
-    [data-theme="light"] .revenda-text .section-title { color: #0f172a; }
-    [data-theme="light"] .revenda-text .section-subtitle { color: #64748b; }
-    [data-theme="light"] .revenda-benefit-icon { background: rgba(22,150,163,.1); }
-    [data-theme="light"] .revenda-benefit-content h4 { color: #0f172a; }
-    [data-theme="light"] .revenda-benefit-content p { color: #64748b; }
-    [data-theme="light"] .revenda-form {
-      background: #ffffff;
-      border-color: #e2e8f0;
-    }
-    [data-theme="light"] .revenda-form h3 { color: #0f172a; }
-    [data-theme="light"] .revenda-form .form-group-lp input,
-    [data-theme="light"] .revenda-form .form-group-lp select {
-      background: #f8fafc;
-      border-color: #e2e8f0;
-      color: #0f172a;
-    }
-    [data-theme="light"] .revenda-form .form-group-lp input::placeholder { color: #94a3b8; }
-    [data-theme="light"] .revenda-form .form-group-lp input:focus,
-    [data-theme="light"] .revenda-form .form-group-lp select:focus {
-      border-color: var(--teal);
-      background: #ffffff;
-    }
-    [data-theme="light"] .revenda-form .form-group-lp select option { background: #fff; color: #0f172a; }
-    [data-theme="light"] .revenda-form .form-submit {
-      background: var(--teal);
-      color: #fff;
-    }
-    [data-theme="light"] .revenda-form .form-submit:hover {
-      background: var(--teal-dark);
-    }
-
-    /* Footer light */
-    [data-theme="light"] footer { background: var(--bg-section); border-top: 1px solid #e2e8f0; }
-    [data-theme="light"] .footer-brand-text { color: #64748b; }
-    [data-theme="light"] .footer-col-title { color: #475569; }
-    [data-theme="light"] .footer-links a { color: #475569; }
-    [data-theme="light"] .footer-links a:hover { color: #0f172a; }
-    [data-theme="light"] .footer-top { border-bottom-color: #e2e8f0; }
-    [data-theme="light"] .footer-bottom { color: #475569; }
-    [data-theme="light"] .footer-bottom a { color: #1f2937; }
-    [data-theme="light"] .footer-bottom a:hover { color: #0f172a; }
-
-    /* Mobile menu light */
-    [data-theme="light"] .mobile-menu { background: #ffffff; }
-    [data-theme="light"] .mobile-menu a { color: #475569; border-bottom-color: #e2e8f0; }
-    [data-theme="light"] .mobile-menu-close { background: rgba(15,23,42,.06); color: #475569; }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      color: var(--text);
-      background: var(--bg-body);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    img { display: block; max-width: 100%; }
-    a { text-decoration: none; color: inherit; }
-    button { cursor: pointer; font-family: inherit; border: none; background: none; }
-
-    /* ─── Utilities ────────────────────────────────────────────────────────── */
-    .container {
-      width: 100%;
-      max-width: 1140px;
-      margin-inline: auto;
-      padding-inline: 24px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 13px 28px;
-      border-radius: 8px;
-      font-size: 0.9375rem;
-      font-weight: 600;
-      line-height: 1;
-      transition: all .18s ease;
-      white-space: nowrap;
-    }
-
-    .btn-primary {
-      background: var(--orange);
-      color: #fff;
-    }
-    .btn-primary:hover { background: var(--orange-dark); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(86,185,136,.35); }
-
-    .btn-ghost {
-      background: transparent;
-      color: #fff;
-      border: 1.5px solid rgba(255,255,255,.4);
-    }
-    .btn-ghost:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.7); }
-
-    .btn-outline {
-      background: transparent;
-      color: var(--orange);
-      border: 1.5px solid var(--orange);
-    }
-    .btn-outline:hover { background: var(--orange); color: #fff; }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 99px;
-      font-size: 0.8125rem;
-      font-weight: 600;
-    }
-
-    .badge-teal {
-      background: rgba(22,150,163,.12);
-      color: var(--teal);
-      border: 1px solid rgba(22,150,163,.2);
-    }
-
-    .section-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--orange);
-    }
-
-    .section-title {
-      font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-      font-weight: 800;
-      line-height: 1.2;
-      color: var(--text);
-      margin-top: 8px;
-    }
-
-    .section-subtitle {
-      font-size: 1.0625rem;
-      color: var(--text-sm);
-      margin-top: 14px;
-      max-width: 600px;
-    }
-
-    /* ─── Navbar ────────────────────────────────────────────────────────────── */
-    #navbar {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 900;
-      padding: 0;
-      transition: background .25s, backdrop-filter .25s, box-shadow .25s;
-    }
-
-    #navbar.scrolled {
-      background: rgba(15,23,42,.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 1px 0 rgba(255,255,255,.08);
-    }
-
-    .nav-inner {
-      display: flex;
-      align-items: center;
-      height: 68px;
-      gap: 28px;
-    }
-
-    .nav-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-
-    .nav-logo-icon {
-      width: 36px;
-      height: 36px;
-    }
-
-    .nav-logo-text {
-      font-size: 1.375rem;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -0.02em;
-    }
-
-    .nav-logo-text span { color: var(--orange); }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 22px;
-      flex: 1;
-      white-space: nowrap;
-    }
-
-    .nav-links a {
-      font-size: 0.875rem;
-      font-weight: 500;
-      color: rgba(255,255,255,.75);
-      transition: color .15s;
-      white-space: nowrap;
-    }
-    .nav-links a:hover { color: #fff; }
-
-    .nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-left: auto;
-    }
-
-    .nav-mobile-right {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      margin-left: auto;
-    }
-    .theme-toggle-mobile { display: none; }
-
-    .nav-hamburger {
-      display: none;
-      flex-direction: column;
-      gap: 5px;
-      padding: 8px;
-    }
-    .nav-hamburger span {
-      display: block;
-      width: 24px;
-      height: 2px;
-      background: #fff;
-      border-radius: 2px;
-      transition: all .2s;
-    }
-
-    /* ─── Hero ──────────────────────────────────────────────────────────────── */
-    #hero {
-      background: linear-gradient(135deg, #0f172a 0%, #1a2744 40%, #0f3441 70%, #0a2332 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      padding-top: 80px;
-      overflow: hidden;
-      position: relative;
-    }
-
-    #hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 60% 50% at 70% 40%, rgba(22,150,163,.18) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 40% at 20% 70%, rgba(86,185,136,.1) 0%, transparent 50%);
-      pointer-events: none;
-    }
-
-    .hero-inner {
-      display: grid;
-      grid-template-columns: 1fr 1.4fr;
-      gap: 48px;
-      align-items: center;
-      padding-block: 80px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .hero-eyebrow {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 24px;
-    }
-
-    .hero-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--orange);
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: .6; transform: scale(.8); }
-    }
-
-    .hero-eyebrow-text {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: rgba(255,255,255,.6);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .hero-title {
-      font-size: clamp(2.2rem, 4.5vw, 3.5rem);
-      font-weight: 900;
-      line-height: 1.1;
-      color: #fff;
-      letter-spacing: -0.02em;
-      margin-bottom: 20px;
-    }
-
-    .hero-title span { color: var(--orange); }
-
-    .hero-subtitle {
-      font-size: 1.125rem;
-      color: rgba(255,255,255,.65);
-      line-height: 1.65;
-      margin-bottom: 36px;
-      max-width: 480px;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .hero-trust {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 28px;
-    }
-
-    .hero-trust-avatars {
-      display: flex;
-    }
-
-    .hero-trust-avatars span {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 2px solid #1a2744;
-      background: linear-gradient(135deg, var(--teal), var(--orange));
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.625rem;
-      font-weight: 700;
-      color: #fff;
-      margin-left: -8px;
-    }
-    .hero-trust-avatars span:first-child { margin-left: 0; }
-
-    .hero-trust-text {
-      font-size: 0.8125rem;
-      color: rgba(255,255,255,.55);
-    }
-    .hero-trust-text strong { color: rgba(255,255,255,.85); font-weight: 600; }
-
-    /* Dashboard Mockup */
-    .hero-mockup {
-      position: relative;
-    }
-
-    .hero-mockup img {
-      width: 130%;
-      height: auto;
-      max-width: none;
-      display: block;
-      border-radius: 14px;
-      box-shadow: 0 32px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
-      transform: perspective(1000px) rotateY(-4deg) rotateX(2deg);
-    }
-    .hero-mockup .hero-mockup-light { display: none; }
-    [data-theme="light"] .hero-mockup .hero-mockup-dark { display: none; }
-    [data-theme="light"] .hero-mockup .hero-mockup-light { display: block; }
-    [data-theme="light"] .hero-mockup img {
-      box-shadow: 0 32px 80px rgba(15,23,42,.18), 0 0 0 1px rgba(15,23,42,.06);
-    }
-
-    .mockup-window {
-      background: #1e293b;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: 0 32px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.06);
-      transform: perspective(1000px) rotateY(-4deg) rotateX(2deg);
-    }
-
-    .mockup-titlebar {
-      background: #0f172a;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .mockup-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
-    .mockup-dot:nth-child(1) { background: #ff5f57; }
-    .mockup-dot:nth-child(2) { background: #febc2e; }
-    .mockup-dot:nth-child(3) { background: #28c840; }
-
-    .mockup-url {
-      flex: 1;
-      background: #1e293b;
-      border-radius: 6px;
-      height: 22px;
-      margin-left: 12px;
-      display: flex;
-      align-items: center;
-      padding: 0 10px;
-      gap: 6px;
-    }
-
-    .mockup-url-text {
-      font-size: 0.6875rem;
-      color: rgba(255,255,255,.35);
-    }
-
-    .mockup-body {
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .mockup-sidebar {
-      position: absolute;
-      left: 0; top: 42px; bottom: 0;
-      width: 48px;
-      background: #0f172a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
-      padding: 16px 0;
-    }
-
-    .mockup-sidebar-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 7px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .mockup-sidebar-icon.active {
-      background: var(--orange);
-    }
-
-    .mockup-kpis {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-
-    .mockup-kpi {
-      background: #0f172a;
-      border-radius: 8px;
-      padding: 10px;
-    }
-
-    .mockup-kpi-label {
-      font-size: 0.5rem;
-      color: rgba(255,255,255,.4);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .mockup-kpi-value {
-      font-size: 0.875rem;
-      font-weight: 700;
-      color: #fff;
-      margin-top: 4px;
-    }
-
-    .mockup-kpi-value.orange { color: var(--orange); }
-    .mockup-kpi-value.teal { color: var(--teal); }
-    .mockup-kpi-value.green { color: #22d3ee; }
-
-    .mockup-chart {
-      background: #0f172a;
-      border-radius: 8px;
-      padding: 12px;
-      height: 100px;
-      display: flex;
-      align-items: flex-end;
-      gap: 6px;
-    }
-
-    .mockup-bar {
-      flex: 1;
-      border-radius: 4px 4px 0 0;
-      background: rgba(22,150,163,.3);
-      transition: height .3s;
-    }
-    .mockup-bar.highlight { background: var(--orange); }
-
-    .mockup-table {
-      background: #0f172a;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .mockup-table-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 10px;
-      border-bottom: 1px solid rgba(255,255,255,.04);
-    }
-
-    .mockup-table-row:last-child { border-bottom: none; }
-
-    .mockup-avatar {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .mockup-table-name {
-      font-size: 0.6rem;
-      color: rgba(255,255,255,.7);
-      flex: 1;
-    }
-
-    .mockup-table-status {
-      font-size: 0.5rem;
-      padding: 2px 7px;
-      border-radius: 99px;
-      font-weight: 600;
-    }
-
-    .mockup-table-status.active {
-      background: rgba(34,197,94,.15);
-      color: #4ade80;
-    }
-
-    .mockup-table-status.warning {
-      background: rgba(86,185,136,.15);
-      color: var(--orange);
-    }
-
-    .mockup-floating {
-      position: absolute;
-      top: -20px;
-      right: -20px;
-      background: var(--bg-card);
-      border-radius: 12px;
-      padding: 12px 16px;
-      box-shadow: var(--shadow-lg);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      white-space: nowrap;
-    }
-
-    .mockup-floating-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 9px;
-      background: rgba(22,150,163,.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .mockup-floating-label {
-      font-size: 0.6875rem;
-      color: var(--text-sm);
-    }
-
-    .mockup-floating-value {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .mockup-floating-2 {
-      position: absolute;
-      bottom: -16px;
-      left: -16px;
-      background: var(--orange);
-      color: #fff;
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      box-shadow: 0 8px 24px rgba(86,185,136,.4);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* ─── Numbers Bar ───────────────────────────────────────────────────────── */
-    #numeros {
-      background: var(--orange);
-      padding: 48px 0;
-    }
-
-    .numeros-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 32px;
-      text-align: center;
-    }
-
-    .numeros-item {
-      position: relative;
-    }
-
-    .numeros-item + .numeros-item::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 20%;
-      width: 1px;
-      height: 60%;
-      background: rgba(255,255,255,.25);
-    }
-
-    .numeros-value {
-      font-size: clamp(2rem, 4vw, 3rem);
-      font-weight: 900;
-      color: #fff;
-      letter-spacing: -0.02em;
-      line-height: 1;
-    }
-
-    .numeros-label {
-      font-size: 0.9375rem;
-      color: rgba(255,255,255,.75);
-      margin-top: 6px;
-      font-weight: 500;
-    }
-
-    /* ─── Features ──────────────────────────────────────────────────────────── */
-    #funcionalidades {
-      padding: 96px 0;
-      background: var(--bg-section);
-    }
-
-    .section-header {
-      text-align: center;
-      margin-bottom: 56px;
-    }
-
-    .section-header .section-subtitle {
-      margin-inline: auto;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-    }
-
-    .feature-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      transition: all .2s;
-    }
-
-    .feature-card:hover {
-      border-color: rgba(22,150,163,.3);
-      box-shadow: var(--shadow-lg);
-      transform: translateY(-3px);
-    }
-
-    .feature-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
-
-    .feature-icon.teal { background: rgba(22,150,163,.1); }
-    .feature-icon.orange { background: rgba(86,185,136,.1); }
-    .feature-icon.green { background: rgba(34,197,94,.1); }
-    .feature-icon.purple { background: rgba(139,92,246,.1); }
-    .feature-icon.blue { background: rgba(59,130,246,.1); }
-    .feature-icon.rose { background: rgba(244,63,94,.1); }
-
-    .feature-title {
-      font-size: 1.0625rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .feature-desc {
-      font-size: 0.9375rem;
-      color: var(--text-sm);
-      line-height: 1.6;
-    }
-
-    /* ─── Spotlight ─────────────────────────────────────────────────────────── */
-    .spotlight {
-      padding: 80px 0;
-      background: var(--bg-section);
-    }
-
-    .spotlight.spotlight-alt { background: var(--bg-alt); }
-
-    .spotlight-inner {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 72px;
-      align-items: center;
-    }
-
-    .spotlight-inner.reverse {
-      direction: rtl;
-    }
-    .spotlight-inner.reverse > * {
-      direction: ltr;
-    }
-
-    .spotlight-text .section-label { margin-bottom: 10px; display: block; }
-
-    .spotlight-text .section-title { margin-top: 0; }
-
-    .spotlight-text p {
-      font-size: 1rem;
-      color: var(--text-sm);
-      line-height: 1.7;
-      margin-top: 14px;
-    }
-
-    .spotlight-checks {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 24px;
-    }
-
-    .spotlight-check {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.9375rem;
-      color: var(--text);
-      font-weight: 500;
-    }
-
-    .spotlight-visual::before {
-      background: rgba(22,150,163,.08);
-    }
-    [data-theme="dark"] .spotlight-visual::before {
-      background: rgba(22,150,163,.15);
-    }
-
-    .check-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: rgba(22,150,163,.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .spotlight-cta { margin-top: 28px; }
-
-    /* Spotlight Mockups */
-    .spotlight-visual {
-      background: var(--bg-alt);
-      border-radius: 18px;
-      padding: 32px;
-      position: relative;
-      overflow: hidden;
-      min-height: 320px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .spotlight-visual:has(.spot-screenshot) {
-      background: transparent;
-      padding: 0;
-      min-height: 0;
-      overflow: visible;
-    }
-
-    .spotlight-visual--img {
-      background: none;
-      padding: 0;
-      min-height: auto;
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .spotlight-visual--img img {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 14px;
-    }
-
-    .spotlight-visual::before {
-      content: '';
-      position: absolute;
-      bottom: -40px; right: -40px;
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      background: rgba(22,150,163,.08);
-    }
-
-    .spot-card {
-      background: var(--bg-card);
-      border-radius: 10px;
-      padding: 14px 16px;
-      box-shadow: var(--card-shadow);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .spot-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .spot-info { flex: 1; }
-
-    .spot-name {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .spot-meta {
-      font-size: 0.75rem;
-      color: var(--text-sm);
-      margin-top: 2px;
-    }
-
-    .spot-status {
-      font-size: 0.6875rem;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 99px;
-    }
-
-    .spot-status.ok { background: rgba(34,197,94,.12); color: #16a34a; }
-    .spot-status.warn { background: rgba(86,185,136,.12); color: var(--orange); }
-    .spot-status.late { background: rgba(244,63,94,.12); color: #e11d48; }
-
-    .spot-stat-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-    }
-
-    .spot-stat {
-      background: var(--bg-card);
-      border-radius: 10px;
-      padding: 12px;
-      text-align: center;
-      box-shadow: var(--card-shadow);
-    }
-
-    .spot-stat-value {
-      font-size: 1.125rem;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .spot-stat-label {
-      font-size: 0.6875rem;
-      color: var(--text-sm);
-      margin-top: 2px;
-    }
-
-    .spot-screenshot { position: relative; margin-top: 4px; }
-    .spot-screenshot-img {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 12px;
-      box-shadow: 0 24px 60px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.06);
-    }
-    .spot-screenshot .spot-screenshot-light { display: none; }
-    [data-theme="light"] .spot-screenshot .spot-screenshot-dark { display: none; }
-    [data-theme="light"] .spot-screenshot .spot-screenshot-light { display: block; }
-    [data-theme="light"] .spot-screenshot-img {
-      box-shadow: 0 24px 60px rgba(15,23,42,.14), 0 0 0 1px rgba(15,23,42,.06);
-    }
-
-    /* ─── Planos ────────────────────────────────────────────────────────────── */
-    #planos {
-      padding: 96px 0;
-      background: var(--navy);
-      position: relative;
-      overflow: hidden;
-    }
-
-    #planos::before {
-      content: '';
-      position: absolute;
-      top: -200px; right: -200px;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(22,150,163,.12) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    #planos .section-header .section-title { color: #fff; }
-    #planos .section-header .section-subtitle { color: rgba(255,255,255,.55); }
-
-    .planos-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .plano-card {
-      background: rgba(255,255,255,.05);
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 16px;
-      padding: 28px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      transition: all .2s;
-    }
-
-    .plano-card:hover {
-      background: rgba(255,255,255,.08);
-      border-color: rgba(255,255,255,.2);
-      transform: translateY(-4px);
-    }
-
-    .plano-card.featured {
-      background: var(--orange);
-      border-color: var(--orange);
-      transform: scale(1.02);
-      box-shadow: 0 20px 60px rgba(86,185,136,.4);
-    }
-
-    .plano-card.featured:hover {
-      transform: scale(1.02) translateY(-4px);
-    }
-
-    .plano-badge {
-      font-size: 0.6875rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      padding: 4px 12px;
-      border-radius: 99px;
-      background: rgba(255,255,255,.2);
-      color: #fff;
-      align-self: flex-start;
-    }
-
-    .plano-name {
-      font-size: 1.375rem;
-      font-weight: 800;
-      color: #fff;
-    }
-
-    .plano-desc {
-      font-size: 0.9375rem;
-      color: rgba(255,255,255,.65);
-      line-height: 1.55;
-    }
-
-    .plano-card.featured .plano-desc { color: rgba(255,255,255,.8); }
-
-    .plano-price {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      margin: 8px 0 4px;
-      color: #fff;
-    }
-    .plano-price .currency { font-size: 1rem; font-weight: 600; opacity: .75; }
-    .plano-price .amount { font-size: 2.75rem; font-weight: 800; line-height: 1; }
-    .plano-price .period { font-size: 0.875rem; opacity: .65; }
-    .plano-price-annual {
-      font-size: 0.8125rem;
-      color: rgba(255,255,255,.55);
-      margin-bottom: 4px;
-    }
-    [data-theme="light"] .plano-price { color: #0f172a; }
-    [data-theme="light"] .plano-card.featured .plano-price { color: #fff; }
-    [data-theme="light"] .plano-price-annual { color: #64748b; }
-    [data-theme="light"] .plano-card.featured .plano-price-annual { color: rgba(255,255,255,.7); }
-
-    .plano-items {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      flex: 1;
-    }
-
-    .plano-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.9375rem;
-      color: rgba(255,255,255,.8);
-    }
-
-    .plano-item svg { flex-shrink: 0; }
-
-    .plano-card.featured .plano-item { color: rgba(255,255,255,.9); }
-
-    .plano-cta {
-      padding: 14px;
-      border-radius: 10px;
-      font-size: 0.9375rem;
-      font-weight: 700;
-      text-align: center;
-      transition: all .18s;
-      display: block;
-    }
-
-    .plano-cta-ghost {
-      border: 1.5px solid rgba(255,255,255,.25);
-      color: rgba(255,255,255,.8);
-    }
-    .plano-cta-ghost:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.5); color: #fff; }
-
-    .plano-cta-solid {
-      background: #fff;
-      color: var(--orange);
-    }
-    .plano-cta-solid:hover { background: rgba(255,255,255,.92); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
-
-    /* ─── Depoimentos ───────────────────────────────────────────────────────── */
-    #depoimentos {
-      padding: 96px 0;
-      background: var(--bg-alt);
-    }
-
-    .depoimentos-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-    }
-
-    .depoimento-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      transition: box-shadow .2s;
-    }
-
-    .depoimento-card:hover { box-shadow: var(--shadow-lg); }
-
-    .depoimento-stars {
-      display: flex;
-      gap: 3px;
-    }
-
-    .star {
-      color: #fbbf24;
-      font-size: 1rem;
-    }
-
-    .depoimento-text {
-      font-size: 0.9375rem;
-      color: var(--dep-text);
-      line-height: 1.7;
-      font-style: italic;
-      flex: 1;
-    }
-
-    .depoimento-author {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .depoimento-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      font-weight: 700;
-      color: #fff;
-      flex-shrink: 0;
-    }
-
-    .depoimento-name {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .depoimento-academia {
-      font-size: 0.8125rem;
-      color: var(--text-sm);
-    }
-
-    /* ─── Como funciona ─────────────────────────────────────────────────────── */
-    #como-funciona {
-      padding: 96px 0;
-      background: var(--bg-alt);
-    }
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 32px;
-      margin-top: 16px;
-    }
-    .step-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px 28px;
-      position: relative;
-      transition: all .2s;
-    }
-    .step-card:hover {
-      border-color: rgba(86,185,136,.35);
-      box-shadow: var(--shadow-lg);
-      transform: translateY(-3px);
-    }
-    .step-number {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: var(--orange);
-      color: #fff;
-      font-weight: 800;
-      font-size: 1.125rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
-    .step-title {
-      font-size: 1.0625rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-    .step-desc {
-      font-size: 0.9375rem;
-      color: var(--text-sm);
-      line-height: 1.6;
-    }
-
-    /* ─── Segurança ─────────────────────────────────────────────────────────── */
-    #seguranca {
-      padding: 96px 0;
-      background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
-      position: relative;
-      overflow: hidden;
-    }
-    #seguranca::before {
-      content: '';
-      position: absolute;
-      top: -200px; left: -200px;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(86,185,136,.12) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    #seguranca .section-header .section-title { color: #fff; }
-    #seguranca .section-header .section-subtitle { color: rgba(255,255,255,.7); }
-    .seguranca-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      position: relative;
-      z-index: 1;
-    }
-    .seguranca-card {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: var(--radius);
-      padding: 28px 24px;
-      transition: all .2s;
-    }
-    .seguranca-card:hover {
-      background: rgba(255,255,255,.07);
-      border-color: rgba(86,185,136,.4);
-      transform: translateY(-3px);
-    }
-    .seguranca-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: rgba(86,185,136,.15);
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 16px;
-      color: #56b988;
-    }
-    .seguranca-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-    .seguranca-desc {
-      font-size: 0.875rem;
-      color: rgba(255,255,255,.65);
-      line-height: 1.6;
-    }
-    @media (max-width: 960px) {
-      .steps-grid { grid-template-columns: 1fr; }
-      .seguranca-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 560px) {
-      .seguranca-grid { grid-template-columns: 1fr; }
-    }
-
-    /* ─── CTA final ─────────────────────────────────────────────────────────── */
-    #cta-final {
-      padding: 88px 0;
-      background: linear-gradient(135deg, #3fa06f 0%, #56b988 100%);
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-    #cta-final::before {
-      content: '';
-      position: absolute;
-      top: -180px; right: -180px;
-      width: 440px; height: 440px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,.18) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    #cta-final::after {
-      content: '';
-      position: absolute;
-      bottom: -200px; left: -200px;
-      width: 440px; height: 440px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .cta-final-inner { position: relative; z-index: 1; max-width: 680px; margin-inline: auto; }
-    .cta-final-title {
-      font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -0.02em;
-      margin-bottom: 14px;
-    }
-    .cta-final-sub {
-      font-size: 1.0625rem;
-      color: rgba(255,255,255,.9);
-      margin-bottom: 32px;
-    }
-    .cta-final-buttons {
-      display: inline-flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .cta-final-buttons .btn-primary {
-      background: #fff;
-      color: #0f172a;
-      border-color: #fff;
-    }
-    .cta-final-buttons .btn-primary:hover {
-      background: #f8fafc;
-      color: #0f172a;
-      transform: translateY(-2px);
-      box-shadow: 0 10px 32px rgba(0,0,0,.18);
-    }
-    .cta-final-buttons .btn-ghost {
-      color: #fff;
-      border-color: rgba(255,255,255,.5);
-    }
-    .cta-final-buttons .btn-ghost:hover {
-      background: rgba(255,255,255,.12);
-      border-color: #fff;
-      color: #fff;
-    }
-
-    /* ─── FAQ ───────────────────────────────────────────────────────────────── */
-    #faq {
-      padding: 96px 0;
-      background: var(--bg-alt);
-    }
-
-    .faq-list {
-      max-width: 720px;
-      margin-inline: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .faq-item {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .faq-question {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px 24px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--text);
-      text-align: left;
-      background: var(--faq-bg);
-      transition: background .15s;
-      gap: 16px;
-    }
-
-    .faq-question:hover { background: var(--faq-hover); }
-
-    .faq-question.open { background: var(--faq-hover); color: var(--teal); }
-
-    .faq-chevron {
-      flex-shrink: 0;
-      transition: transform .25s;
-      color: var(--text-sm);
-    }
-
-    .faq-question.open .faq-chevron { transform: rotate(180deg); color: var(--teal); }
-
-    .faq-answer {
-      display: none;
-      padding: 0 24px 20px;
-      font-size: 0.9375rem;
-      color: var(--text-sm);
-      line-height: 1.7;
-      background: var(--faq-hover);
-    }
-
-    .faq-answer.open { display: block; }
-
-    /* ─── CTA Final / Contato ───────────────────────────────────────────────── */
-    #contato {
-      padding: 96px 0;
-      background: linear-gradient(135deg, var(--orange) 0%, #3fa06f 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    #contato::before {
-      content: '';
-      position: absolute;
-      top: -100px; right: -100px;
-      width: 400px; height: 400px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.06);
-    }
-
-    #contato::after {
-      content: '';
-      position: absolute;
-      bottom: -80px; left: -80px;
-      width: 300px; height: 300px;
-      border-radius: 50%;
-      background: rgba(0,0,0,.06);
-    }
-
-    .contato-inner {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 72px;
-      align-items: center;
-      position: relative;
-      z-index: 1;
-    }
-
-    .contato-text .section-label { color: rgba(255,255,255,.7); }
-    .contato-text .section-title { color: #fff; }
-    .contato-text .section-subtitle { color: rgba(255,255,255,.75); }
-
-    .contato-items {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      margin-top: 28px;
-    }
-
-    .contato-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.9375rem;
-      color: rgba(255,255,255,.85);
-      font-weight: 500;
-    }
-
-    .contato-item-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 9px;
-      background: rgba(255,255,255,.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .contato-form {
-      background: rgba(255,255,255,.12);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,.2);
-      border-radius: 20px;
-      padding: 36px;
-    }
-
-    .contato-form h3 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 24px;
-    }
-
-    .form-group-lp {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 16px;
-    }
-
-    .form-group-lp label {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: rgba(255,255,255,.75);
-    }
-
-    .form-group-lp input,
-    .form-group-lp select {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.2);
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-size: 0.9375rem;
-      color: #fff;
-      font-family: inherit;
-      width: 100%;
-      transition: border-color .15s;
-      outline: none;
-    }
-
-    .form-group-lp input::placeholder { color: rgba(255,255,255,.4); }
-
-    .form-group-lp input:focus,
-    .form-group-lp select:focus {
-      border-color: rgba(255,255,255,.5);
-      background: rgba(255,255,255,.16);
-    }
-
-    .form-group-lp select option { background: #0f172a; color: #fff; }
-
-    .form-submit {
-      width: 100%;
-      padding: 15px;
-      background: #fff;
-      color: var(--orange);
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all .18s;
-      margin-top: 20px;
-      border: none;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    .form-submit:hover {
-      background: rgba(255,255,255,.92);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 24px rgba(0,0,0,.15);
-    }
-
-    /* ─── Revenda ──────────────────────────────────────────────────────────── */
-    #revenda {
-      padding: 96px 0;
-      background: linear-gradient(135deg, var(--navy) 0%, #0c2d3f 50%, #134e5e 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    #revenda::before {
-      content: '';
-      position: absolute;
-      top: -120px; right: -120px;
-      width: 400px; height: 400px;
-      border-radius: 50%;
-      background: rgba(22,150,163,.12);
-    }
-
-    #revenda::after {
-      content: '';
-      position: absolute;
-      bottom: -80px; left: -80px;
-      width: 300px; height: 300px;
-      border-radius: 50%;
-      background: rgba(86,185,136,.08);
-    }
-
-    .revenda-inner {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 72px;
-      align-items: center;
-      position: relative;
-      z-index: 1;
-    }
-
-    .revenda-text .section-label { color: var(--teal); }
-    .revenda-text .section-title { color: #fff; }
-    .revenda-text .section-subtitle { color: rgba(255,255,255,.75); }
-
-    .revenda-benefits {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      margin-top: 32px;
-    }
-
-    .revenda-benefit {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-    }
-
-    .revenda-benefit-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: rgba(22,150,163,.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .revenda-benefit-content h4 {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 4px;
-    }
-
-    .revenda-benefit-content p {
-      font-size: 0.8125rem;
-      color: rgba(255,255,255,.65);
-      line-height: 1.5;
-    }
-
-    .revenda-form {
-      background: rgba(255,255,255,.08);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,.15);
-      border-radius: 20px;
-      padding: 36px;
-    }
-
-    .revenda-form h3 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 24px;
-    }
-
-    .revenda-form .form-group-lp label { color: rgba(255,255,255,.75); }
-    .revenda-form .form-group-lp input,
-    .revenda-form .form-group-lp select {
-      background: rgba(255,255,255,.1);
-      border: 1px solid rgba(255,255,255,.18);
-      color: #fff;
-    }
-    .revenda-form .form-group-lp input::placeholder { color: rgba(255,255,255,.35); }
-    .revenda-form .form-group-lp input:focus,
-    .revenda-form .form-group-lp select:focus {
-      border-color: var(--teal);
-      background: rgba(255,255,255,.14);
-    }
-    .revenda-form .form-group-lp select option { background: #0f172a; color: #fff; }
-
-    .revenda-form .form-submit {
-      background: var(--teal);
-      color: #fff;
-    }
-    .revenda-form .form-submit:hover {
-      background: var(--teal-dark);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 24px rgba(22,150,163,.3);
-    }
-
-    /* ─── Footer ────────────────────────────────────────────────────────────── */
-    footer {
-      background: var(--navy);
-      padding: 56px 0 32px;
-    }
-
-    .footer-top {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 48px;
-      padding-bottom: 48px;
-      border-bottom: 1px solid rgba(255,255,255,.08);
-    }
-
-    .footer-brand-text {
-      font-size: 0.9375rem;
-      color: rgba(255,255,255,.45);
-      line-height: 1.65;
-      margin-top: 12px;
-      max-width: 280px;
-    }
-
-    .footer-address {
-      display: block;
-      margin-top: 16px;
-      font-size: 0.8125rem;
-      color: rgba(255,255,255,.65);
-      line-height: 1.6;
-      font-style: normal;
-      max-width: 280px;
-    }
-    [data-theme="light"] .footer-address { color: #475569; }
-
-    .footer-col-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: rgba(255,255,255,.65);
-      margin-bottom: 16px;
-    }
-
-    .footer-links {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .footer-links a {
-      font-size: 0.9375rem;
-      color: rgba(255,255,255,.55);
-      transition: color .15s;
-    }
-    .footer-links a:hover { color: rgba(255,255,255,.9); }
-
-    .footer-social {
-      display: flex;
-      gap: 10px;
-    }
-    .footer-social a {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
-      color: rgba(255,255,255,.55);
-      transition: all .15s ease;
-    }
-    .footer-social a:hover {
-      color: var(--orange);
-      border-color: var(--orange);
-      background: rgba(86,185,136,.08);
-    }
-    [data-theme="light"] .footer-social a {
-      background: rgba(15,23,42,.03);
-      border-color: rgba(15,23,42,.08);
-      color: #64748b;
-    }
-    [data-theme="light"] .footer-social a:hover {
-      color: var(--orange);
-      border-color: var(--orange);
-      background: rgba(86,185,136,.08);
-    }
-
-    .footer-bottom {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-top: 28px;
-      font-size: 0.875rem;
-      color: rgba(255,255,255,.65);
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .footer-bottom a { color: rgba(255,255,255,.85); text-decoration: underline; }
-    .footer-bottom a:hover { color: #ffffff; }
-
-    /* ─── Mobile Menu ───────────────────────────────────────────────────────── */
-    .mobile-menu {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: var(--navy);
-      z-index: 950;
-      flex-direction: column;
-      padding: 80px 24px 40px;
-      gap: 8px;
-    }
-
-    .mobile-menu.open { display: flex; }
-
-    .mobile-menu a {
-      font-size: 1.125rem;
-      font-weight: 600;
-      color: rgba(255,255,255,.75);
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(255,255,255,.07);
-    }
-
-    .mobile-menu-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 24px;
-    }
-
-    .mobile-menu-actions .btn {
-      display: block;
-      width: 100%;
-      padding: 14px 20px;
-      text-align: center;
-      font-size: 1rem;
-    }
-
-    .mobile-menu-close {
-      position: absolute;
-      top: 20px; right: 20px;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.08);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      color: rgba(255,255,255,.7);
-    }
-
-    /* Hero mockup light */
-    [data-theme="light"] .mockup-window { background: #ffffff; box-shadow: 0 32px 80px rgba(0,0,0,.1), 0 0 0 1px rgba(0,0,0,.06); }
-    [data-theme="light"] .mockup-titlebar { background: #f1f5f9; }
-    [data-theme="light"] .mockup-url { background: #e2e8f0; }
-    [data-theme="light"] .mockup-url-text { color: #94a3b8; }
-    [data-theme="light"] .mockup-kpi { background: #f8fafc; }
-    [data-theme="light"] .mockup-kpi-label { color: #94a3b8; }
-    [data-theme="light"] .mockup-kpi-value { color: #0f172a; }
-    [data-theme="light"] .mockup-chart { background: #f8fafc; }
-    [data-theme="light"] .mockup-bar { background: rgba(22,150,163,.15); }
-    [data-theme="light"] .mockup-table { background: #f8fafc; }
-    [data-theme="light"] .mockup-table-row { border-bottom-color: #e2e8f0; }
-    [data-theme="light"] .mockup-table-name { color: #475569; }
-    [data-theme="light"] .mockup-sidebar { background: #f1f5f9; }
-
-    /* ─── Theme Toggle ─────────────────────────────────────────────────────── */
-    .theme-toggle {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.12);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background .2s;
-      flex-shrink: 0;
-    }
-    .theme-toggle:hover { background: rgba(255,255,255,.22); }
-    .theme-toggle svg { width: 18px; height: 18px; color: #fff; }
-    .theme-toggle .icon-sun { display: none; }
-    .theme-toggle .icon-moon { display: block; }
-    [data-theme="dark"] .theme-toggle .icon-sun { display: block; }
-    [data-theme="dark"] .theme-toggle .icon-moon { display: none; }
-
-    /* ─── Theme Transitions ──────────────────────────────────────────────── */
-    body, #hero, #funcionalidades, #depoimentos, #faq,
-    #planos, #contato, #revenda, footer,
-    #navbar, .mobile-menu,
-    .feature-card, .depoimento-card,
-    .faq-question, .faq-answer, .faq-item,
-    .spotlight-visual, .spot-card, .spot-stat,
-    .mockup-floating, .section-title, .section-subtitle,
-    .feature-title, .feature-desc, .spotlight-check,
-    .depoimento-text, .depoimento-name, .spot-name,
-    .spot-stat-value, .spot-meta, .mockup-floating-value,
-    .mockup-floating-label, .badge-teal,
-    .plano-card, .plano-name, .plano-desc, .plano-item,
-    .plano-cta-ghost, .plano-badge,
-    .contato-form, .contato-item,
-    .revenda-form, .revenda-benefit-content h4, .revenda-benefit-content p,
-    .hero-title, .hero-subtitle, .hero-eyebrow-text,
-    .nav-links a, .btn-ghost, .theme-toggle,
-    .footer-brand-text, .footer-col-title, .footer-links a, .footer-bottom,
-    .form-group-lp input, .form-group-lp select, .form-group-lp label,
-    .form-submit {
-      transition: background-color .3s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease;
-    }
-
-    /* ─── Responsive ────────────────────────────────────────────────────────── */
-    @media (max-width: 1280px) {
-      .planos-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .hero-inner {
-        grid-template-columns: 1fr;
-        gap: 48px;
-        text-align: center;
-      }
-      .hero-eyebrow { justify-content: center; }
-      .hero-subtitle { max-width: none; }
-      .hero-actions { justify-content: center; }
-      .hero-trust { justify-content: center; }
-      .hero-mockup {
-        display: block;
-      }
-      .hero-mockup img {
-        width: 100%;
-        transform: none;
-      }
-
-      .features-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .spotlight-inner {
-        grid-template-columns: 1fr;
-        gap: 40px;
-      }
-      .spotlight-inner.reverse { direction: ltr; }
-
-      .spotlight-visual--img img {
-        border-radius: 10px;
-      }
-
-      .planos-grid {
-        grid-template-columns: repeat(2, 1fr);
-        max-width: 600px;
-        margin-inline: auto;
-      }
-
-      .plano-card.featured { transform: none; }
-      .plano-card.featured:hover { transform: translateY(-4px); }
-
-      .depoimentos-grid {
-        grid-template-columns: 1fr;
-        max-width: 560px;
-        margin-inline: auto;
-      }
-
-      .contato-inner,
-      .revenda-inner {
-        grid-template-columns: 1fr;
-        gap: 48px;
-      }
-
-      .footer-top {
-        grid-template-columns: 1fr 1fr;
-        gap: 36px;
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .nav-links,
-      .nav-actions { display: none; }
-      .nav-mobile-right { display: flex; }
-      .theme-toggle-mobile { display: flex; }
-      .nav-mobile-right .nav-hamburger { display: flex; }
-    }
-
-    @media (max-width: 768px) {
-
-      .numeros-grid {
-        grid-template-columns: 1fr;
-        gap: 28px;
-      }
-      .numeros-item::before { display: none; }
-
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .planos-grid {
-        grid-template-columns: 1fr;
-        max-width: 440px;
-      }
-
-      .footer-top {
-        grid-template-columns: 1fr;
-      }
-
-      .footer-bottom {
-        flex-direction: column;
-        text-align: center;
-      }
-
-      .contato-form,
-      .revenda-form { padding: 24px; }
-
-      .mockup-kpis { grid-template-columns: repeat(2, 1fr); }
-
-      .hero-mockup img {
-        width: 100%;
-        transform: none;
-        border-radius: 10px;
-      }
-
-      .spotlight-visual--img {
-        border-radius: 10px;
-      }
-
-      .whatsapp-wrap {
-        bottom: 16px;
-        right: 16px;
-      }
-
-      .whatsapp-float {
-        width: 52px;
-        height: 52px;
-      }
-
-      .whatsapp-float svg {
-        width: 26px;
-        height: 26px;
-      }
-
-      .whatsapp-tooltip {
-        display: none;
-      }
-    }
-
-    /* ─── Scroll reveal ─────────────────────────────────────────────────────── */
-    .reveal {
-      opacity: 0;
-      transform: translateY(28px);
-      transition: opacity .55s ease, transform .55s ease;
-    }
-
-    .reveal.visible {
-      opacity: 1;
-      transform: none;
-    }
-
-    .reveal-delay-1 { transition-delay: .1s; }
-    .reveal-delay-2 { transition-delay: .2s; }
-    .reveal-delay-3 { transition-delay: .3s; }
-    .reveal-delay-4 { transition-delay: .4s; }
-    .reveal-delay-5 { transition-delay: .5s; }
-
-    /* ─── Chat Widget ──────────────────────────────────────────────────────── */
-    .chat-widget {
-      position: fixed;
-      bottom: 28px;
-      right: 100px;
-      z-index: 1000;
-      font-family: 'Inter', system-ui, sans-serif;
-    }
-
-    .chat-toggle {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: var(--teal);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 16px rgba(22,150,163,.4);
-      transition: transform .2s, box-shadow .2s;
-      cursor: pointer;
-      border: none;
-      position: relative;
-    }
-    .chat-toggle::before {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      background: rgba(22,150,163,.3);
-      animation: wpp-pulse 2s ease-in-out infinite;
-    }
-    .chat-toggle:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 24px rgba(22,150,163,.5);
-    }
-    .chat-toggle:hover::before { animation: none; }
-
-    .chat-tooltip {
-      position: absolute;
-      right: 72px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: var(--bg-card, #1e293b);
-      color: var(--color-text, #e2e8f0);
-      padding: 8px 16px;
-      border-radius: 10px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      white-space: nowrap;
-      box-shadow: 0 4px 16px rgba(0,0,0,.2);
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .4s;
-    }
-    .chat-tooltip::after {
-      content: '';
-      position: absolute;
-      right: -6px;
-      top: 50%;
-      transform: translateY(-50%);
-      border: 6px solid transparent;
-      border-left-color: var(--bg-card, #1e293b);
-      border-right: none;
-    }
-    .chat-tooltip.show { opacity: 1; }
-    [data-theme="light"] .chat-tooltip { background: #fff; color: #0f172a; box-shadow: 0 4px 16px rgba(0,0,0,.1); }
-    [data-theme="light"] .chat-tooltip::after { border-left-color: #fff; }
-    .chat-toggle svg {
-      width: 28px;
-      height: 28px;
-      fill: #fff;
-      position: relative;
-      z-index: 1;
-    }
-
-    .chat-panel {
-      display: none;
-      position: fixed;
-      bottom: 100px;
-      right: 28px;
-      width: 380px;
-      height: 520px;
-      background: var(--bg-card);
-      border-radius: 16px;
-      box-shadow: var(--shadow-lg);
-      flex-direction: column;
-      overflow: hidden;
-      z-index: 1001;
-    }
-    .chat-panel.open { display: flex; }
-
-    .chat-header {
-      background: var(--teal);
-      color: #fff;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-    }
-    .chat-header h4 {
-      font-size: 0.9375rem;
-      font-weight: 700;
-      margin: 0;
-    }
-    .chat-header-close {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,.8);
-      font-size: 1.25rem;
-      cursor: pointer;
-      padding: 4px;
-      line-height: 1;
-    }
-    .chat-header-close:hover { color: #fff; }
-
-    .chat-start {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 32px 24px;
-      gap: 16px;
-    }
-    .chat-start p {
-      font-size: 0.875rem;
-      color: var(--text-sm);
-      text-align: center;
-      line-height: 1.5;
-    }
-    .chat-start-field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .chat-start-field label {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-sm);
-      text-transform: uppercase;
-      letter-spacing: .03em;
-    }
-    .chat-start-field input {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.875rem;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--bg-section);
-      outline: none;
-      transition: border-color .15s;
-    }
-    .chat-start-field input:focus {
-      border-color: var(--teal);
-    }
-    .chat-start-btn {
-      background: var(--teal);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 0.875rem;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background .15s;
-      margin-top: 8px;
-    }
-    .chat-start-btn:hover { background: var(--teal-dark); }
-    .chat-start-btn:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
-
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .chat-msg {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-size: 0.8125rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .chat-msg.sistema,
-    .chat-msg.suporte {
-      background: var(--bg-alt);
-      color: var(--text);
-      align-self: flex-start;
-      border-bottom-left-radius: 4px;
-    }
-    .chat-msg.cliente {
-      background: var(--teal);
-      color: #fff;
-      align-self: flex-end;
-      border-bottom-right-radius: 4px;
-    }
-
-    .chat-input-wrap {
-      display: flex;
-      padding: 12px;
-      gap: 8px;
-      border-top: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    .chat-input-wrap input {
-      flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.875rem;
-      font-family: inherit;
-      color: var(--text);
-      background: var(--bg-section);
-      outline: none;
-    }
-    .chat-input-wrap input:focus {
-      border-color: var(--teal);
-    }
-    .chat-input-send {
-      background: var(--teal);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      width: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background .15s;
-      flex-shrink: 0;
-    }
-    .chat-input-send:hover { background: var(--teal-dark); }
-    .chat-input-send svg {
-      width: 18px;
-      height: 18px;
-      fill: none;
-      stroke: #fff;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-
-    .chat-closed-msg {
-      text-align: center;
-      padding: 16px;
-      font-size: 0.8125rem;
-      color: var(--text-sm);
-      border-top: 1px solid var(--border);
-    }
-
-    @media (max-width: 480px) {
-      .chat-panel {
-        width: calc(100vw - 24px);
-        right: 12px;
-        bottom: 80px;
-        height: 70vh;
-      }
-      .chat-widget { bottom: 16px; right: 16px; }
-      .chat-toggle { width: 52px; height: 52px; }
-      .chat-toggle svg { width: 24px; height: 24px; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- ═══════════════════════════════════════════════════ NAVBAR -->
-<nav id="navbar">
-  <div class="container">
-    <div class="nav-inner">
-      <a href="#" class="nav-logo">
-        <img src="/landing/alfa-home-logo.webp" alt="AlfaHome" width="134" height="20" decoding="async" fetchpriority="high" style="height: 20px; width: auto;" />
-      </a>
-
-      <div class="nav-links">
-        <a href="#funcionalidades">Funcionalidades</a>
-        <a href="#como-funciona">Como funciona</a>
-        <a href="#planos">Planos</a>
-        <a href="#faq">FAQ</a>
-        <a href="/baixar-app">Baixar app</a>
-      </div>
-
-      <div class="nav-actions">
-        <button id="themeToggle" class="theme-toggle" aria-label="Alternar tema" onclick="toggleTheme()">
-          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        </button>
-        <a href="/login" class="btn btn-ghost" style="padding: 10px 20px; font-size: 0.875rem;">Entrar</a>
-      </div>
-
-      <div class="nav-mobile-right">
-        <button class="theme-toggle theme-toggle-mobile" aria-label="Alternar tema" onclick="toggleTheme()">
-          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        </button>
-        <button class="nav-hamburger" id="hamburgerBtn" aria-label="Abrir menu">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
-    </div>
-  </div>
-</nav>
-
-<!-- Mobile Menu -->
-<div class="mobile-menu" id="mobileMenu">
-  <button class="mobile-menu-close" id="mobileMenuClose">×</button>
-  <a href="#funcionalidades" class="mobile-link">Funcionalidades</a>
-  <a href="#como-funciona" class="mobile-link">Como funciona</a>
-  <a href="#planos" class="mobile-link">Planos</a>
-  <a href="#faq" class="mobile-link">FAQ</a>
-  <div class="mobile-menu-actions">
-    <a href="/login" class="btn btn-ghost" style="text-align:center;">Entrar</a>
-    <a href="#planos" class="btn btn-primary" style="text-align:center;">Ver planos</a>
-  </div>
-</div>
-
-
-<!-- ═══════════════════════════════════════════════════ HERO -->
-<section id="hero">
-  <div class="container">
-    <div class="hero-inner">
-      <div class="hero-content">
-        <div class="hero-eyebrow reveal">
-          <div class="hero-dot"></div>
-          <span class="hero-eyebrow-text">Controle financeiro completo</span>
-        </div>
-
-        <h1 class="hero-title reveal reveal-delay-1">
-          Organize suas finanças<br>
-          com <span>clareza</span>
-        </h1>
-
-        <p class="hero-subtitle reveal reveal-delay-2">
-          Tudo que você precisa para controlar receitas, despesas, cartões e investimentos em um só lugar. Visão clara do seu dinheiro, mês a mês — simples e poderoso.
-        </p>
-
-      </div>
-
-      <!-- Dashboard screenshot -->
-      <div class="hero-mockup reveal reveal-delay-3">
-        <img src="/landing/screenshots/dashboard-dark.webp" alt="Dashboard AlfaHome" class="hero-mockup-img hero-mockup-dark" width="1280" height="800" decoding="async" loading="lazy" />
-        <img src="/landing/screenshots/dashboard-light.webp" alt="Dashboard AlfaHome" class="hero-mockup-img hero-mockup-light" width="1280" height="800" decoding="async" fetchpriority="high" />
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ NUMEROS -->
-<section id="numeros">
-  <div class="container">
-    <div class="numeros-grid">
-      <div class="numeros-item reveal">
-        <div class="numeros-value">+80</div>
-        <div class="numeros-label">Categorias prontas para uso</div>
-      </div>
-      <div class="numeros-item reveal reveal-delay-2">
-        <div class="numeros-value">100%</div>
-        <div class="numeros-label">Multiusuário para toda a família</div>
-      </div>
-      <div class="numeros-item reveal reveal-delay-3">
-        <div class="numeros-value">24/7</div>
-        <div class="numeros-label">Acesso pelo celular ou computador</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ COMO FUNCIONA -->
-<section id="como-funciona">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-label reveal">Como funciona</span>
-      <h2 class="section-title reveal reveal-delay-1">Comece em 3 passos simples</h2>
-      <p class="section-subtitle reveal reveal-delay-2">Sem integração com banco, sem burocracia. Você tem o controle do que entra no sistema.</p>
-    </div>
-
-    <div class="steps-grid">
-      <div class="step-card reveal">
-        <div class="step-number">1</div>
-        <div class="step-title">Crie sua conta</div>
-        <div class="step-desc">Cadastro gratuito em menos de um minuto. Comece pelo plano Individual e convide a família quando quiser.</div>
-      </div>
-      <div class="step-card reveal reveal-delay-1">
-        <div class="step-number">2</div>
-        <div class="step-title">Cadastre contas e cartões</div>
-        <div class="step-desc">Adicione seus bancos, cartões de crédito e categorias de despesa. Em poucos minutos o sistema já reflete a sua realidade.</div>
-      </div>
-      <div class="step-card reveal reveal-delay-2">
-        <div class="step-number">3</div>
-        <div class="step-title">Lance no dia a dia</div>
-        <div class="step-desc">Registre receitas, despesas e parcelas conforme elas acontecem. O saldo, a fatura e o orçamento se atualizam sozinhos.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ FEATURES -->
-<section id="funcionalidades">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-label reveal">Funcionalidades</span>
-      <h2 class="section-title reveal reveal-delay-1">Tudo que sua família precisa para organizar o dinheiro</h2>
-      <p class="section-subtitle reveal reveal-delay-2">Receitas, despesas, cartões, contas e investimentos em um só lugar — simples de usar no celular ou no computador.</p>
-    </div>
-
-    <div class="features-grid">
-      <div class="feature-card reveal">
-        <div class="feature-icon teal">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M5 9l7-7 7 7"/><path d="M5 15l7 7 7-7"/></svg>
-        </div>
-        <div class="feature-title">Receitas & Despesas</div>
-        <div class="feature-desc">Lance entradas e saídas em segundos, com categorias prontas, filtros por período e marcação de pago/recebido.</div>
-      </div>
-
-      <div class="feature-card reveal reveal-delay-1">
-        <div class="feature-icon orange">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#56b988" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
-        </div>
-        <div class="feature-title">Cartões de Crédito</div>
-        <div class="feature-desc">Acompanhe faturas, parcelas e limite disponível de cada cartão, com fechamento e vencimento automáticos.</div>
-      </div>
-
-      <div class="feature-card reveal reveal-delay-2">
-        <div class="feature-icon green">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-4 7 4"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v4"/><path d="M12 14v4"/><path d="M16 14v4"/></svg>
-        </div>
-        <div class="feature-title">Contas & Bancos</div>
-        <div class="feature-desc">Cadastre quantas contas quiser, veja o saldo consolidado e acompanhe o dinheiro em cada banco em tempo real.</div>
-      </div>
-
-      <div class="feature-card reveal">
-        <div class="feature-icon purple">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg>
-        </div>
-        <div class="feature-title">Recorrências & Parcelas</div>
-        <div class="feature-desc">Cadastre uma vez aluguel, mensalidades e compras parceladas no cartão — a gente lança todos os meses automaticamente.</div>
-      </div>
-
-      <div class="feature-card reveal reveal-delay-1">
-        <div class="feature-icon blue">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-        </div>
-        <div class="feature-title">Dashboard & Relatórios</div>
-        <div class="feature-desc">Painel com saldo em contas, fatura dos cartões, receitas realizadas, despesas por categoria e comparativo mês a mês.</div>
-      </div>
-
-      <div class="feature-card reveal reveal-delay-2">
-        <div class="feature-icon rose">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-        </div>
-        <div class="feature-title">Investimentos</div>
-        <div class="feature-desc">Registre aportes em renda fixa, ações ou fundos e acompanhe a evolução do patrimônio da família ao longo do tempo.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ SPOTLIGHT 1 -->
-<section class="spotlight spotlight-alt">
-  <div class="container">
-    <div class="spotlight-inner">
-      <div class="spotlight-text">
-        <span class="section-label reveal">Dia a dia financeiro</span>
-        <h2 class="section-title reveal reveal-delay-1">Seus gastos do mês<br>sempre sob controle</h2>
-        <p class="reveal reveal-delay-2">Registre cada conta, compra ou recebimento em poucos segundos e saiba exatamente para onde o dinheiro está indo — sem planilha, sem dor de cabeça.</p>
-        <div class="spotlight-checks reveal reveal-delay-3">
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Lançamento rápido de receitas e despesas
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Categorias prontas e personalizáveis
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Filtros por período, status e pessoa
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Marcação de pago e recebido com um toque
-          </div>
-        </div>
-        <div class="spotlight-cta reveal reveal-delay-4">
-          <a href="#planos" class="btn btn-primary">Conhecer o sistema</a>
-        </div>
-      </div>
-
-      <div class="spotlight-visual reveal reveal-delay-1">
-        <div class="spot-stat-row">
-          <div class="spot-stat">
-            <div class="spot-stat-value" style="color:var(--teal)">+80</div>
-            <div class="spot-stat-label">Categorias prontas</div>
-          </div>
-          <div class="spot-stat">
-            <div class="spot-stat-value" style="color:var(--orange)">&lt;10s</div>
-            <div class="spot-stat-label">Por lançamento</div>
-          </div>
-          <div class="spot-stat">
-            <div class="spot-stat-value" style="color:#22c55e">Tempo real</div>
-            <div class="spot-stat-label">Saldo atualizado</div>
-          </div>
-        </div>
-        <div class="spot-screenshot">
-          <img src="/landing/screenshots/despesas-dark.webp" alt="Lista de despesas AlfaHome" class="spot-screenshot-img spot-screenshot-dark" width="1280" height="800" loading="lazy" decoding="async" />
-          <img src="/landing/screenshots/despesas-light.webp" alt="Lista de despesas AlfaHome" class="spot-screenshot-img spot-screenshot-light" width="1280" height="800" loading="lazy" decoding="async" />
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ SPOTLIGHT 2 -->
-<section class="spotlight">
-  <div class="container">
-    <div class="spotlight-inner reverse">
-      <div class="spotlight-text">
-        <span class="section-label reveal">Contas & Cartões</span>
-        <h2 class="section-title reveal reveal-delay-1">Todas as suas contas<br>e cartões num só lugar</h2>
-        <p class="reveal reveal-delay-2">Cadastre cada banco, poupança, carteira e cartão de crédito da família. O saldo consolidado, a fatura e o limite disponível ficam sempre atualizados.</p>
-        <div class="spotlight-checks reveal reveal-delay-3">
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Saldo consolidado de todas as contas
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Fatura e limite de cada cartão de crédito
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Fechamento e vencimento automáticos
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Um titular por conta ou cartão
-          </div>
-        </div>
-        <div class="spotlight-cta reveal reveal-delay-4">
-          <a href="#planos" class="btn btn-primary">Ver demonstração</a>
-        </div>
-      </div>
-
-      <div class="spotlight-visual reveal reveal-delay-1">
-        <div class="spot-screenshot">
-          <img src="/landing/screenshots/bancos-dark.webp" alt="Contas bancárias AlfaHome" class="spot-screenshot-img spot-screenshot-dark" width="1280" height="800" loading="lazy" decoding="async" />
-          <img src="/landing/screenshots/bancos-light.webp" alt="Contas bancárias AlfaHome" class="spot-screenshot-img spot-screenshot-light" width="1280" height="800" loading="lazy" decoding="async" />
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ SPOTLIGHT 3 -->
-<section class="spotlight spotlight-alt">
-  <div class="container">
-    <div class="spotlight-inner">
-      <div class="spotlight-text">
-        <span class="section-label reveal">Investimentos</span>
-        <h2 class="section-title reveal reveal-delay-1">O patrimônio da família<br>crescendo à vista</h2>
-        <p class="reveal reveal-delay-2">Registre aportes em renda fixa, ações, fundos e tesouro direto. Acompanhe a rentabilidade de cada ativo e veja a evolução do patrimônio mês a mês.</p>
-        <div class="spotlight-checks reveal reveal-delay-3">
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Aportes em renda fixa, ações e fundos
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Rentabilidade de cada ativo
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Posição consolidada da carteira
-          </div>
-          <div class="spotlight-check">
-            <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-            Evolução do patrimônio ao longo do tempo
-          </div>
-        </div>
-        <div class="spotlight-cta reveal reveal-delay-4">
-          <a href="#planos" class="btn btn-primary">Começar agora</a>
-        </div>
-      </div>
-
-      <div class="spotlight-visual reveal reveal-delay-1">
-        <div class="spot-screenshot">
-          <img src="/landing/screenshots/investimentos-dark.webp" alt="Investimentos AlfaHome" class="spot-screenshot-img spot-screenshot-dark" width="1280" height="800" loading="lazy" decoding="async" />
-          <img src="/landing/screenshots/investimentos-light.webp" alt="Investimentos AlfaHome" class="spot-screenshot-img spot-screenshot-light" width="1280" height="800" loading="lazy" decoding="async" />
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ SEGURANÇA -->
-<section id="seguranca">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-label reveal" style="color:#56b988">Segurança & Privacidade</span>
-      <h2 class="section-title reveal reveal-delay-1">Seus dados são seus — e só seus</h2>
-      <p class="section-subtitle reveal reveal-delay-2">Nós não pedimos senha de banco, não vendemos dados e seguimos a LGPD à risca.</p>
-    </div>
-
-    <div class="seguranca-grid">
-      <div class="seguranca-card reveal">
-        <div class="seguranca-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        </div>
-        <div class="seguranca-title">Sem acesso ao seu banco</div>
-        <div class="seguranca-desc">Você lança o que quer, como quer. Não pedimos senha, Open Finance nem integração com conta bancária.</div>
-      </div>
-      <div class="seguranca-card reveal reveal-delay-1">
-        <div class="seguranca-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div class="seguranca-title">Criptografia ponta a ponta</div>
-        <div class="seguranca-desc">Tráfego protegido por HTTPS/TLS, senhas com hash e dados sensíveis armazenados com criptografia em repouso.</div>
-      </div>
-      <div class="seguranca-card reveal reveal-delay-2">
-        <div class="seguranca-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-9-9 9 9 0 0 1 9-9c2.5 0 4.7 1 6.3 2.7L21 3"/><path d="M21 3v6h-6"/></svg>
-        </div>
-        <div class="seguranca-title">Backup diário automático</div>
-        <div class="seguranca-desc">Cópia de segurança dos seus dados todos os dias, com retenção inteligente. Você nunca perde o histórico.</div>
-      </div>
-      <div class="seguranca-card reveal reveal-delay-3">
-        <div class="seguranca-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div class="seguranca-title">LGPD na prática</div>
-        <div class="seguranca-desc">Você pode exportar, corrigir ou excluir seus dados a qualquer momento. <a href="/politica-privacidade" style="color:#56b988">Leia nossa política</a>.</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ PLANOS -->
-<section id="planos">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-label reveal">Planos</span>
-      <h2 class="section-title reveal reveal-delay-1">Escolha o plano ideal</h2>
-      <p class="section-subtitle reveal reveal-delay-2" style="color:rgba(255,255,255,.55);">Planos flexíveis para uso individual, casal ou família inteira. Sem taxa de setup, sem fidelidade.</p>
-    </div>
-
-    <div class="planos-grid">
-      <!-- INDIVIDUAL -->
-      <div class="plano-card reveal">
-        <div class="plano-name">Individual</div>
-        <div class="plano-desc">Para quem quer organizar as próprias finanças.</div>
-        <div class="plano-price">
-          <span class="currency">R$</span>
-          <span class="amount">19,90</span>
-          <span class="period">/mês</span>
-        </div>
-        <div class="plano-price-annual">ou R$ 199,00/ano — economize 17%</div>
-        <div class="plano-items">
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            1 usuário
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            1 conta bancária
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Receitas, despesas e cartões
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Dashboard e relatórios
-          </div>
-        </div>
-        <a href="https://wa.me/5527992250122?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Individual%20do%20AlfaHome." target="_blank" rel="noopener" class="plano-cta plano-cta-ghost">Assinar agora</a>
-      </div>
-
-      <!-- CASAL (destaque) -->
-      <div class="plano-card featured reveal reveal-delay-1">
-        <div class="plano-badge">Mais popular</div>
-        <div class="plano-name">Casal</div>
-        <div class="plano-desc">Para casais que cuidam do dinheiro juntos.</div>
-        <div class="plano-price">
-          <span class="currency">R$</span>
-          <span class="amount">29,90</span>
-          <span class="period">/mês</span>
-        </div>
-        <div class="plano-price-annual">ou R$ 299,00/ano — economize 17%</div>
-        <div class="plano-items">
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Até 2 usuários
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Até 4 contas bancárias
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Tudo do Individual
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Quem pagou e quem recebeu
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Investimentos e patrimônio
-          </div>
-        </div>
-        <a href="https://wa.me/5527992250122?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Casal%20do%20AlfaHome." target="_blank" rel="noopener" class="plano-cta plano-cta-solid">Assinar agora</a>
-      </div>
-
-      <!-- FAMÍLIA -->
-      <div class="plano-card reveal reveal-delay-2">
-        <div class="plano-name">Família</div>
-        <div class="plano-desc">Para famílias — recursos ilimitados.</div>
-        <div class="plano-price">
-          <span class="currency">R$</span>
-          <span class="amount">49,90</span>
-          <span class="period">/mês</span>
-        </div>
-        <div class="plano-price-annual">ou R$ 499,00/ano — economize 17%</div>
-        <div class="plano-items">
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Usuários ilimitados
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Bancos e cartões ilimitados
-          </div>
-          <div class="plano-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            Tudo do Casal
-          </div>
-        </div>
-        <a href="https://wa.me/5527992250122?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Fam%C3%ADlia%20do%20AlfaHome." target="_blank" rel="noopener" class="plano-cta plano-cta-ghost">Assinar agora</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ FAQ -->
-<section id="faq">
-  <div class="container">
-    <div class="section-header">
-      <span class="section-label reveal">Perguntas Frequentes</span>
-      <h2 class="section-title reveal reveal-delay-1">Tire suas dúvidas</h2>
-    </div>
-
-    <div class="faq-list">
-      <div class="faq-item reveal">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Dá para usar no celular como se fosse um aplicativo?
-          <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-answer">
-          Sim. O AlfaHome é um PWA (Progressive Web App): no celular ou no computador, o navegador oferece a opção "Instalar AlfaHome" e o sistema passa a abrir em uma janela própria, igual a um aplicativo — sem precisar passar pela App Store ou Play Store.
-        </div>
-      </div>
-
-      <div class="faq-item reveal reveal-delay-1">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Como funcionam as despesas recorrentes e as compras parceladas no cartão?
-          <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-answer">
-          Ao cadastrar uma despesa, você pode marcá-la como recorrente (aluguel, mensalidade, streaming — o sistema projeta os lançamentos dos próximos meses) ou informar um número de parcelas. Em compras parceladas no cartão, o AlfaHome divide o valor entre as parcelas e joga cada uma na fatura correta, respeitando o dia de fechamento e vencimento daquele cartão.
-        </div>
-      </div>
-
-      <div class="faq-item reveal reveal-delay-2">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Mais de uma pessoa da família pode acessar a mesma conta?
-          <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-answer">
-          Sim. Nos planos Casal e Família, cada pessoa tem seu próprio login e vê os mesmos lançamentos. Em cada receita ou despesa, você escolhe quem comprou ou quem recebeu a partir do cadastro de familiares — assim dá para saber exatamente quanto cada um movimentou no mês.
-        </div>
-      </div>
-
-      <div class="faq-item reveal reveal-delay-3">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          As categorias já vêm prontas ou preciso cadastrar do zero?
-          <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-answer">
-          Já vêm prontas. Ao criar sua conta, o AlfaHome instala dezenas de categorias típicas — supermercado, farmácia, combustível, aluguel, escola, streaming, salário, freelance, rendimentos etc. — organizadas por receita e despesa. Você pode editar, desativar ou criar novas categorias a qualquer momento.
-        </div>
-      </div>
-
-      <div class="faq-item reveal reveal-delay-4">
-        <button class="faq-question" onclick="toggleFaq(this)">
-          Dá para registrar investimentos além de conta e cartão?
-          <svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="faq-answer">
-          Sim. Você pode cadastrar aportes em Tesouro Direto, CDB, Renda Fixa, Fundos Imobiliários, Ações, Cripto e Poupança. O AlfaHome acompanha o valor aportado em cada ativo, o rendimento registrado e mostra a posição consolidada da carteira para você ver o patrimônio crescendo mês a mês.
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ CTA FINAL -->
-<section id="cta-final">
-  <div class="container">
-    <div class="cta-final-inner">
-      <h2 class="cta-final-title reveal">Pronto para organizar<br>as finanças da sua família?</h2>
-      <p class="cta-final-sub reveal reveal-delay-1">Comece hoje, cadastre suas contas e cartões em minutos e tenha o controle total já no próximo lançamento.</p>
-      <div class="cta-final-buttons reveal reveal-delay-2">
-        <a href="#planos" class="btn btn-primary">Ver planos</a>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ═══════════════════════════════════════════════════ FOOTER -->
-<footer>
-  <div class="container">
-    <div class="footer-top">
-      <div>
-        <p class="footer-brand-text">Organize as finanças da sua família em um só lugar. Receitas, despesas, cartões, contas e investimentos — de forma simples e sem conectar banco.</p>
-        <address class="footer-address">
-          R. Pedro Palácios, 79 — Centro<br>
-          Vila Velha, ES · 29100-190
-        </address>
-      </div>
-
-      <div>
-        <div class="footer-col-title">Produto</div>
-        <div class="footer-links">
-          <a href="#funcionalidades">Funcionalidades</a>
-          <a href="#planos">Planos</a>
-          <a href="#faq">FAQ</a>
-          <a href="/login">Entrar</a>
-          <a href="/register">Criar conta</a>
-        </div>
-      </div>
-
-      <div>
-        <div class="footer-col-title">Contato</div>
-        <div class="footer-social">
-          <a href="https://wa.me/5527992250122" target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.372-.025-.521-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.372-.01-.571-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0 0 20.465 3.488"/></svg>
-          </a>
-          <a href="https://www.instagram.com/alfa.solucoestecnologicas/" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          </a>
-          <a href="mailto:alfa.comercial.solucoes@gmail.com" aria-label="E-mail" title="E-mail">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </a>
-        </div>
-      </div>
-
-      <div>
-        <div class="footer-col-title">Legal</div>
-        <div class="footer-links">
-          <a href="/politica-privacidade">Política de Privacidade</a>
-          <a href="/termos-de-uso">Termos de Uso</a>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <span>© <script>document.write(new Date().getFullYear())</script> <a href="https://alfasolucoes.cloud/" target="_blank" rel="noopener">Alfa Soluções Tecnológicas</a>. Todos os direitos reservados.</span>
-    </div>
-  </div>
-</footer>
-
-
-<!-- ═══════════════════════════════════════════════════ JS -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>alfahome — suas finanças, mais simples</title>
+<meta name="description" content="Planeje o mês, acompanhe o previsto e o realizado, controle cartões, parcelas, contas fixas, dívidas e metas da família em um só lugar. Sem conectar banco.">
+<meta name="author" content="Alfa Soluções Tecnológicas">
+<link rel="canonical" href="https://home.alfasolucoes.cloud/">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/svg+xml" href="/marca/simbolo.svg">
+<link rel="apple-touch-icon" href="/favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="alfahome">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:url" content="https://home.alfasolucoes.cloud/">
+<meta property="og:title" content="alfahome — suas finanças, mais simples">
+<meta property="og:description" content="Planejamento do mês, cartões, parcelas, contas fixas, dívidas e metas da família em um só lugar. Sem conectar banco.">
+<meta property="og:image" content="https://home.alfasolucoes.cloud/landing/screenshots/dashboard-dark.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800|plus-jakarta-sans:700,800&display=swap" rel="stylesheet">
 <script>
-  // ── Navbar scroll effect
-  const navbar = document.getElementById('navbar');
-  window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 40);
-  }, { passive: true });
-
-  // ── Mobile menu
-  const hamburger = document.getElementById('hamburgerBtn');
-  const mobileMenu = document.getElementById('mobileMenu');
-  const mobileClose = document.getElementById('mobileMenuClose');
-
-  hamburger.addEventListener('click', () => mobileMenu.classList.add('open'));
-  mobileClose.addEventListener('click', () => mobileMenu.classList.remove('open'));
-
-  document.querySelectorAll('.mobile-link').forEach(link => {
-    link.addEventListener('click', () => mobileMenu.classList.remove('open'));
-  });
-
-  // ── FAQ accordion
-  function toggleFaq(btn) {
-    const answer = btn.nextElementSibling;
-    const isOpen = btn.classList.contains('open');
-
-    // Close all
-    document.querySelectorAll('.faq-question').forEach(q => q.classList.remove('open'));
-    document.querySelectorAll('.faq-answer').forEach(a => a.classList.remove('open'));
-
-    // Open clicked (if wasn't open)
-    if (!isOpen) {
-      btn.classList.add('open');
-      answer.classList.add('open');
-    }
-  }
-
-  // ── Máscara de telefone
-  function maskPhone(value) {
-    const digits = value.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 10) {
-      return digits.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
-    }
-    return digits.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
-  }
-  document.querySelectorAll('input[type="tel"]').forEach(function(input) {
-    input.addEventListener('input', function() { this.value = maskPhone(this.value); });
-  });
-
-  // ── Contact form → API Leads
-  const API_BASE = '';
-
-  function submitForm(e) {
-    e.preventDefault();
-    const btn = document.getElementById('formSubmitBtn');
-    const nome = document.getElementById('nome').value.trim();
-    const empresa = document.getElementById('academia').value.trim();
-    const whatsapp = document.getElementById('whatsapp').value.trim();
-    const interesse = document.getElementById('interesse');
-    const interesseText = interesse.options[interesse.selectedIndex].text;
-
-    btn.disabled = true;
-    btn.textContent = 'Enviando...';
-
-    fetch(`${API_BASE}/api/landing/leads`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, empresa, whatsapp, interesse: interesseText })
-    })
-    .then(r => {
-      if (!r.ok) throw new Error('Erro ao enviar');
-      return r.json();
-    })
-    .then(() => {
-      const form = document.getElementById('contactForm');
-      form.innerHTML = '<div style="text-align:center;padding:24px 0;">' +
-        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#25d366" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
-        '<h3 style="color:#fff;margin-top:16px;font-size:1.125rem;">Mensagem enviada!</h3>' +
-        '<p style="color:rgba(255,255,255,.7);margin-top:8px;font-size:0.875rem;">Entraremos em contato em breve pelo WhatsApp.</p>' +
-        '</div>';
-    })
-    .catch(() => {
-      // Fallback: abre WhatsApp
-      const msg = encodeURIComponent(
-        `Olá! Tenho interesse no AlfaHome.\n\n*Nome:* ${nome}\n*Empresa:* ${empresa || document.getElementById('academia')?.value?.trim() || ''}\n*WhatsApp:* ${whatsapp}\n*Interesse:* ${interesseText}`
-      );
-      window.open(`https://api.whatsapp.com/send?phone=5527992250122&text=${msg}`, '_blank');
-      btn.disabled = false;
-      btn.textContent = 'Enviar mensagem';
-    });
-  }
-
-  // ── Revenda form → API Leads
-  function submitRevendaForm(e) {
-    e.preventDefault();
-    const btn = document.getElementById('revendaSubmitBtn');
-    const nome = document.getElementById('revNome').value.trim();
-    const whatsapp = document.getElementById('revWhatsapp').value.trim();
-    const cidade = document.getElementById('revCidade').value.trim();
-    const qtdSelect = document.getElementById('revQtd');
-    const qtdAcademias = qtdSelect.options[qtdSelect.selectedIndex].value;
-
-    btn.disabled = true;
-    btn.textContent = 'Enviando...';
-
-    fetch(`${API_BASE}/api/landing/leads`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nome, whatsapp, tipo: 'REVENDA', cidade, qtdAcademias })
-    })
-    .then(r => {
-      if (!r.ok) throw new Error('Erro ao enviar');
-      return r.json();
-    })
-    .then(() => {
-      const form = document.getElementById('revendaForm');
-      form.innerHTML = '<div style="text-align:center;padding:24px 0;">' +
-        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1696a3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' +
-        '<h3 style="color:#fff;margin-top:16px;font-size:1.125rem;">Cadastro enviado!</h3>' +
-        '<p style="color:rgba(255,255,255,.7);margin-top:8px;font-size:0.875rem;">Nossa equipe entrará em contato pelo WhatsApp em breve.</p>' +
-        '</div>';
-    })
-    .catch(() => {
-      const msg = encodeURIComponent(
-        `Olá! Tenho interesse em ser revendedor AlfaHome.\n\n*Nome:* ${nome}\n*WhatsApp:* ${whatsapp}\n*Cidade:* ${cidade}\n*Imobiliárias que atendo:* ${qtdAcademias}`
-      );
-      window.open(`https://api.whatsapp.com/send?phone=5527992250122&text=${msg}`, '_blank');
-      btn.disabled = false;
-      btn.textContent = 'Quero ser revendedor';
-    });
-  }
-
-  // ── Theme toggle
-  function toggleTheme() {
-    var current = document.documentElement.getAttribute('data-theme');
-    var next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('lp-theme', next);
-    updateThemeImages(next);
-  }
-
-  function updateThemeImages(theme) {
-    document.querySelectorAll('.theme-img').forEach(function(img) {
-      img.src = theme === 'dark' ? img.dataset.dark : img.dataset.light;
-    });
-  }
-
-  // Aplicar imagens corretas no load + preload do tema oposto
-  (function() {
-    var theme = document.documentElement.getAttribute('data-theme') || 'dark';
-    updateThemeImages(theme);
-    // Preload opposite theme images so toggle is instant
-    document.querySelectorAll('.theme-img').forEach(function(img) {
-      var preload = new Image();
-      preload.src = theme === 'dark' ? img.dataset.light : img.dataset.dark;
-    });
-  })();
-
-  // ── Scroll reveal
-  const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        revealObserver.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.12 });
-
-  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
-
-  // ── Smooth close mobile menu on resize
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) mobileMenu.classList.remove('open');
-  });
-</script>
-
-<!-- WhatsApp floating button -->
-<style>
-  .whatsapp-wrap {
-    position: fixed;
-    bottom: 28px;
-    right: 28px;
-    z-index: 999;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    opacity: 0;
-    transform: translateY(20px);
-    animation: wpp-enter .5s ease forwards;
-    animation-delay: 3s;
-  }
-
-  .whatsapp-tooltip {
-    background: #fff;
-    color: #1e293b;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.12);
-    white-space: nowrap;
-    opacity: 0;
-    transform: translateX(8px);
-    animation: wpp-tooltip .4s ease forwards;
-    animation-delay: 5s;
-    position: relative;
-  }
-
-  .whatsapp-tooltip::after {
-    content: '';
-    position: absolute;
-    right: -6px;
-    top: 50%;
-    transform: translateY(-50%);
-    border: 6px solid transparent;
-    border-left-color: #fff;
-  }
-
-  .whatsapp-tooltip-close {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #e2e8f0;
-    border: none;
-    font-size: 10px;
-    line-height: 1;
-    color: #64748b;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .whatsapp-tooltip-close:hover { background: #cbd5e1; }
-
-  .whatsapp-float {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: #25d366;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 16px rgba(37,211,102,.4);
-    transition: transform .2s, box-shadow .2s;
-    text-decoration: none;
-    flex-shrink: 0;
-    position: relative;
-  }
-
-  .whatsapp-float::before {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    background: rgba(37,211,102,.3);
-    animation: wpp-pulse 2s ease-in-out infinite;
-  }
-
-  .whatsapp-float:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 24px rgba(37,211,102,.5);
-  }
-  .whatsapp-float:hover::before { animation: none; }
-
-  .whatsapp-float svg {
-    width: 32px;
-    height: 32px;
-    fill: #fff;
-    position: relative;
-    z-index: 1;
-  }
-
-  @keyframes wpp-enter {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @keyframes wpp-tooltip {
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes wpp-pulse {
-    0%, 100% { transform: scale(1); opacity: .6; }
-    50% { transform: scale(1.35); opacity: 0; }
-  }
-</style>
-
-<!-- Cookie consent banner -->
-<style>
-  .cookie-banner {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 998;
-    background: var(--navy);
-    border-top: 1px solid rgba(255,255,255,.1);
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    opacity: 0;
-    transform: translateY(100%);
-    animation: cookie-enter .4s ease forwards;
-    animation-delay: 2s;
-    box-shadow: 0 -4px 24px rgba(0,0,0,.3);
-  }
-
-  .cookie-banner.hidden { display: none; }
-
-  .cookie-banner-text {
-    color: rgba(255,255,255,.8);
-    font-size: 0.85rem;
-    line-height: 1.5;
-    max-width: 640px;
-  }
-
-  .cookie-banner-text a {
-    color: var(--orange);
-    text-decoration: underline;
-  }
-
-  .cookie-banner-actions {
-    display: flex;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-
-  .cookie-btn-accept {
-    background: #2f8057;
-    color: #fff;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background .2s;
-  }
-  .cookie-btn-accept:hover { background: #1f5a3c; }
-
-  @keyframes cookie-enter {
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  @media (max-width: 768px) {
-    .cookie-banner {
-      flex-direction: column;
-      text-align: center;
-      padding: 16px;
-      gap: 12px;
-    }
-  }
-</style>
-
-<div class="cookie-banner hidden" id="cookieBanner">
-  <p class="cookie-banner-text">
-    Utilizamos cookies essenciais para o funcionamento do site. Nenhum dado é compartilhado com terceiros para fins publicitários.
-    Saiba mais na nossa <a href="/politica-privacidade">Política de Privacidade</a>.
-  </p>
-  <div class="cookie-banner-actions">
-    <button class="cookie-btn-accept" onclick="acceptCookies()">Aceitar</button>
-  </div>
-</div>
-
-<script>
-  function acceptCookies() {
-    localStorage.setItem('alfahome_cookies_accepted', '1');
-    document.getElementById('cookieBanner').classList.add('hidden');
-  }
-
-  if (!localStorage.getItem('alfahome_cookies_accepted')) {
-    document.getElementById('cookieBanner').classList.remove('hidden');
-  }
-</script>
-
-<!-- ═══════════════════════════════════════════════════ CHAT WIDGET -->
-<div class="chat-widget" id="chatWidget">
-  <span class="chat-tooltip" id="chatTooltip">Fale conosco!</span>
-  <button class="chat-toggle" id="chatToggle" aria-label="Abrir chat">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-  </button>
-</div>
-
-<div class="chat-panel" id="chatPanel">
-  <div class="chat-header">
-    <h4>Fale com um consultor</h4>
-    <button class="chat-header-close" id="chatClose" aria-label="Fechar">&times;</button>
-  </div>
-
-  <!-- Banner fora do horário -->
-  <div id="chatHorarioBanner" style="display:none; background:#fff3cd; color:#856404; padding:10px 14px; font-size:0.82rem; line-height:1.4; border-bottom:1px solid #ffc107;">
-    <strong>⏰ Fora do horário de atendimento</strong>
-    <div id="chatHorarioDesc" style="margin-top:4px; opacity:0.85;"></div>
-    <div style="margin-top:4px; opacity:0.85;">Você pode deixar sua mensagem e responderemos assim que possível.</div>
-  </div>
-
-  <!-- Tela inicial -->
-  <div class="chat-start" id="chatStart">
-    <p>Olá! Preencha seus dados para iniciar uma conversa com nosso time comercial.</p>
-    <div class="chat-start-field">
-      <label for="chatNome">Seu nome</label>
-      <input type="text" id="chatNome" placeholder="Ex: João Silva" required />
-    </div>
-    <div class="chat-start-field">
-      <label for="chatWhatsapp">WhatsApp</label>
-      <input type="tel" id="chatWhatsapp" placeholder="(11) 99999-9999" required />
-    </div>
-    <button class="chat-start-btn" id="chatStartBtn">Iniciar conversa</button>
-  </div>
-
-  <!-- Area de mensagens (oculta ate iniciar) -->
-  <div class="chat-messages" id="chatMessages" style="display:none;"></div>
-  <div class="chat-input-wrap" id="chatInputWrap" style="display:none;">
-    <input type="text" id="chatInput" placeholder="Digite sua mensagem..." />
-    <button class="chat-input-send" id="chatSendBtn">
-      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-    </button>
-  </div>
-</div>
-
-
-<script>
-// ── Chat Widget Logic ──
-(function() {
-  const API = '';
-  let chatToken = localStorage.getItem('alfahome_chat_token');
-  let pollInterval = null;
-  let lastMsgCount = 0;
-
-  // Expirar token após 24h
-  const tokenTs = parseInt(localStorage.getItem('alfahome_chat_token_ts') || '0');
-  if (chatToken && (Date.now() - tokenTs > 24 * 60 * 60 * 1000)) {
-    limparSessaoChat();
-  }
-
-  const panel = document.getElementById('chatPanel');
-  const toggle = document.getElementById('chatToggle');
-  const closeBtn = document.getElementById('chatClose');
-  const startScreen = document.getElementById('chatStart');
-  const startBtn = document.getElementById('chatStartBtn');
-  const messagesDiv = document.getElementById('chatMessages');
-  const inputWrap = document.getElementById('chatInputWrap');
-  const chatInput = document.getElementById('chatInput');
-  const sendBtn = document.getElementById('chatSendBtn');
-
-  function limparSessaoChat() {
-    localStorage.removeItem('alfahome_chat_token');
-    localStorage.removeItem('alfahome_chat_token_ts');
-    chatToken = null;
-    lastMsgCount = 0;
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-  }
-
-  function resetarParaTelaInicial() {
-    messagesDiv.style.display = 'none';
-    messagesDiv.innerHTML = '';
-    inputWrap.style.display = 'none';
-    startScreen.style.display = 'flex';
-    startBtn.disabled = false;
-    startBtn.textContent = 'Iniciar conversa';
-    document.getElementById('chatNome').value = '';
-    document.getElementById('chatWhatsapp').value = '';
-  }
-
-  function verificarHorario() {
-    fetch(`${API}/api/landing/chat/horario-status`)
-      .then(r => r.json())
-      .then(data => {
-        const banner = document.getElementById('chatHorarioBanner');
-        if (!data.dentroDoHorario) {
-          const desc = document.getElementById('chatHorarioDesc');
-          if (data.descricaoHorario) {
-            desc.textContent = 'Horário de atendimento: ' + data.descricaoHorario + '.';
-          } else {
-            desc.textContent = '';
-          }
-          banner.style.display = 'block';
-        } else {
-          banner.style.display = 'none';
-        }
-      })
-      .catch(() => {});
-  }
-
-  function abrirChatPanel() {
-    panel.classList.add('open');
-    verificarHorario();
-    if (chatToken) {
-      showChatView();
-      carregarMensagens();
-      iniciarPolling();
-    }
-  }
-
-  function fecharChatPanel() {
-    panel.classList.remove('open');
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-  }
-
-  toggle.addEventListener('click', function() {
-    if (panel.classList.contains('open')) fecharChatPanel();
-    else abrirChatPanel();
-    // Hide tooltip when chat is opened
-    var tip = document.getElementById('chatTooltip');
-    if (tip) tip.classList.remove('show');
-  });
-  closeBtn.addEventListener('click', fecharChatPanel);
-
-  // Tooltip: show after 5s, hide after 13s (8s visible)
-  setTimeout(function() {
-    var tip = document.getElementById('chatTooltip');
-    if (tip && !panel.classList.contains('open')) {
-      tip.classList.add('show');
-      setTimeout(function() { tip.classList.remove('show'); }, 8000);
-    }
-  }, 5000);
-
-  // Expor globalmente para os botões "Falar com consultor"
-  window.abrirChat = function() {
-    abrirChatPanel();
-  };
-
-  function showChatView() {
-    startScreen.style.display = 'none';
-    messagesDiv.style.display = 'flex';
-    inputWrap.style.display = 'flex';
-  }
-
-  // WhatsApp comercial AlfaHome
-  const WHATSAPP_NUMERO = '5527992250122';
-
-  startBtn.addEventListener('click', function() {
-    const nome = document.getElementById('chatNome').value.trim();
-    const whatsapp = document.getElementById('chatWhatsapp').value.trim();
-    if (!nome || !whatsapp) return;
-
-    const mensagem =
-      'Olá! Gostaria de saber mais sobre o AlfaHome.\n\n' +
-      'Nome: ' + nome + '\n' +
-      'WhatsApp: ' + whatsapp;
-
-    const url = 'https://wa.me/' + WHATSAPP_NUMERO + '?text=' + encodeURIComponent(mensagem);
-    window.open(url, '_blank', 'noopener');
-  });
-
-  function carregarMensagens() {
-    if (!chatToken) return;
-    fetch(`${API}/api/landing/chat/${chatToken}/mensagens`)
-      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(data => {
-        if (data.status === 'FECHADO') {
-          renderMensagens(data.mensagens);
-          limparSessaoChat();
-          inputWrap.style.display = 'none';
-          return;
-        }
-        if (data.mensagens.length === lastMsgCount) return;
-        lastMsgCount = data.mensagens.length;
-        renderMensagens(data.mensagens);
-      })
-      .catch(() => {});
-  }
-
-  function renderMensagens(msgs) {
-    messagesDiv.innerHTML = '';
-    msgs.forEach(m => {
-      const div = document.createElement('div');
-      div.className = 'chat-msg ' + m.autorTipo.toLowerCase();
-      div.textContent = m.conteudo;
-      messagesDiv.appendChild(div);
-    });
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  }
-
-  function enviarMensagem() {
-    const text = chatInput.value.trim();
-    if (!text || !chatToken) return;
-
-    chatInput.value = '';
-
-    // Optimistic: mostrar imediatamente
-    const div = document.createElement('div');
-    div.className = 'chat-msg cliente';
-    div.textContent = text;
-    messagesDiv.appendChild(div);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    lastMsgCount++;
-
-    fetch(`${API}/api/landing/chat/${chatToken}/mensagens`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conteudo: text })
-    })
-    .then(r => { if (!r.ok) throw new Error(); })
-    .catch(() => {});
-  }
-
-  sendBtn.addEventListener('click', enviarMensagem);
-  chatInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); enviarMensagem(); }
-  });
-
-  function iniciarPolling() {
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(carregarMensagens, 3000);
-  }
-
-  // Restaurar sessão existente
-  if (chatToken) {
-    showChatView();
-  }
+// Aplicar o tema antes da primeira pintura; manter a preferência da landing antiga.
+(function () {
+  var saved;
+  try { saved = localStorage.getItem('lp-theme'); } catch (e) {}
+  var theme = saved === 'light' || saved === 'dark' ? saved
+    : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+  document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f8fafc' : '#0b1220';
 })();
 </script>
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{color-scheme:dark}
+[data-theme="light"]{color-scheme:light}
+body{margin:0;background:#0b1220;color:#e5edf5;font-family:'Figtree',system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.fundo{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(900px 600px at 15% 85%,rgba(20,184,166,.14),transparent 60%),
+             radial-gradient(700px 500px at 85% 10%,rgba(16,185,129,.09),transparent 60%),
+             linear-gradient(160deg,#0b1220 0%,#0d1a2b 55%,#08111c 100%)}
+.pagina{position:relative;z-index:1}
+.box{max-width:1200px;margin:0 auto;padding:0 40px}
 
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ea4125d4a53a64f',t:'MTc3NTg0ODQzNw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+/* Marca */
+.marca{display:inline-flex;align-items:center;gap:12px}
+.marca b{font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-weight:700;font-size:28px;letter-spacing:-.02em;color:#F8FAFC}
+
+/* Topo */
+.topo{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);background:rgba(11,18,32,.72);border-bottom:1px solid rgba(255,255,255,.06)}
+.topo .box{display:flex;align-items:center;justify-content:space-between;height:76px}
+.topo nav{display:flex;gap:30px;font-size:15px;color:#9fb0c3;font-weight:500}
+.topo nav a:hover{color:#fff}
+.topo .acoes{display:flex;gap:12px;align-items:center}
+.bt{font-family:inherit;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:12px;font-weight:700;font-size:15px;border:0;cursor:pointer}
+.bt-pri{color:#fff;background:linear-gradient(90deg,#2563EB,#1D4ED8);box-shadow:0 10px 30px rgba(37,99,235,.28)}
+.bt-pri:hover{filter:brightness(1.08)}
+.bt-sec{color:#e5edf5;border:1px solid #2b3a50;background:rgba(26,38,56,.6)}
+.bt-sec:hover{border-color:#60A5FA}
+.bt-lg{height:56px;padding:0 28px;font-size:17px}
+.bt-link{color:#9fb0c3;font-weight:600;font-size:15px;padding:0 6px}
+
+/* Hero */
+.hero{padding:84px 0 70px}
+.hero .box{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.selo{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;background:rgba(45,212,191,.10);border:1px solid rgba(45,212,191,.3);color:#5EEAD4;font-size:13px;font-weight:600}
+.traco{width:36px;height:3px;border-radius:3px;background:#2DD4BF;margin:26px 0 24px}
+h1{font-size:clamp(38px,4.6vw,62px);line-height:1.04;font-weight:800;letter-spacing:-.025em;color:#fff;margin:0}
+h1 span,h2 span{color:#5EEAD4}
+.sub{margin:20px 0 34px;font-size:19px;line-height:1.55;color:#9fb0c3;max-width:520px}
+.hero .ctas{display:flex;gap:14px;flex-wrap:wrap}
+.garantias{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px;color:#8ea2b8;font-size:14px}
+.garantias span{display:inline-flex;align-items:center;gap:8px}
+.garantias svg{color:#2DD4BF}
+
+/* Ilustração (mesma do login, maior) */
+.ilus{position:relative;height:440px;perspective:1600px}
+.painel{position:absolute;left:10px;top:20px;width:600px;height:360px;border-radius:20px;background:rgba(15,27,43,.94);border:1px solid rgba(96,165,250,.22);box-shadow:0 40px 100px rgba(0,0,0,.5);transform:rotateY(-12deg) rotateX(6deg) rotateZ(2deg);transform-origin:right center;display:grid;grid-template-columns:140px 1fr;overflow:hidden}
+.menu{border-right:1px solid rgba(255,255,255,.06);padding:18px 12px;font-size:12px;color:#8ea2b8}
+.menu b{display:block;font-family:'Plus Jakarta Sans';font-size:14px;color:#E2E8F0;margin-bottom:16px}
+.menu div{padding:8px 9px;border-radius:8px;margin-bottom:3px}
+.menu div.ativo{background:rgba(96,165,250,.16);color:#DBEAFE}
+.cont{padding:18px 20px}
+.cont small{color:#8ea2b8;font-size:11px}
+.saldo{font-size:26px;font-weight:800;color:#fff;margin:2px 0 6px}
+.barras{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 12px}
+.barra{background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;font-size:11px;color:#9fb0c3}
+.barra strong{display:block;color:#fff;font-size:15px;margin:3px 0 7px}
+.trilho{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.trilho i{display:block;height:100%;border-radius:6px}
+.linha{display:flex;justify-content:space-between;font-size:11px;padding:8px 0;border-top:1px solid rgba(255,255,255,.05);color:#c7d3df}
+.e{color:#34d399}.s{color:#fb7185}
+.flutua{position:absolute;border-radius:14px;padding:13px 16px;display:flex;gap:12px;align-items:center;background:rgba(13,30,40,.96);box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.flutua i{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:18px;font-weight:800}
+.flutua small{display:block;font-size:11px;color:#9fb0c3}
+.flutua strong{font-size:16px;color:#fff}
+.f1{left:-20px;top:300px;border:1px solid rgba(52,211,153,.35)}.f1 i{background:rgba(16,185,129,.2);color:#34d399}
+.f2{right:-10px;top:-6px;border:1px solid rgba(251,191,36,.35)}.f2 i{background:rgba(251,191,36,.15);color:#fbbf24}
+.f3{right:30px;top:340px;border:1px solid rgba(96,165,250,.35)}.f3 i{background:rgba(96,165,250,.16);color:#60A5FA}
+.legenda-ex{position:absolute;left:12px;bottom:-4px;font-size:11px;color:#55677d}
+
+/* Faixa */
+.faixa{border-top:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.06);background:rgba(13,22,36,.6)}
+.faixa .box{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding-top:26px;padding-bottom:26px}
+.faixa div{display:flex;gap:14px;align-items:center;font-size:15px;color:#c7d3df;font-weight:600}
+.faixa i{flex-shrink:0;width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(45,212,191,.1);color:#2DD4BF}
+.faixa small{display:block;color:#8ea2b8;font-weight:400;font-size:13px;margin-top:2px}
+
+/* Seções */
+section.sec{padding:100px 0}
+.rotulo{color:#5EEAD4;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+h2{font-size:clamp(30px,3.4vw,44px);line-height:1.1;font-weight:800;letter-spacing:-.02em;color:#fff;margin:14px 0 16px}
+.lead{font-size:18px;line-height:1.55;color:#9fb0c3;max-width:640px;margin:0}
+.cab{margin-bottom:52px}
+.cab.centro{text-align:center}.cab.centro .lead{margin:0 auto}
+
+/* Recursos (bento) */
+.bento{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.card{background:rgba(17,26,40,.82);border:1px solid rgba(255,255,255,.07);border-radius:20px;padding:28px;transition:border-color .2s,transform .2s}
+.card:hover{border-color:rgba(96,165,250,.35);transform:translateY(-2px)}
+.card .ic{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.card h3{font-size:20px;color:#fff;margin:0 0 8px;font-weight:700}
+.card p{margin:0;color:#9fb0c3;font-size:15px;line-height:1.55}
+.card.grande{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center}
+.ic-azul{background:rgba(96,165,250,.14);color:#60A5FA}.ic-teal{background:rgba(45,212,191,.12);color:#2DD4BF}
+.ic-verde{background:rgba(52,211,153,.12);color:#34d399}.ic-ambar{background:rgba(251,191,36,.12);color:#fbbf24}
+.ic-rosa{background:rgba(251,113,133,.12);color:#fb7185}.ic-lilas{background:rgba(167,139,250,.14);color:#a78bfa}
+.mini{background:#0f1b2b;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;font-size:12px;color:#9fb0c3}
+.mini .lin{display:grid;grid-template-columns:1fr auto auto;gap:14px;padding:7px 0;border-top:1px solid rgba(255,255,255,.05)}
+.mini .lin:first-child{border-top:0;color:#6f8197;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.mini .ok{color:#34d399}.mini .pend{color:#fbbf24}
+
+/* Como funciona */
+.passos{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;counter-reset:p}
+.passo{position:relative;padding:30px 28px;border-radius:20px;background:linear-gradient(180deg,rgba(17,26,40,.85),rgba(17,26,40,.45));border:1px solid rgba(255,255,255,.07)}
+.passo::before{counter-increment:p;content:counter(p);display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#2563EB,#14B8A6);color:#fff;font-weight:800;font-size:18px;margin-bottom:18px}
+.passo h3{color:#fff;font-size:19px;margin:0 0 8px}
+.passo p{color:#9fb0c3;margin:0;font-size:15px;line-height:1.55}
+
+/* Família / app */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.bloco{border-radius:24px;padding:40px;border:1px solid rgba(255,255,255,.07);background:rgba(17,26,40,.82);position:relative;overflow:hidden}
+.bloco h3{color:#fff;font-size:26px;margin:14px 0 10px;letter-spacing:-.01em}
+.bloco p{color:#9fb0c3;font-size:16px;line-height:1.55;margin:0 0 22px;max-width:440px}
+.lista{list-style:none;padding:0;margin:0 0 26px;display:grid;gap:10px}
+.lista li{display:flex;gap:10px;align-items:flex-start;color:#c7d3df;font-size:15px}
+.lista li::before{content:'';flex-shrink:0;margin-top:6px;width:8px;height:8px;border-radius:50%;background:#2DD4BF;box-shadow:0 0 0 4px rgba(45,212,191,.15)}
+.pessoas{display:flex;margin-bottom:6px}
+.pessoas span{width:42px;height:42px;border-radius:50%;border:3px solid #111a28;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;margin-left:-10px}
+.pessoas span:first-child{margin-left:0}
+.bloco.app{padding-right:240px}
+.celular{position:absolute;right:34px;bottom:-60px;width:170px;height:300px;border-radius:28px;background:#0f1b2b;border:6px solid #1d2b40;box-shadow:0 30px 60px rgba(0,0,0,.5);padding:20px 14px;font-size:10px;color:#9fb0c3}
+.celular strong{display:block;color:#fff;font-size:16px;margin:2px 0 10px}
+
+/* Segurança */
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.seg .card{padding:26px}
+.seg .card h3{font-size:17px}
+
+/* Planos */
+.planos{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch}
+.plano{display:flex;flex-direction:column;border-radius:22px;padding:34px 30px;background:rgba(17,26,40,.82);border:1px solid rgba(255,255,255,.08)}
+.plano.dest{background:linear-gradient(180deg,rgba(29,78,216,.22),rgba(17,26,40,.9) 45%);border-color:rgba(96,165,250,.55);box-shadow:0 30px 80px rgba(37,99,235,.18);position:relative}
+.plano.dest .tag{position:absolute;top:-13px;left:30px;background:linear-gradient(90deg,#2563EB,#14B8A6);color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px}
+.plano h3{margin:0;color:#fff;font-size:22px}
+.plano .desc{color:#9fb0c3;font-size:14px;margin:6px 0 22px}
+.preco{display:flex;align-items:baseline;gap:4px;color:#fff}
+.preco small{font-size:16px;color:#9fb0c3;font-weight:600}
+.preco b{font-size:46px;font-weight:800;letter-spacing:-.02em}
+.anual{color:#5EEAD4;font-size:13px;margin:6px 0 24px}
+.plano .lista{flex:1}
+.plano .bt{width:100%}
+
+/* FAQ */
+.faq{max-width:820px;margin:0 auto;display:grid;gap:12px}
+details{border-radius:16px;background:rgba(17,26,40,.82);border:1px solid rgba(255,255,255,.07);padding:0 24px}
+details[open]{border-color:rgba(96,165,250,.35)}
+summary{list-style:none;cursor:pointer;padding:22px 0;font-weight:700;color:#fff;font-size:17px;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';color:#60A5FA;font-size:24px;line-height:1;font-weight:400}
+details[open] summary::after{content:'–'}
+details p{margin:0 0 22px;color:#9fb0c3;line-height:1.6;font-size:15px}
+
+/* CTA final */
+.final{margin:20px auto 100px;max-width:1120px;border-radius:28px;padding:64px 56px;text-align:center;position:relative;overflow:hidden;
+  background:radial-gradient(600px 300px at 20% 0%,rgba(45,212,191,.22),transparent 60%),radial-gradient(600px 300px at 90% 100%,rgba(37,99,235,.3),transparent 60%),#0f1b2b;border:1px solid rgba(96,165,250,.25)}
+.final h2{margin-top:0}
+.final .lead{margin:0 auto 32px}
+.final .ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+/* Rodapé */
+footer{border-top:1px solid rgba(255,255,255,.06);padding:56px 0 40px;color:#8ea2b8;font-size:14px}
+footer .grade{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px}
+footer h4{color:#e5edf5;font-size:14px;margin:0 0 14px}
+footer a{display:block;margin-bottom:9px}
+footer a:hover{color:#fff}
+footer .copy{margin-top:40px;padding-top:24px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;font-size:13px;color:#6f8197}
+
+.chat{position:fixed;right:24px;bottom:24px;z-index:30;width:60px;height:60px;border:0;cursor:pointer;border-radius:50%;background:linear-gradient(135deg,#2563EB,#14B8A6);display:flex;align-items:center;justify-content:center;box-shadow:0 14px 34px rgba(37,99,235,.4);color:#fff}
+.chat:focus-visible,.bt:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
+.chat-painel{position:fixed;right:24px;bottom:96px;z-index:31;width:340px;max-width:calc(100vw - 32px);border-radius:18px;background:#111a28;border:1px solid rgba(255,255,255,.1);box-shadow:0 30px 80px rgba(0,0,0,.5);overflow:hidden}
+.chat-painel[hidden],.cookies[hidden]{display:none}
+.chat-cab{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:linear-gradient(90deg,#1D4ED8,#0f766e)}
+.chat-cab h4{margin:0;color:#fff;font-size:16px}
+.chat-cab button{background:none;border:0;color:#fff;font-size:24px;line-height:1;cursor:pointer}
+.chat-painel form{padding:18px;display:grid;gap:8px}
+.chat-painel p{margin:0 0 6px;color:#9fb0c3;font-size:14px;line-height:1.5}
+.chat-painel label{font-size:13px;font-weight:600;color:#e5edf5}
+.chat-painel input{height:46px;border-radius:10px;background:#1a2638;border:1px solid #2b3a50;color:#fff;font:inherit;font-size:15px;padding:0 14px;margin-bottom:6px}
+.chat-painel input:focus{outline:none;border-color:#60A5FA;box-shadow:0 0 0 3px rgba(96,165,250,.28)}
+.cookies{position:fixed;left:16px;right:100px;bottom:16px;z-index:29;max-width:760px;margin:0 auto;display:flex;gap:16px;align-items:center;padding:14px 18px;border-radius:14px;background:rgba(17,26,40,.97);border:1px solid rgba(255,255,255,.1);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.cookies p{margin:0;font-size:13px;line-height:1.5;color:#9fb0c3}
+.cookies a{color:#60A5FA;text-decoration:underline}
+.cookies .bt{height:40px;flex-shrink:0}
+
+/* Alternância de tema, disponível também no celular. */
+.tema{width:42px;height:42px;padding:0;flex-shrink:0;border-radius:12px;border:1px solid #2b3a50;background:rgba(26,38,56,.6);color:#e5edf5;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.tema:hover{border-color:#60A5FA}
+.tema:focus-visible{outline:2px solid #93C5FD;outline-offset:2px}
+.tema svg{width:20px;height:20px}
+.tema .lua,[data-theme="light"] .tema .sol{display:none}
+[data-theme="light"] .tema .lua{display:block}
+
+/* Tema claro: mesma identidade e hierarquia do visual aprovado. */
+[data-theme="light"] body{background:#f8fafc;color:#1e293b}
+[data-theme="light"] .fundo{background:radial-gradient(900px 600px at 15% 85%,rgba(20,184,166,.10),transparent 60%),radial-gradient(700px 500px at 85% 10%,rgba(37,99,235,.08),transparent 60%),linear-gradient(160deg,#f8fafc 0%,#eef6fa 55%,#f8fafc 100%)}
+[data-theme="light"] .topo{background:rgba(248,250,252,.88);border-color:#dce5ee}
+[data-theme="light"] .marca b,[data-theme="light"] h1,[data-theme="light"] h2,[data-theme="light"] .card h3,[data-theme="light"] .passo h3,[data-theme="light"] .bloco h3,[data-theme="light"] .plano h3,[data-theme="light"] .preco,[data-theme="light"] summary{color:#0f172a}
+[data-theme="light"] .marca svg path:first-child{stroke:#0f172a}
+[data-theme="light"] .marca svg path:nth-child(2){stroke:#2563eb}
+[data-theme="light"] .marca svg path:nth-child(3){stroke:#0d9488}
+[data-theme="light"] h1 span,[data-theme="light"] h2 span,[data-theme="light"] .rotulo,[data-theme="light"] .anual{color:#0f766e}
+[data-theme="light"] .topo nav,[data-theme="light"] .bt-link,[data-theme="light"] .sub,[data-theme="light"] .lead,[data-theme="light"] .card p,[data-theme="light"] .passo p,[data-theme="light"] .bloco p,[data-theme="light"] .plano .desc,[data-theme="light"] .preco small,[data-theme="light"] details p,[data-theme="light"] .garantias{color:#475569}
+[data-theme="light"] .topo nav a:hover,[data-theme="light"] footer a:hover{color:#1d4ed8}
+[data-theme="light"] .bt-sec,[data-theme="light"] .tema{color:#1e293b;border-color:#cbd5e1;background:rgba(255,255,255,.85)}
+[data-theme="light"] .bt-sec:hover,[data-theme="light"] .tema:hover{border-color:#2563eb}
+[data-theme="light"] .selo{background:rgba(13,148,136,.08);border-color:rgba(13,148,136,.28);color:#0f766e}
+[data-theme="light"] .traco{background:#0d9488}
+[data-theme="light"] .garantias svg,[data-theme="light"] .faixa i{color:#0f766e}
+[data-theme="light"] .faixa{background:rgba(255,255,255,.6);border-color:#dce5ee}
+[data-theme="light"] .faixa div,[data-theme="light"] .lista li{color:#334155}
+[data-theme="light"] .faixa small,[data-theme="light"] footer,[data-theme="light"] footer .copy{color:#52657a}
+[data-theme="light"] .card,[data-theme="light"] .bloco,[data-theme="light"] .plano,[data-theme="light"] details{background:rgba(255,255,255,.9);border-color:#dce5ee}
+[data-theme="light"] .card:hover,[data-theme="light"] details[open]{border-color:#93b4de}
+[data-theme="light"] .passo{background:linear-gradient(180deg,#fff,rgba(255,255,255,.6));border-color:#dce5ee}
+[data-theme="light"] .plano.dest{background:linear-gradient(180deg,#e8f0ff,#fff 45%);border-color:#60a5fa;box-shadow:0 30px 80px rgba(37,99,235,.10)}
+[data-theme="light"] .ic-azul,[data-theme="light"] .f3 i,[data-theme="light"] summary::after{color:#1d4ed8}
+[data-theme="light"] .ic-teal{color:#0f766e}
+[data-theme="light"] .ic-verde,[data-theme="light"] .e,[data-theme="light"] .mini .ok,[data-theme="light"] .f1 i{color:#047857}
+[data-theme="light"] .ic-ambar,[data-theme="light"] .mini .pend,[data-theme="light"] .f2 i{color:#92400e}
+[data-theme="light"] .ic-rosa,[data-theme="light"] .s{color:#be123c}
+[data-theme="light"] .ic-lilas{color:#6d28d9}
+[data-theme="light"] .painel{background:rgba(255,255,255,.96);border-color:#b9cde8;box-shadow:0 40px 100px rgba(15,23,42,.16)}
+[data-theme="light"] .menu{background:#f1f5f9;border-color:#dce5ee;color:#52657a}
+[data-theme="light"] .menu b,[data-theme="light"] .saldo,[data-theme="light"] .barra strong,[data-theme="light"] .flutua strong,[data-theme="light"] .celular strong{color:#0f172a}
+[data-theme="light"] .menu div.ativo{background:#dbeafe;color:#1d4ed8}
+[data-theme="light"] .cont small,[data-theme="light"] .barra,[data-theme="light"] .flutua small,[data-theme="light"] .mini,[data-theme="light"] .celular,[data-theme="light"] .legenda-ex{color:#52657a}
+[data-theme="light"] .barra{background:#f1f5f9}
+[data-theme="light"] .trilho{background:#dce5ee}
+[data-theme="light"] .linha{border-color:#dce5ee;color:#334155}
+[data-theme="light"] .flutua{background:rgba(255,255,255,.97);box-shadow:0 18px 40px rgba(15,23,42,.12)}
+[data-theme="light"] .f1{border-color:#a7d9c8}
+[data-theme="light"] .f2{border-color:#e6cd92}
+[data-theme="light"] .f3{border-color:#b9cde8}
+[data-theme="light"] .mini{background:#f1f5f9;border-color:#dce5ee}
+[data-theme="light"] .mini .lin{border-color:#dce5ee}
+[data-theme="light"] .mini .lin:first-child{color:#52657a}
+[data-theme="light"] .pessoas span{border-color:#fff}
+[data-theme="light"] .celular{background:#f8fafc;border-color:#cbd5e1;box-shadow:0 30px 60px rgba(15,23,42,.16)}
+[data-theme="light"] .final{background:radial-gradient(600px 300px at 20% 0%,rgba(45,212,191,.12),transparent 60%),radial-gradient(600px 300px at 90% 100%,rgba(37,99,235,.12),transparent 60%),#fff;border-color:#b9cde8}
+[data-theme="light"] footer,[data-theme="light"] footer .copy{border-color:#dce5ee}
+[data-theme="light"] footer h4{color:#1e293b}
+[data-theme="light"] .chat-painel{background:#fff;border-color:#dce5ee;box-shadow:0 30px 80px rgba(15,23,42,.16)}
+[data-theme="light"] .chat-painel p,[data-theme="light"] .cookies p{color:#475569}
+[data-theme="light"] .chat-painel label{color:#1e293b}
+[data-theme="light"] .chat-painel input{background:#f8fafc;border-color:#cbd5e1;color:#0f172a}
+[data-theme="light"] .cookies{background:rgba(255,255,255,.97);border-color:#dce5ee;box-shadow:0 20px 50px rgba(15,23,42,.14)}
+[data-theme="light"] .cookies a{color:#1d4ed8}
+
+@media (max-width:980px){
+  .box{padding:0 20px}
+  .topo nav,.topo .bt-link,.topo .bt-pri{display:none}
+  .topo .bt{height:40px;padding:0 18px}
+  .hero .ctas{flex-direction:column}
+  .topo .box{height:64px}
+  .marca b{font-size:22px}
+  .hero{padding:44px 0 40px}
+  .hero .box{grid-template-columns:1fr}
+  .ilus{display:none}
+  .sub{font-size:17px}
+  .hero .ctas .bt{width:100%}
+  .faixa .box,.bento,.passos,.duo,.seg,.planos{grid-template-columns:1fr}
+  .card.grande{grid-column:auto;grid-template-columns:1fr}
+  section.sec{padding:64px 0}
+  .bloco{padding:28px}
+  .celular{display:none}
+  .bloco.app{padding-right:28px}
+  .final{margin:0 16px 64px;padding:44px 22px}
+  footer .grade{grid-template-columns:1fr 1fr}
+  footer .copy{flex-direction:column;gap:8px}
+  .cookies{right:16px;bottom:92px;flex-direction:column;align-items:stretch;text-align:center}
+}
+@media (max-width:360px){
+  .topo .marca{gap:8px}
+  .topo .marca b{font-size:20px}
+  .topo .marca svg{width:32px;height:32px;flex-shrink:0}
+  .topo .acoes{gap:8px}
+  .topo .bt{padding:0 14px}
+}
+</style>
+</head>
+<body>
+<div class="fundo"></div>
+<div class="pagina">
+
+<header class="topo">
+  <div class="box">
+    <a href="/" class="marca" aria-label="alfahome">
+      <svg viewBox="0 0 64 64" width="40" height="40" aria-hidden="true"><path d="M11 54 L29.6 12.4 Q32 7.2 34.4 12.4" fill="none" stroke="#E2E8F0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M34.4 12.4 L53 54" fill="none" stroke="#60A5FA" stroke-width="9" stroke-linecap="round"/><path d="M21 39 H43" fill="none" stroke="#2DD4BF" stroke-width="7" stroke-linecap="round"/></svg>
+      <b>alfahome</b>
+    </a>
+    <nav><a href="#recursos">Recursos</a><a href="#como-funciona">Como funciona</a><a href="#planos">Planos</a><a href="#duvidas">Dúvidas</a></nav>
+    <div class="acoes">
+      <button class="tema" id="themeToggle" type="button" aria-label="Ativar modo claro" title="Ativar modo claro">
+        <svg class="sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+        <svg class="lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"/></svg>
+      </button>
+      <a class="bt-link" href="/baixar-app">Baixar app</a>
+      <a class="bt bt-sec" href="/login">Entrar</a>
+      <a class="bt bt-pri" href="/register">Criar conta</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="box">
+    <div>
+      <span class="selo">● Finanças da casa, para a família inteira</span>
+      <div class="traco"></div>
+      <h1>Sua vida financeira,<br><span>mais simples.</span></h1>
+      <p class="sub">Planeje o mês, acompanhe o previsto e o realizado, controle cartões, parcelas e contas fixas — tudo em um só lugar, no computador e no celular.</p>
+      <div class="ctas">
+        <a class="bt bt-pri bt-lg" href="/register">Criar minha conta
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="bt bt-sec bt-lg" href="#planos">Ver planos</a>
+      </div>
+      <div class="garantias">
+        <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12 5 5L20 7"/></svg>Sem senha de banco</span>
+        <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12 5 5L20 7"/></svg>Sem fidelidade</span>
+        <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 12 5 5L20 7"/></svg>Web e app Android</span>
+      </div>
+    </div>
+
+    <div class="ilus" aria-hidden="true">
+      <div class="painel">
+        <div class="menu"><b>alfahome</b>
+          <div class="ativo">Início</div><div>Planejamento</div><div>Lançamentos</div><div>Cartões</div><div>Metas</div><div>Avisos</div>
+        </div>
+        <div class="cont">
+          <small>Saldo do mês</small>
+          <div class="saldo">R$ 4.850,00</div>
+          <div class="barras">
+            <div class="barra">Receitas · realizado<strong>R$ 7.200,00</strong><div class="trilho"><i style="width:92%;background:#34d399"></i></div></div>
+            <div class="barra">Despesas · realizado<strong>R$ 2.350,00</strong><div class="trilho"><i style="width:58%;background:#60A5FA"></i></div></div>
+          </div>
+          <small>Próximos vencimentos</small>
+          <div class="linha"><span>Aluguel · dia 10</span><span class="s">-R$ 1.500,00</span></div>
+          <div class="linha"><span>Internet · dia 15</span><span class="s">-R$ 99,90</span></div>
+          <div class="linha"><span>Salário · dia 05</span><span class="e">+R$ 4.500,00</span></div>
+        </div>
+      </div>
+      <div class="flutua f1"><i>↑</i><div><small>Economia do mês</small><strong>67%</strong></div></div>
+      <div class="flutua f2"><i>!</i><div><small>Fatura fecha em</small><strong>3 dias</strong></div></div>
+      <div class="flutua f3"><i>◎</i><div><small>Meta: reserva</small><strong>48% concluída</strong></div></div>
+      <div class="legenda-ex">Valores ilustrativos</div>
+    </div>
+  </div>
+</section>
+
+<div class="faixa">
+  <div class="box">
+    <div><i><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></i><span>Sem conectar banco<small>Você lança o que quiser</small></span></div>
+    <div><i><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5"/></svg></i><span>Para a família<small>Cada um com seu login</small></span></div>
+    <div><i><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></i><span>Web e celular<small>Os mesmos números nos dois</small></span></div>
+    <div><i><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></i><span>Avisos no tempo certo<small>Vencimentos e faturas</small></span></div>
+  </div>
+</div>
+
+<section class="sec" id="recursos">
+  <div class="box">
+    <div class="cab">
+      <div class="rotulo">Recursos</div>
+      <h2>Tudo o que a casa precisa,<br><span>sem planilha complicada.</span></h2>
+      <p class="lead">Do planejamento do mês às metas da família: o alfahome organiza o dinheiro do jeito que ele acontece de verdade.</p>
+    </div>
+    <div class="bento">
+      <div class="card grande">
+        <div>
+          <div class="ic ic-azul"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg></div>
+          <h3>Planejamento: previsto x realizado</h3>
+          <p>Planeje receitas e despesas do mês e do ano e compare com o que aconteceu. Saldo, economia e comprometimento da renda calculados para você.</p>
+        </div>
+        <div class="mini" aria-hidden="true">
+          <div class="lin"><span>Conta</span><span>Previsto</span><span>Situação</span></div>
+          <div class="lin"><span>Aluguel</span><span>R$ 1.500,00</span><span class="ok">Pago</span></div>
+          <div class="lin"><span>Energia</span><span>R$ 210,00</span><span class="ok">Pago</span></div>
+          <div class="lin"><span>Escola</span><span>R$ 890,00</span><span class="pend">Pendente</span></div>
+          <div class="lin"><span>Internet</span><span>R$ 99,90</span><span class="pend">Pendente</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ic ic-teal"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+        <h3>Cartões e parceladas</h3>
+        <p>Limite usado e disponível, fechamento, vencimento, fatura do mês e cada compra parcelada com parcelas pagas e restantes.</p>
+      </div>
+      <div class="card">
+        <div class="ic ic-ambar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+        <h3>Contas fixas</h3>
+        <p>Aluguel, escola, energia: dia de vencimento, valor previsto e o que já foi pago no mês.</p>
+      </div>
+      <div class="card">
+        <div class="ic ic-rosa"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h3>Dívidas sob controle</h3>
+        <p>Saldo, taxa, parcela e prioridade de cada dívida, com previsão de quitação.</p>
+      </div>
+      <div class="card">
+        <div class="ic ic-verde"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div>
+        <h3>Metas da família</h3>
+        <p>Viagem, reserva, carro novo: valor alvo, quanto falta, prazo e aporte mensal.</p>
+      </div>
+      <div class="card">
+        <div class="ic ic-lilas"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V10l7-6 7 6v11M9 21v-6h6v6"/></svg></div>
+        <h3>Bancos e investimentos</h3>
+        <p>Saldo de cada conta e a posição dos investimentos, para ver o patrimônio da família.</p>
+      </div>
+      <div class="card">
+        <div class="ic ic-ambar"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+        <h3>Avisos de vencimento</h3>
+        <p>O sininho mostra o que vence e a fatura que está para fechar, antes de virar juros.</p>
+      </div>
+      <div class="card">
+        <div class="ic ic-azul"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/></svg></div>
+        <h3>Para onde vai o dinheiro</h3>
+        <p>Despesas por categoria no gráfico do mês, para saber onde dá para economizar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="como-funciona" style="padding-top:20px">
+  <div class="box">
+    <div class="cab centro">
+      <div class="rotulo">Como funciona</div>
+      <h2>Comece em <span>3 passos</span></h2>
+      <p class="lead">Sem integração com banco e sem burocracia. Você decide o que entra no sistema.</p>
+    </div>
+    <div class="passos">
+      <div class="passo"><h3>Crie sua conta</h3><p>Cadastro rápido. Depois convide quem divide as contas da casa com você.</p></div>
+      <div class="passo"><h3>Cadastre bancos e cartões</h3><p>Contas, cartões e categorias. Em poucos minutos o sistema reflete a sua realidade.</p></div>
+      <div class="passo"><h3>Lance e acompanhe</h3><p>Registre entradas e saídas no dia a dia. Saldo, faturas e planejamento se atualizam sozinhos.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" style="padding-top:20px">
+  <div class="box duo">
+    <div class="bloco">
+      <div class="pessoas"><span style="background:#2563EB">F</span><span style="background:#14B8A6">J</span><span style="background:#7c3aed">+</span></div>
+      <h3>Feito para a família inteira</h3>
+      <p>Cada pessoa tem o próprio login e todos veem os mesmos números. Em cada lançamento, você marca quem comprou ou quem recebeu.</p>
+      <ul class="lista"><li>Um login para cada pessoa</li><li>Quem pagou e quem recebeu</li><li>Os dados de uma família não aparecem para outra</li></ul>
+    </div>
+    <div class="bloco app">
+      <span class="selo">App Android</span>
+      <h3>No bolso, na hora da compra</h3>
+      <p>Consulte saldo, faturas e vencimentos pelo celular. Os números são os mesmos do computador.</p>
+      <a class="bt bt-sec" href="/baixar-app">Baixar o app</a>
+      <div class="celular" aria-hidden="true"><small>Saldo do mês</small><strong>R$ 4.850,00</strong>
+        <div class="linha"><span>Aluguel</span><span class="s">-1.500,00</span></div>
+        <div class="linha"><span>Mercado</span><span class="s">-320,00</span></div>
+        <div class="linha"><span>Salário</span><span class="e">+4.500,00</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="seguranca" style="padding-top:20px">
+  <div class="box">
+    <div class="cab">
+      <div class="rotulo">Privacidade</div>
+      <h2>Seus dados são <span>seus — e só seus.</span></h2>
+    </div>
+    <div class="seg">
+      <div class="card"><div class="ic ic-teal"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><h3>Sem senha de banco</h3><p>Não pedimos senha bancária nem acesso à sua conta.</p></div>
+      <div class="card"><div class="ic ic-azul"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/></svg></div><h3>Conexão protegida</h3><p>Acesso por HTTPS e senhas guardadas com hash.</p></div>
+      <div class="card"><div class="ic ic-verde"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg></div><h3>Só a sua família vê</h3><p>Cada família enxerga apenas os próprios lançamentos.</p></div>
+      <div class="card"><div class="ic ic-lilas"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><h3>LGPD</h3><p>Política de privacidade e termos de uso claros.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="planos" style="padding-top:20px">
+  <div class="box">
+    <div class="cab centro">
+      <div class="rotulo">Planos</div>
+      <h2>Escolha o plano <span>da sua casa</span></h2>
+      <p class="lead">Para uso individual, casal ou família inteira. Sem taxa de adesão e sem fidelidade.</p>
+    </div>
+    <div class="planos">
+      <div class="plano">
+        <h3>Individual</h3><div class="desc">Para organizar as próprias finanças.</div>
+        <div class="preco"><small>R$</small><b>19,90</b><small>/mês</small></div>
+        <div class="anual">ou R$ 199,00/ano — economize 17%</div>
+        <ul class="lista"><li>1 usuário</li><li>1 conta bancária</li><li>Receitas, despesas e cartões</li><li>Painel e relatórios</li></ul>
+        <a class="bt bt-sec" href="https://wa.me/5527992250122?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Individual%20do%20AlfaHome." target="_blank" rel="noopener">Assinar Individual</a>
+      </div>
+      <div class="plano dest">
+        <span class="tag">Recomendado</span>
+        <h3>Casal</h3><div class="desc">Para quem cuida do dinheiro a dois.</div>
+        <div class="preco"><small>R$</small><b>29,90</b><small>/mês</small></div>
+        <div class="anual">ou R$ 299,00/ano — economize 17%</div>
+        <ul class="lista"><li>Até 2 usuários</li><li>Até 4 contas bancárias</li><li>Tudo do Individual</li><li>Quem pagou e quem recebeu</li><li>Investimentos e patrimônio</li></ul>
+        <a class="bt bt-pri" href="https://wa.me/5527992250122?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Casal%20do%20AlfaHome." target="_blank" rel="noopener">Assinar Casal</a>
+      </div>
+      <div class="plano">
+        <h3>Família</h3><div class="desc">Recursos ilimitados para a casa toda.</div>
+        <div class="preco"><small>R$</small><b>49,90</b><small>/mês</small></div>
+        <div class="anual">ou R$ 499,00/ano — economize 17%</div>
+        <ul class="lista"><li>Usuários ilimitados</li><li>Bancos e cartões ilimitados</li><li>Tudo do Casal</li></ul>
+        <a class="bt bt-sec" href="https://wa.me/5527992250122?text=Ol%C3%A1!%20Quero%20assinar%20o%20plano%20Fam%C3%ADlia%20do%20AlfaHome." target="_blank" rel="noopener">Assinar Família</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="duvidas" style="padding-top:20px">
+  <div class="box">
+    <div class="cab centro"><div class="rotulo">Dúvidas</div><h2>Perguntas frequentes</h2></div>
+    <div class="faq">
+      <details open><summary>Preciso conectar minha conta do banco?</summary><p>Não. Você lança entradas e saídas como quiser. O alfahome não pede senha de banco nem acesso à sua conta.</p></details>
+      <details><summary>Tem aplicativo para celular?</summary><p>Sim. Há o app para Android, que você baixa na página "Baixar app", e o sistema também funciona no navegador do celular e do computador.</p></details>
+      <details><summary>Mais de uma pessoa pode usar a mesma conta?</summary><p>Sim. Nos planos Casal e Família, cada pessoa tem o próprio login e todos veem os mesmos lançamentos.</p></details>
+      <details><summary>Como funcionam as compras parceladas no cartão?</summary><p>Você informa o número de parcelas e o alfahome acompanha cada uma na fatura certa, com parcelas pagas, restantes e o próximo vencimento.</p></details>
+      <details><summary>Posso cancelar quando quiser?</summary><p>Sim. Não há fidelidade nem taxa de adesão.</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="final">
+  <h2>Pronto para organizar <span>as finanças da casa?</span></h2>
+  <p class="lead">Crie sua conta, cadastre bancos e cartões e tenha o mês planejado já no primeiro lançamento.</p>
+  <div class="ctas"><a class="bt bt-pri bt-lg" href="/register">Criar minha conta</a><a class="bt bt-sec bt-lg" href="https://wa.me/5527992250122" target="_blank" rel="noopener">Falar no WhatsApp</a></div>
+</div>
+
+<footer>
+  <div class="box">
+    <div class="grade">
+      <div>
+        <a href="/" class="marca"><svg viewBox="0 0 64 64" width="34" height="34" aria-hidden="true"><path d="M11 54 L29.6 12.4 Q32 7.2 34.4 12.4" fill="none" stroke="#E2E8F0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M34.4 12.4 L53 54" fill="none" stroke="#60A5FA" stroke-width="9" stroke-linecap="round"/><path d="M21 39 H43" fill="none" stroke="#2DD4BF" stroke-width="7" stroke-linecap="round"/></svg><b style="font-size:24px">alfahome</b></a>
+        <p style="margin:16px 0 0;max-width:320px;line-height:1.6">Suas finanças, mais simples. Planejamento, cartões, contas e metas da família em um só lugar.</p>
+        <p style="margin:14px 0 0">R. Pedro Palácios, 79 — Centro<br>Vila Velha, ES · 29100-190</p>
+      </div>
+      <div><h4>Produto</h4><a href="#recursos">Recursos</a><a href="#planos">Planos</a><a href="#duvidas">Dúvidas</a><a href="/baixar-app">Baixar app</a></div>
+      <div><h4>Conta</h4><a href="/login">Entrar</a><a href="/register">Criar conta</a><a href="https://wa.me/5527992250122" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:alfa.comercial.solucoes@gmail.com">E-mail</a><a href="https://www.instagram.com/alfa.solucoestecnologicas/" target="_blank" rel="noopener">Instagram</a></div>
+      <div><h4>Legal</h4><a href="/politica-privacidade">Política de Privacidade</a><a href="/termos-de-uso">Termos de Uso</a></div>
+    </div>
+    <div class="copy"><span>© <span id="ano"></span> <a href="https://alfasolucoes.cloud/" target="_blank" rel="noopener" style="display:inline;margin:0">Alfa Soluções Tecnológicas</a>. Todos os direitos reservados.</span><span>Feito no Espírito Santo</span></div>
+  </div>
+</footer>
+</div>
+<button class="chat" id="chatToggle" type="button" aria-label="Fale conosco" aria-expanded="false" aria-controls="chatPainel"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12Z"/></svg></button>
+
+<div class="chat-painel" id="chatPainel" role="dialog" aria-labelledby="chatTitulo" hidden>
+  <div class="chat-cab"><h4 id="chatTitulo">Fale com a gente</h4><button type="button" id="chatFechar" aria-label="Fechar">&times;</button></div>
+  <form id="chatForm">
+    <p>Deixe seu nome e WhatsApp. A conversa continua no WhatsApp do time comercial.</p>
+    <label for="chatNome">Seu nome</label>
+    <input type="text" id="chatNome" autocomplete="name" placeholder="Ex.: João Silva" required>
+    <label for="chatWhatsapp">WhatsApp</label>
+    <input type="tel" id="chatWhatsapp" autocomplete="tel" inputmode="tel" placeholder="(27) 99999-9999" required>
+    <button type="submit" class="bt bt-pri">Iniciar conversa</button>
+  </form>
+</div>
+
+<div class="cookies" id="cookieBanner" hidden>
+  <p>Usamos cookies essenciais para o funcionamento do site. Nenhum dado é compartilhado com terceiros para fins publicitários. Saiba mais na nossa <a href="/politica-privacidade">Política de Privacidade</a>.</p>
+  <button type="button" class="bt bt-pri" id="cookieAceitar">Aceitar</button>
+</div>
+
+<script>
+(function () {
+  document.getElementById('ano').textContent = new Date().getFullYear();
+
+  // Escolha manual prevalece; sem ela, acompanhar o tema do dispositivo.
+  var themeToggle = document.getElementById('themeToggle');
+  var systemTheme = window.matchMedia('(prefers-color-scheme: light)');
+  var manualTheme = false;
+  try { manualTheme = /^(light|dark)$/.test(localStorage.getItem('lp-theme')); } catch (e) {}
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelector('meta[name="theme-color"]').content = theme === 'light' ? '#f8fafc' : '#0b1220';
+    var label = theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro';
+    themeToggle.setAttribute('aria-label', label);
+    themeToggle.title = label;
+  }
+  applyTheme(document.documentElement.getAttribute('data-theme'));
+  themeToggle.addEventListener('click', function () {
+    var theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    manualTheme = true;
+    applyTheme(theme);
+    try { localStorage.setItem('lp-theme', theme); } catch (e) {}
+  });
+  systemTheme.addEventListener('change', function (e) {
+    if (!manualTheme) applyTheme(e.matches ? 'light' : 'dark');
+  });
+
+  // Cookies
+  var banner = document.getElementById('cookieBanner');
+  if (!localStorage.getItem('alfahome_cookies_accepted')) banner.hidden = false;
+  document.getElementById('cookieAceitar').addEventListener('click', function () {
+    localStorage.setItem('alfahome_cookies_accepted', '1');
+    banner.hidden = true;
+  });
+
+  // Chat: coleta nome e WhatsApp e abre a conversa no WhatsApp comercial
+  var painel = document.getElementById('chatPainel');
+  var botao = document.getElementById('chatToggle');
+  function abrir(sim) {
+    painel.hidden = !sim;
+    botao.setAttribute('aria-expanded', sim ? 'true' : 'false');
+    if (sim) document.getElementById('chatNome').focus();
+  }
+  botao.addEventListener('click', function () { abrir(painel.hidden); });
+  document.getElementById('chatFechar').addEventListener('click', function () { abrir(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') abrir(false); });
+
+  var tel = document.getElementById('chatWhatsapp');
+  tel.addEventListener('input', function () {
+    var d = this.value.replace(/\D/g, '').slice(0, 11);
+    this.value = d.length <= 10
+      ? d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2')
+      : d.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+  });
+
+  document.getElementById('chatForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var nome = document.getElementById('chatNome').value.trim();
+    var whatsapp = tel.value.trim();
+    if (!nome || !whatsapp) return;
+    var msg = 'Olá! Gostaria de saber mais sobre o AlfaHome.\n\nNome: ' + nome + '\nWhatsApp: ' + whatsapp;
+    window.open('https://wa.me/5527992250122?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+  });
+})();
+</script>
+</body>
 </html>
