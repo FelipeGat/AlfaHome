@@ -47,6 +47,9 @@ RUN npm install && npm run build
 # OPcache (código compilado em memória)
 COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache-alfahome.ini
 
+# Sessão do PHP endurecida (T-580)
+COPY docker/php/seguranca.ini /usr/local/etc/php/conf.d/seguranca-alfahome.ini
+
 # Permissões
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
