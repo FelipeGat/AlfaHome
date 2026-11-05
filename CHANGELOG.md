@@ -1,5 +1,13 @@
 # Changelog
 
+## AlfaHome — 05/11/2026 — Correção de segurança no PHP (PHP2Shell)
+
+### Segurança
+- Corrigimos no AlfaHome a falha conhecida como PHP2Shell (CVE-2026-109618 e CVE-2026-109619), descoberta nesta semana no PHP, a linguagem em que o sistema roda. Ela permitia que alguém de fora, sem login, rodasse comandos no servidor. Atualizamos o PHP para a versão 8.2.35, que fecha a falha, no mesmo dia em que ela foi divulgada.
+- Antes de atualizar, verificamos os registros do sistema desde agosto e não encontramos nenhum sinal de que a falha tenha sido usada contra o AlfaHome.
+- Nada muda no uso do sistema e não houve perda de dados.
+
+
 ## AlfaHome — 07/10/2026 — Lançar pelo sistema, sem planilha
 
 ### Novidades
